@@ -214,33 +214,18 @@
         "ray.at.qoopio@gmail.com": "呂承叡"
       };
 
-      document.addEventListener("DOMContentLoaded", function () {
-      const emailInput = document.getElementById("email");
-
-
-      function handleEmailConfirm() {
-        const input = emailInput.value.trim();
-        if (input && input.includes("@")) {
-          localStorage.setItem("qoopio_email", input);
-          emailInput.blur(); // ⭐ 讓輸入欄失焦，清除藍色邊框
-          showUserInfo(input);
+      document.addEventListener("DOMContentLoaded", () => {
+        const savedEmail = localStorage.getItem("qoopio_email");
+        if (savedEmail && savedEmail.includes("@")) {
+          showUserInfo(savedEmail);
+        } else {
+          showEmailInput();
         }
-      }
-
-      // 失去焦點時觸發
-      emailInput.addEventListener("blur", handleEmailConfirm);
-
-      // 按下 Enter 鍵時觸發
-      emailInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          handleEmailConfirm();
-        }
-      });
-
-
+      
         updateButtonLabel();
         setInterval(updateButtonLabel, 60000);
       });
+
 
       function showUserInfo(email) {
         const name = nameMap[email] || email;
