@@ -321,7 +321,13 @@
           }, 15000);
 
           lastSubmitTime = now;
-          google.script.run.submitClockIn(data);
+          fetch("https://script.google.com/macros/s/AKfycbz8r--Pcm04IfW3GE-CrcrMothFlEVqRj1sczKnz9LvSusBIFvH61VzajlMi51bexji/exec", {
+            method: "POST",
+            mode: "no-cors", // 無回應，不會報錯但也沒訊息可抓
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
         });
       }
     </script>
