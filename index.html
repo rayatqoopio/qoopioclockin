@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>qoopio打卡</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon-192.png" sizes="192x192" />
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 1.5rem;
+        background-color: #f9f9f9;
+        color: #333;
+        text-align: center;
+      }
+      .container {
+        max-width: 440px;
+        margin: 20vh auto 0;
+        transform: scale(1.8);
+        transform-origin: top center;
+      }
+      #user-info {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      .button-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .submit-btn {
+        flex: 5;
+        padding: 1rem;
+        font-size: 1.5rem;
+        background-color: #111;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+      }
+      .change-btn {
+        flex: 1;
+        padding: 1rem;
+        font-size: 1rem;
+        background-color: #ccc;
+        border: none;
+        border-radius: 10px;
+      }
+      input[type="email"] {
+        font-size: 1.2rem;
+        padding: 1rem;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="user-info" style="display:none;">
+        <span id="user-label"></span>
+      </div>
+
+      <div id="email-input-area">
+        <label for="email">Email：</label>
+        <input type="email" id="email" placeholder="輸入公司 email" required />
+      </div>
+
+      <div class="button-row">
+        <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
+        <button onclick="resetEmail()" class="change-btn">更換</button>
+      </div>
+
+      <div id="status"></div>
+    </div>
+
+    <script>
+      const nameMap = {
+        "lilian6337@gmail.com": "陳彥如",
+        "tiffany05141997@gmail.com": "許宇禎",
+        "olaaaqoopio@gmail.com": "王彥茹",
+        "violet.qoopio@gmail.com": "譚雯",
+        "ringo.qoopio0407@gmail.com": "王姝蘋",
+        "rulinqoopio@gmail.com": "黃茹琳",
+        "orange.at.qoopio@gmail.com": "劉宇晨",
+        "xinyu881106.at.qoopio@gmail.com": "鄭鑫俞",
+        "e3072029@gmail.com": "黃辰鈺",
+        "pegalt178y@gmail.com": "周霈棋",
+        "ray.at.qoopio@gmail.com": "呂承叡"
+      };
+
+      function getOrCreateDeviceId() {
+        let uuid = localStorage.getItem("device_id");
+        if (!uuid) {
+          uuid = crypto.randomUUID();
+          localStorage.setItem("device_id", uuid);
+        }
+        return uuid;
+      }
+
+      function showUserInfo(email) {
+        const name = nameMap[email] || email;
+        document.getElementById("user-label").textContent = `${name}（${email}）`;
+        document.getElementById("user-info").style.display = "block";
+        document.getElementById("email-input-area").style.display = "none";
+      }
+
+      function showEmailInput() {
+        document.getElementById("user-info").style.display = "none";
+        document.getElementById("email-input-area").style.display = "block";
+      }
+
+      function resetEmail() {
+        localStorage.removeItem("qoopio_email");
+        location.reload();
+      }
+
+      function updateButtonLabel() {
+        const now = new Date();
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
+        const btn = document.getElementById("clockInBtn");
+        if (totalMinutes >= 240 && totalMinutes <= 1140) {
+          btn.textContent = "上班打卡";
+          btn.dataset.type = "上班";
+        } else {
+          btn.textContent = "下班打卡";
+          btn.dataset.type = "下班";
+        }
+      }
+
+      let lastSubmitTime = 0;
+
+      function submitClockIn() {
+        const now = Date.now();
+        if (now - lastSubmitTime < 15000) {
+          alert("請勿重複打卡，請等待幾秒再試！");
+          return;
+        }
+
+        const email = localStorage.getItem("qoopio_email") || document.getElementById("email").value.trim();
+        if (!email) return alert("請輸入 email！");
+        localStorage.setItem("qoopio_email", email);
+
+        const deviceId = getOrCreateDeviceId();
+        console.log("🔑 Device ID:", deviceId);
+        updateButtonLabel();
+        lastSubmitTime = now;
+
+        const name = nameMap[email] || email;
+        const type = document.getElementById("clockInBtn").dataset.type || "上班";
+        const timeStr = new Date().toLocaleTimeString();
+        const statusEl = document.getElementById("status");
+        statusEl.textContent = `✅ ${name} ${type}（${timeStr}）`;
+        statusEl.style.color = "green";
+
+        // TODO: 可接 Apps Script 的傳送邏輯
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const savedEmail = localStorage.getItem("qoopio_email");
+        if (savedEmail) showUserInfo(savedEmail);
+        else showEmailInput();
+
+        updateButtonLabel();
+        setInterval(updateButtonLabel, 60000);
+      });
+    </script>
+  </body>
+</html>
