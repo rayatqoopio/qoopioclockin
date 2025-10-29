@@ -331,13 +331,14 @@
           
           fetch("https://script.google.com/macros/s/AKfycbz8r--Pcm04IfW3GE-CrcrMothFlEVqRj1sczKnz9LvSusBIFvH61VzajlMi51bexji/exec", {
             method: "POST",
-            mode: "no-cors", // 無回應，不會報錯但也沒訊息可抓
+            mode: "no-cors",
             headers: {
               "Content-Type": "application/json"
             },
             body: JSON.stringify(data)
-        });
-      }
+          });
+        }); // <-- 這是 geolocation 成功 callback 的結尾
+      }     // ✅ 補上這個 function 的結尾括號
     </script>
 
 
