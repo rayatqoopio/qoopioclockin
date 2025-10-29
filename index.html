@@ -186,6 +186,14 @@
 
 
     <script>
+
+        if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("service-worker.js")
+      .then(() => console.log("✅ Service Worker registered"))
+      .catch((error) => console.error("❌ SW registration failed:", error));
+      }
+      
       const nameMap = {
         "lilian6337@gmail.com": "陳彥如",
         "tiffany05141997@gmail.com": "許宇禎",
