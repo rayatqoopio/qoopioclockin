@@ -42,7 +42,7 @@
       flex: 6;
       padding: 1rem;
       border: 1px solid #ccc;
-      border-radius: 10px 0 0 10px;
+      border-radius: 10px;
       border-right: none;
       box-sizing: border-box;
     }
@@ -55,7 +55,7 @@
       background-color: #eee;
       color: #333;
       border-left: none;
-      border-radius: 0 10px 10px 0;
+      border-radius: 10px;
       cursor: pointer;
     }
     .login-btn:hover {
@@ -112,7 +112,6 @@
     </div>
 
     <div id="email-input-area">
-      <label for="email">Email：</label>
       <div class="input-row">
         <input type="email" id="email" placeholder="輸入公司 email" required />
         <button class="login-btn" onclick="handleLogin()">登入</button>
