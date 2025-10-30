@@ -1,256 +1,264 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Qoopio 打卡系統</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#111111" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="icon.png" />
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("service-worker.js")
-          .then(() => console.log("✅ Service Worker registered"))
-          .catch((error) => console.error("❌ SW registration failed:", error));
-      }
-    </script>
-    <style>
-      body {
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        margin: 0;
-        padding: 2rem;
-        background-color: #fdf5e6;
-        color: #333;
-        text-align: center;
-      }
-      .container {
-        max-width: 500px;
-        margin: 5vh auto;
-      }
-      .logo {
-        width: 250px;
-        margin-bottom: 2rem;
-      }
-      label {
-        display: block;
-        margin: 1rem 0 0.5rem;
-        font-size: 1.2rem;
-        text-align: left;
-      }
-      input[type="email"] {
-        font-size: 1.4rem;
-        width: 100%;
-        padding: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-sizing: border-box;
-      }
-      .button-row {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1.5rem;
-      }
-      .submit-btn {
-        flex: 5;
-        padding: 1.5rem;
-        font-size: 1.4rem;
-        background-color: #111;
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-      .change-btn {
-        flex: 2;
-        padding: 1.5rem;
-        font-size: 1rem;
-        background-color: #ddd;
-        color: #222;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-      .user-label {
-        font-size: 1.1rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-      }
-      #status {
-        margin-top: 1rem;
-        font-size: 1.2rem;
-        font-weight: bold;
-      }
-      #shift-info {
-        margin-top: 1.5rem;
-        font-size: 1rem;
-        color: #444;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <!-- LOGO 圖示 -->
-      <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
+<head>
+  <meta charset="UTF-8" />
+  <title>Qoopio 打卡系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.png" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("service-worker.js")
+        .then(() => console.log("✅ Service Worker registered"))
+        .catch((error) => console.error("❌ SW registration failed:", error));
+    }
+  </script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background-color: #fdf5e6;
+      color: #333;
+      text-align: center;
+    }
+    .container {
+      max-width: 500px;
+      margin: 5vh auto;
+    }
+    .logo {
+      width: 250px;
+      margin-bottom: 2rem;
+    }
+    .input-row {
+      display: flex;
+      margin-top: 1rem;
+    }
+    input[type="email"] {
+      font-size: 1.4rem;
+      flex: 1;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px 0 0 10px;
+      border-right: none;
+      box-sizing: border-box;
+    }
+    .login-btn {
+      font-size: 1.6rem;
+      font-weight: bold;
+      padding: 1rem 1.5rem;
+      border: 1px solid #ccc;
+      background-color: #eee;
+      color: #333;
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+    }
+    .login-btn:hover {
+      background-color: #ddd;
+    }
+    .button-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .submit-btn {
+      flex: 5;
+      padding: 1.5rem;
+      font-size: 1.4rem;
+      background-color: #111;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .change-btn {
+      flex: 2;
+      padding: 1.5rem;
+      font-size: 1rem;
+      background-color: #ddd;
+      color: #222;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .user-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    #shift-info {
+      margin-top: 1.5rem;
+      font-size: 1rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
 
-      <!-- 使用者資訊區 -->
-      <div id="user-info" style="display: none;">
-        <div id="user-label" class="user-label"></div>
-      </div>
-
-      <!-- Email 輸入區 -->
-      <div id="email-input-area">
-        <label for="email">Email：</label>
-        <input type="email" id="email" placeholder="輸入公司 email" required />
-        <button onclick="handleLogin()">登入</button>
-      </div>
-
-      <!-- 打卡與更換帳號按鈕 -->
-      <div class="button-row">
-        <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
-        <button onclick="resetEmail()" class="change-btn">登出</button>
-      </div>
-
-      <!-- 班別資訊顯示區 -->
-      <div id="shift-info">讀取班別中…</div>
-
-      <!-- 打卡狀態顯示 -->
-      <div id="status"></div>
+    <div id="user-info" style="display: none;">
+      <div id="user-label" class="user-label"></div>
     </div>
 
-    <script>
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD-DTgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
-      let userData = {};
+    <div id="email-input-area">
+      <label for="email">Email：</label>
+      <div class="input-row">
+        <input type="email" id="email" placeholder="輸入公司 email" required />
+        <button class="login-btn" onclick="handleLogin()">登入</button>
+      </div>
+    </div>
 
-      // 載入 user.json
-      fetch("user.json")
+    <div class="button-row">
+      <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
+      <button onclick="resetEmail()" class="change-btn">登出</button>
+    </div>
+
+    <div id="shift-info">讀取班別中…</div>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD-DTgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
+    let userData = {};
+
+    fetch("user.json")
+      .then(res => res.json())
+      .then(json => {
+        userData = json;
+        initLogin();
+      })
+      .catch(err => {
+        console.error("❌ 無法載入使用者資料", err);
+        alert("使用者資料載入失敗，請刷新頁面");
+      });
+
+    function initLogin() {
+      const savedEmail = localStorage.getItem("qoopio_email");
+      if (savedEmail && userData[savedEmail]) {
+        showUserInfo(savedEmail);
+      } else {
+        localStorage.removeItem("qoopio_email"); // 確保資料一致性
+        showEmailInput();
+      }
+      updateButtonLabel();
+      setInterval(updateButtonLabel, 60000);
+    }
+
+    function handleLogin() {
+      const email = document.getElementById("email").value.trim();
+      if (!userData[email]) {
+        alert("查無此帳號，請重新確認 email！");
+        return;
+      }
+      localStorage.setItem("qoopio_email", email);
+      showUserInfo(email);
+    }
+
+    function showUserInfo(email) {
+      const name = userData[email].name || email;
+      document.getElementById("user-label").textContent = `${name}（${email}）`;
+      document.getElementById("user-info").style.display = "block";
+      document.getElementById("email-input-area").style.display = "none";
+      loadShifts(email);
+    }
+
+    function showEmailInput() {
+      document.getElementById("user-info").style.display = "none";
+      document.getElementById("email-input-area").style.display = "block";
+    }
+
+    function resetEmail() {
+      localStorage.removeItem("qoopio_email");
+      location.reload();
+    }
+
+    let lastSubmitTime = 0;
+    function updateButtonLabel() {
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const btn = document.getElementById("clockInBtn");
+      if (totalMinutes >= 240 && totalMinutes <= 1140) {
+        btn.textContent = "上班打卡";
+        btn.dataset.type = "上班";
+      } else {
+        btn.textContent = "下班打卡";
+        btn.dataset.type = "下班";
+      }
+    }
+
+    function loadShifts(email) {
+      document.getElementById("shift-info").textContent = "讀取班別中…";
+      fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
-        .then(json => {
-          userData = json;
-          initLogin();
+        .then(data => {
+          document.getElementById("shift-info").innerHTML =
+            `📅 今日班別：${data.today || "—"}<br>⏭️ 明日班別：${data.tomorrow || "—"}`;
         })
         .catch(err => {
-          console.error("❌ 無法載入使用者資料", err);
-          alert("使用者資料載入失敗，請刷新頁面");
+          console.error("❌ 無法載入班別：", err);
+          document.getElementById("shift-info").textContent = "無法讀取班表";
         });
+    }
 
-      function initLogin() {
-        const savedEmail = localStorage.getItem("qoopio_email");
-        if (savedEmail && userData[savedEmail]) {
-          showUserInfo(savedEmail);
-        } else {
-          showEmailInput();
-        }
-        updateButtonLabel();
-        setInterval(updateButtonLabel, 60000);
+    function submitClockIn() {
+      const now = Date.now();
+      if (now - lastSubmitTime < 15000) {
+        alert("請勿重複打卡，請等待幾秒再試！");
+        return;
       }
 
-      function handleLogin() {
-        const email = document.getElementById("email").value.trim();
-        if (!userData[email]) {
-          alert("查無此帳號，請重新確認 email！");
-          return;
-        }
-        localStorage.setItem("qoopio_email", email);
-        showUserInfo(email);
+      const email = localStorage.getItem("qoopio_email");
+      if (!email) {
+        alert("請先登入！");
+        return;
       }
 
-      function showUserInfo(email) {
+      const type = document.getElementById("clockInBtn").dataset.type || "上班";
+      if (!navigator.geolocation) {
+        alert("您的瀏覽器不支援定位功能");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        const data = { email, type, lat, lng };
         const name = userData[email].name || email;
-        document.getElementById("user-label").textContent = `${name}（${email}）`;
-        document.getElementById("user-info").style.display = "block";
-        document.getElementById("email-input-area").style.display = "none";
-        loadShifts(email);
-      }
+        const timeStr = new Date().toLocaleTimeString();
 
-      function showEmailInput() {
-        document.getElementById("user-info").style.display = "none";
-        document.getElementById("email-input-area").style.display = "block";
-      }
+        document.getElementById("status").textContent =
+          `✅ ${name} ${type}（${timeStr}）`;
+        document.getElementById("status").style.color = "green";
 
-      function resetEmail() {
-        localStorage.removeItem("qoopio_email");
-        location.reload();
-      }
+        document.getElementById("clockInBtn").disabled = true;
+        setTimeout(() => {
+          document.getElementById("clockInBtn").disabled = false;
+        }, 15000);
 
-      let lastSubmitTime = 0;
-      function updateButtonLabel() {
-        const now = new Date();
-        const totalMinutes = now.getHours() * 60 + now.getMinutes();
-        const btn = document.getElementById("clockInBtn");
-        if (totalMinutes >= 240 && totalMinutes <= 1140) {
-          btn.textContent = "上班打卡";
-          btn.dataset.type = "上班";
-        } else {
-          btn.textContent = "下班打卡";
-          btn.dataset.type = "下班";
-        }
-      }
+        lastSubmitTime = now;
 
-      function loadShifts(email) {
-        document.getElementById("shift-info").textContent = "讀取班別中…";
-        fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
-          .then(res => res.json())
-          .then(data => {
-            document.getElementById("shift-info").innerHTML =
-              `📅 今日班別：${data.today || "—"}<br>⏭️ 明日班別：${data.tomorrow || "—"}`;
-          })
-          .catch(err => {
-            console.error("❌ 無法載入班別：", err);
-            document.getElementById("shift-info").textContent = "無法讀取班表";
-          });
-      }
-
-      function submitClockIn() {
-        const now = Date.now();
-        if (now - lastSubmitTime < 15000) {
-          alert("請勿重複打卡，請等待幾秒再試！");
-          return;
-        }
-
-        const email = localStorage.getItem("qoopio_email");
-        if (!email) {
-          alert("請先登入！");
-          return;
-        }
-
-        const type = document.getElementById("clockInBtn").dataset.type || "上班";
-        if (!navigator.geolocation) {
-          alert("您的瀏覽器不支援定位功能");
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-
-          const data = { email, type, lat, lng };
-          const name = userData[email].name || email;
-          const timeStr = new Date().toLocaleTimeString();
-
-          document.getElementById("status").textContent =
-            `✅ ${name} ${type}（${timeStr}）`;
-          document.getElementById("status").style.color = "green";
-
-          document.getElementById("clockInBtn").disabled = true;
-          setTimeout(() => {
-            document.getElementById("clockInBtn").disabled = false;
-          }, 15000);
-
-          lastSubmitTime = now;
-
-          fetch(scriptUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-          });
-        }, () => {
-          alert("無法取得定位資訊，請確認瀏覽器權限！");
+        fetch(scriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
         });
-      }
-    </script>
-  </body>
+      }, () => {
+        alert("無法取得定位資訊，請確認瀏覽器權限！");
+      });
+    }
+  </script>
+</body>
 </html>
