@@ -34,29 +34,26 @@
     }
     .input-row {
       display: flex;
+      width: 100%;
       margin-top: 1rem;
     }
     input[type="email"] {
       flex: 5;
       font-size: 1.4rem;
-      padding: 1rem;
+      padding: 1.5rem;
       border: 1px solid #ccc;
-      border-radius: 10px 0 0 10px;
+      border-radius: 10px;
       box-sizing: border-box;
     }
     .login-btn {
       flex: 2;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       font-weight: bold;
-      padding: 1rem;
-      border: 1px solid #ccc;
+      padding: 1.5rem;
       background-color: #eee;
-      color: #333;
-      border-radius: 0 10px 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 10px;
       cursor: pointer;
-    }
-    .login-btn:hover {
-      background-color: #ddd;
     }
     .button-row {
       display: flex;
@@ -108,9 +105,11 @@
       <div id="user-label" class="user-label"></div>
     </div>
 
-    <div class="input-row">
-      <input type="email" id="email" placeholder="輸入公司 email" required />
-      <button class="login-btn" onclick="handleLogin()">登入</button>
+    <div id="email-input-area">
+      <div class="input-row">
+        <input type="email" id="email" placeholder="輸入公司 email" required />
+        <button onclick="handleLogin()" class="login-btn">登入</button>
+      </div>
     </div>
 
     <div class="button-row">
