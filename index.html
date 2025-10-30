@@ -32,39 +32,32 @@
       width: 250px;
       margin-bottom: 2rem;
     }
-    .login-row {
-      margin-top: 1rem;
-      text-align: left;
-    }
-    
-    .input-with-button {
+    .input-row {
       display: flex;
       width: 100%;
+      margin-top: 1rem;
     }
-    
-    .input-with-button input[type="email"] {
-      flex: 7;
+    .input[type="email"] {
+      flex: 5;
       font-size: 1.4rem;
       padding: 1rem;
       border: 1px solid #ccc;
-      border-right: none; /* 把右邊邊框取消，避免重疊 */
       border-radius: 10px 0 0 10px;
+      border-right: none;
       box-sizing: border-box;
     }
-    
     .login-btn {
-      flex: 1;
-      font-size: 1.5rem;
+      flex: 2;
+      font-size: 1.2rem;
       font-weight: bold;
-      padding: 1rem;
+      padding: 1rem 1.2rem;
       border: 1px solid #ccc;
-      border-left: none; /* 把左邊邊框取消，避免重疊 */
       background-color: #eee;
       color: #333;
+      border-left: none;
       border-radius: 0 10px 10px 0;
       cursor: pointer;
     }
-    
     .login-btn:hover {
       background-color: #ddd;
     }
@@ -118,12 +111,11 @@
       <div id="user-label" class="user-label"></div>
     </div>
 
-    <!-- Email 輸入區（包成一排） -->
-    <div class="login-row">
+    <div id="email-input-area">
       <label for="email">Email：</label>
-      <div class="input-with-button">
+      <div class="input-row">
         <input type="email" id="email" placeholder="輸入公司 email" required />
-        <button onclick="handleLogin()" class="login-btn">登入</button>
+        <button class="login-btn" onclick="handleLogin()">登入</button>
       </div>
     </div>
 
