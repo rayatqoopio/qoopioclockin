@@ -192,13 +192,15 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         const savedEmail = localStorage.getItem("qoopio_email");
-        if (savedEmail) showUserInfo(savedEmail);
-        else showEmailInput();
+        if (savedEmail && savedEmail.includes("@")) {
+          showUserInfo(savedEmail);
+        } else {
+          showEmailInput();
+        }
       
         updateButtonLabel();
         setInterval(updateButtonLabel, 60000);
       });
-
 
 
       function showUserInfo(email) {
