@@ -26,7 +26,7 @@
     }
     .container {
       max-width: 500px;
-      margin: 10vh auto;
+      margin: 5vh auto;
     }
     .logo {
       width: 250px;
@@ -37,23 +37,23 @@
       margin-top: 1rem;
     }
     .input[type="email"] {
-      flex: 5;
       font-size: 1.4rem;
-      padding: 1.5rem;
-      border: none;
-      border-radius: 10px;
+      flex: 1;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px 0 0 10px;
       border-right: none;
       box-sizing: border-box;
     }
     .login-btn {
-      flex: 1;
       font-size: 1rem;
       font-weight: bold;
-      padding: 1.5rem;
+      padding: 1rem 1.5rem;
+      border: 1px solid #ccc;
       background-color: #eee;
-      border: none;
-      border-radius: 10px;
+      color: #333;
       border-left: none;
+      border-radius: 0 10px 10px 0;
       cursor: pointer;
     }
     .login-btn:hover {
@@ -75,7 +75,7 @@
       cursor: pointer;
     }
     .change-btn {
-      flex: 1;
+      flex: 2;
       padding: 1.5rem;
       font-size: 1rem;
       background-color: #ddd;
@@ -110,12 +110,13 @@
     </div>
 
     <div id="email-input-area">
+      <label for="email">Email：</label>
       <div class="input-row">
         <input type="email" id="email" placeholder="輸入公司 email" required />
         <button class="login-btn" onclick="handleLogin()">登入</button>
       </div>
     </div>
-    
+
     <div class="button-row">
       <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
       <button onclick="resetEmail()" class="change-btn">登出</button>
