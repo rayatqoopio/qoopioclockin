@@ -262,7 +262,7 @@
       }
 
       function submitClockIn() {
-        const now = Date.now();
+        const name = userData[email]?.name || email;
         if (now - lastSubmitTime < 15000) {
           alert("請勿重複打卡，請等待幾秒再試！");
           return;
