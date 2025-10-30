@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
     <title>Qoopio 打卡系統</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user‑scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#111111" />
     <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon.png" />
     <script>
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
@@ -16,7 +17,7 @@
     </script>
     <style>
       body {
-        font-family: "Helvetica Neue", Helvetica, Arial, sans‑serif;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         margin: 0;
         padding: 2rem;
         background-color: #f9f9f9;
@@ -24,22 +25,26 @@
         text-align: center;
       }
       .container {
-        max-width: 960px;
-        margin: 20vh auto;
+        max-width: 500px;
+        margin: 5vh auto;
+      }
+      .logo {
+        width: 100px;
+        margin-bottom: 2rem;
       }
       label {
         display: block;
         margin: 1rem 0 0.5rem;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         text-align: left;
       }
       input[type="email"] {
-        font-size: 2.5rem;
-        width: 98%;
-        padding: 1.6rem;
+        font-size: 1.4rem;
+        width: 100%;
+        padding: 1rem;
         border: 1px solid #ccc;
-        border-radius: 12px;
-        box-sizing: border‑box;
+        border-radius: 10px;
+        box-sizing: border-box;
       }
       .button-row {
         display: flex;
@@ -48,51 +53,45 @@
       }
       .submit-btn {
         flex: 5;
-        padding: 2.5rem;
-        font-size: 2rem;
+        padding: 1.5rem;
+        font-size: 1.4rem;
         background-color: #111;
         color: #fff;
         border: none;
         border-radius: 10px;
         cursor: pointer;
-        transition: background-color 0.3s ease;
-      }
-      .submit-btn:hover {
-        background-color: #444;
       }
       .change-btn {
-        flex: 1;
-        padding: 2.5rem;
-        font-size: 1.6rem;
-        background-color: #e0e0e0;
+        flex: 2;
+        padding: 1.5rem;
+        font-size: 1rem;
+        background-color: #ddd;
         color: #222;
         border: none;
         border-radius: 10px;
         cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      .change-btn:hover {
-        background-color: #ccc;
       }
       .user-label {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: bold;
         margin-bottom: 1rem;
       }
       #status {
-        margin-top: 1.2rem;
-        font-size: 1.5rem;
+        margin-top: 1rem;
+        font-size: 1.2rem;
         font-weight: bold;
       }
       #shift-info {
-        margin-top: 2rem;
-        font-size: 1.3rem;
+        margin-top: 1.5rem;
+        font-size: 1rem;
         color: #444;
       }
     </style>
   </head>
   <body>
     <div class="container">
+      <!-- LOGO 圖示 -->
+      <img src="logo.png" class="logo" alt="Qoopio Logo" />
 
       <!-- 使用者資訊區 -->
       <div id="user-info" style="display: none;">
@@ -117,11 +116,10 @@
 
       <!-- 打卡狀態顯示 -->
       <div id="status"></div>
-
     </div>
 
     <script>
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD‑D‑TgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD-DTgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
       let userData = {};
 
       // 載入 user.json
@@ -136,7 +134,6 @@
           alert("使用者資料載入失敗，請刷新頁面");
         });
 
-      // 初始化登入狀態
       function initLogin() {
         const savedEmail = localStorage.getItem("qoopio_email");
         if (savedEmail && userData[savedEmail]) {
@@ -148,7 +145,6 @@
         setInterval(updateButtonLabel, 60000);
       }
 
-      // 處理登入按鈕
       function handleLogin() {
         const email = document.getElementById("email").value.trim();
         if (!userData[email]) {
@@ -159,7 +155,6 @@
         showUserInfo(email);
       }
 
-      // 顯示使用者資訊
       function showUserInfo(email) {
         const name = userData[email].name || email;
         document.getElementById("user-label").textContent = `${name}（${email}）`;
@@ -168,19 +163,16 @@
         loadShifts(email);
       }
 
-      // 顯示 email 輸入區
       function showEmailInput() {
         document.getElementById("user-info").style.display = "none";
         document.getElementById("email-input-area").style.display = "block";
       }
 
-      // 重設帳號
       function resetEmail() {
         localStorage.removeItem("qoopio_email");
         location.reload();
       }
 
-      // 更新打卡按鈕文字（上班／下班）
       let lastSubmitTime = 0;
       function updateButtonLabel() {
         const now = new Date();
@@ -195,7 +187,6 @@
         }
       }
 
-      // 取得今日與明日班別
       function loadShifts(email) {
         document.getElementById("shift-info").textContent = "讀取班別中…";
         fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
@@ -210,23 +201,25 @@
           });
       }
 
-      // 打卡送出邏輯（定位 + 傳送 +狀態顯示）
       function submitClockIn() {
         const now = Date.now();
         if (now - lastSubmitTime < 15000) {
           alert("請勿重複打卡，請等待幾秒再試！");
           return;
         }
+
         const email = localStorage.getItem("qoopio_email");
         if (!email) {
           alert("請先登入！");
           return;
         }
+
         const type = document.getElementById("clockInBtn").dataset.type || "上班";
         if (!navigator.geolocation) {
           alert("您的瀏覽器不支援定位功能");
           return;
         }
+
         navigator.geolocation.getCurrentPosition(position => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
@@ -245,7 +238,7 @@
           }, 15000);
 
           lastSubmitTime = now;
-          // 傳送資料給 Apps Script
+
           fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
