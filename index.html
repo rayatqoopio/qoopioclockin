@@ -112,7 +112,7 @@
 
     <div id="email-input-area">
       <div class="input-row">
-        <input ［type="email"］ id="email" placeholder="輸入公司 email" required />
+        <input type="email" class "input[type="email"]" id="email" placeholder="輸入公司 email" required />
         <button class="login-btn" onclick="handleLogin()">登入</button>
       </div>
     </div>
@@ -165,7 +165,7 @@
 
     function showUserInfo(email) {
       const name = userData[email].name || email;
-      document.getElementById("user-label").textContent = `${name}（${email}）`;
+      document.getElementById("user-label").textContent = `${name} ${email}`;
       document.getElementById("user-info").style.display = "block";
       document.getElementById("email-input-area").style.display = "none";
       loadShifts(email);
