@@ -38,7 +38,7 @@
       gap: 0.5rem;
       margin-top: 1rem;
     }
-    .input[type="email"] {
+    .input-row input[type="email"] {
       flex: 5;
       font-size: 1.4rem;
       padding: 1rem;
@@ -46,7 +46,7 @@
       border-radius: 10px 0 0 10px;
       box-sizing: border-box;
     }
-    .login-btn {
+    .input-row login-btn {
       flex: 2;
       font-size: 1.2rem;
       font-weight: bold;
@@ -110,11 +110,9 @@
       <div id="user-label" class="user-label"></div>
     </div>
 
-    <div id="email-input-area">
-      <div class="input-row">
-        <input type="email" id="email" placeholder="輸入公司 email" required />
-        <button class="login-btn" onclick="handleLogin()">登入</button>
-      </div>
+    <div class="input-row">
+      <input type="email" id="email" placeholder="輸入公司 email" required />
+      <button class="login-btn" onclick="handleLogin()">登入</button>
     </div>
 
     <div class="button-row">
