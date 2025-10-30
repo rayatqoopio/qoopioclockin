@@ -160,6 +160,9 @@
       <!-- ✅ 打卡狀態顯示 -->
       <div id="status"></div>
 
+      <!-- 📅 班別顯示區 -->
+      <div id="shift-info" style="margin-top: 1.5rem; font-size: 1.5rem; font-weight: bold;"></div>
+
 
     <script>
 
@@ -205,11 +208,14 @@
         const userLabel = document.getElementById("user-label");
         const userInfo = document.getElementById("user-info");
         const emailInputArea = document.getElementById("email-input-area");
-
+      
         userLabel.textContent = `${name} ${email}`;
         userInfo.style.display = "block";
         emailInputArea.style.display = "none";
+      
+        loadShifts(email);
       }
+
 
       function showEmailInput() {
         const userInfo = document.getElementById("user-info");
@@ -246,6 +252,21 @@
         if (now - lastSubmitTime < 15000) {
           alert("請勿重複打卡，請等待幾秒再試！");
           return;
+        }
+
+      function loadShifts(email) {
+        const endpoint = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD-DTgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
+      
+        fetch(`${endpoint}?email=${encodeURIComponent(email)}`)
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById("shift-info").innerHTML =
+              `📅 今日班別：${data.today || "—"}<br>⏭️ 明日班別：${data.tomorrow || "—"}`;
+          })
+          .catch(err => {
+            console.error("❌ 無法載入班別：", err);
+            document.getElementById("shift-info").innerHTML = "無法讀取班表";
+          });
         }
 
         // ✅ 這裡先取得 email
