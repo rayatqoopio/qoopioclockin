@@ -1,6 +1,6 @@
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open('qoopio-cache').then((cache) => {
-    return cache.addAll(['/', '/index.html', '/manifest.json', '/icon.png']);
+    return cache.addAll(['/', '/index.html', '/manifest.json', '/icon.png', '/user.json']);
   }));
 });
 
