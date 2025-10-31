@@ -193,11 +193,11 @@
 
     function loadShifts(email) {
       document.getElementById("shift-info").textContent = "讀取班別中…";
-      fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
+      fetch(`${scriptUrl}?name=${encodeURIComponent(userData[email]?.name || "")}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("shift-info").innerHTML =
-            `📅 今日班別：${data.today || "—"}<br>⏭️ 明日班別：${data.tomorrow || "—"}`;
+            `今日班別：${data.today || "—"}<br>明日班別：${data.tomorrow || "—"}`;
         })
         .catch(err => {
           console.error("❌ 無法載入班別：", err);
