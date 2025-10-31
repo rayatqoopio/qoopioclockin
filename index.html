@@ -193,7 +193,8 @@
 
     function loadShifts(email) {
       document.getElementById("shift-info").textContent = "讀取班別中…";
-      fetch(`${scriptUrl}?name=${encodeURIComponent(userData[email]?.name || "")}`)
+      const name = userData[email].name;
+      fetch(`${scriptUrl}?name=${encodeURIComponent(name)}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("shift-info").innerHTML =
