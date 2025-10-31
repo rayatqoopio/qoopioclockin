@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -193,7 +194,7 @@
 
     function loadShifts(email) {
       document.getElementById("shift-info").textContent = "讀取班別中…";
-      fetch(`${scriptUrl}?email=xxx@gmail.com`)
+      fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("shift-info").innerHTML =
