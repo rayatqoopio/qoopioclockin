@@ -15,6 +15,7 @@
     }
   </script>
   <style>
+    /* ✅ 讓整頁可滾動 */
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
@@ -22,9 +23,18 @@
       color: #333;
       text-align: center;
       height: 100vh;
+      overflow-y: auto; /* 🆕 新增：允許頁面上下滾動 */
       display: flex;
       justify-content: center;
       align-items: center;
+    }
+    
+    /* ✅ 班表頁可獨立滾動 */
+    #page-schedule {
+      display: none;
+      overflow-y: auto; /* 🆕 新增：班表內容太長時可以滑動 */
+      max-height: calc(100vh - 100px); /* 🆕 保留底部導覽列空間 */
+      padding-bottom: 2rem; /* 保留底部距離，避免被 tab-bar 擋到 */
     }
 
     .container {
