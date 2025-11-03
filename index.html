@@ -197,7 +197,7 @@
           <button onclick="changeMonth(1)">〉</button>
         </div>
         <div id="calendar-grid" class="calendar-grid"></div>
-        <div id="selected-shift">📅 請選擇日期</div>
+        <div id="selected-shift">請選擇日期</div>
       </div>
     </div>
   </div>
@@ -340,7 +340,7 @@
             return (ai===-1?99:ai)-(bi===-1?99:bi);
           };
           zhongshan.sort(sorter); jingmei.sort(sorter);
-          let html = `📅 ${target} 全員班表<br><br>`;
+          let html = `${target} 班表<br><br>`;
           if (zhongshan.length) html += `<div class="group-title">[中山]</div>` + formatGroup(zhongshan);
           if (jingmei.length) html += `<div class="group-title">[景美]</div>` + formatGroup(jingmei);
           if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
