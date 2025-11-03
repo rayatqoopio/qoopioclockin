@@ -110,6 +110,22 @@
       font-size: 1.2rem;
       font-weight: bold;
     }
+    .calendar-header button {
+      background: none;         /* 移除底色 */
+      border: none;             /* 移除框線 */
+      font-size: 1.4rem;        /* 放大一點讓箭頭明顯 */
+      font-weight: bold;        /* 字重加粗 */
+      color: #333;              /* 設定箭頭顏色 */
+      cursor: pointer;          /* 滑鼠指標變手 */
+      padding: 0.3rem 0.6rem;   /* 適度內距 */
+      transition: color 0.2s ease;
+    }
+    .calendar-header button:hover {
+      color: #000;              /* 滑過時稍微加深顏色 */
+    }
+    .calendar-header button:focus {
+      outline: none;            /* 去掉點選後的藍色外框 */
+    }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -404,7 +420,7 @@
             return (ai===-1?99:ai)-(bi===-1?99:bi);
           };
           zhongshan.sort(sorter); jingmei.sort(sorter);
-          let html = `📅 ${target} 全員班表<br><br>`;
+          let html = `${target}<br><br>`;
           if (zhongshan.length) html += `<div class="group-title">[中山]</div>` + formatGroup(zhongshan);
           if (jingmei.length) html += `<div class="group-title">[景美]</div>` + formatGroup(jingmei);
           if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
