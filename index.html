@@ -120,16 +120,17 @@
       position: relative;
       padding: 10px;
       border-radius: 8px;
-      background: #fff;
-      border: 1px solid #ddd;
+      border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .day-cell:hover { background-color: #eee; }
+    .day-cell:hover { background-color: #f3f3f3; }
     .day-cell.today {
       border: 2px solid #111;
       font-weight: bold;
-      background: #fafafa;
+    }
+    .day-cell.selected {
+      background-color: #ddd;
     }
     .day-name {
       font-weight: bold;
@@ -197,7 +198,7 @@
           <button onclick="changeMonth(1)">〉</button>
         </div>
         <div id="calendar-grid" class="calendar-grid"></div>
-        <div id="selected-shift">請選擇日期</div>
+        <div id="selected-shift">📅 請選擇日期</div>
       </div>
     </div>
   </div>
@@ -213,6 +214,7 @@
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let userData = {};
+    let selectedCell = null;
 
     fetch("user.json")
       .then(res => res.json())
@@ -284,7 +286,12 @@
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear())
           cell.classList.add("today");
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        cell.onclick = () => loadAllShifts(dateStr);
+        cell.onclick = () => {
+          if (selectedCell) selectedCell.classList.remove("selected");
+          cell.classList.add("selected");
+          selectedCell = cell;
+          loadAllShifts(dateStr);
+        };
         grid.appendChild(cell);
       }
       updateMonthShiftMarkers();
@@ -306,6 +313,7 @@
           const zhongshanDays = data.zhongshanDays || [];
           const jingmeiDays = data.jingmeiDays || [];
           document.querySelectorAll(".day-cell").forEach(cell => {
+            cell.classList.remove("shift-zhongshan", "shift-jingmei");
             const day = cell.textContent;
             const full = `${ym}-${String(day).padStart(2, "0")}`;
             if (zhongshanDays.includes(full)) cell.classList.add("shift-zhongshan");
@@ -340,7 +348,7 @@
             return (ai===-1?99:ai)-(bi===-1?99:bi);
           };
           zhongshan.sort(sorter); jingmei.sort(sorter);
-          let html = `${target} 班表<br><br>`;
+          let html = `📅 ${target} 全員班表<br><br>`;
           if (zhongshan.length) html += `<div class="group-title">[中山]</div>` + formatGroup(zhongshan);
           if (jingmei.length) html += `<div class="group-title">[景美]</div>` + formatGroup(jingmei);
           if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
