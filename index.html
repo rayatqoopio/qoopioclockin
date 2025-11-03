@@ -19,32 +19,53 @@
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
-      padding: 2rem;
+      padding: 0;
       background-color: #fdf5e6;
       color: #333;
       text-align: center;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+
     .container {
+      width: 100%;
       max-width: 500px;
-      margin: 5vh auto;
+      padding: 2rem;
+      box-sizing: border-box;
       padding-bottom: 6rem;
     }
+
     .logo {
       width: 200px;
       margin-bottom: 1.5rem;
     }
+
     .user-label {
       font-size: 1rem;
       font-weight: bold;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
     }
+
+    /* ✅ 打卡頁置中布局 */
+    #page-clock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+    }
+
     .button-row {
       display: flex;
-      gap: 1rem;
+      width: 80%;
+      gap: 0.8rem;
       margin-top: 1rem;
     }
+
     .submit-btn {
-      flex: 5;
+      flex: 6;
       padding: 1.4rem;
       font-size: 1.3rem;
       background-color: #111;
@@ -53,8 +74,9 @@
       border-radius: 10px;
       cursor: pointer;
     }
+
     .change-btn {
-      flex: 2;
+      flex: 1;
       padding: 1.4rem;
       font-size: 1rem;
       background-color: #ddd;
@@ -63,16 +85,13 @@
       border-radius: 10px;
       cursor: pointer;
     }
+
     #status {
       margin-top: 1rem;
       font-size: 1.1rem;
       font-weight: bold;
     }
-    #shift-info {
-      margin-top: 1.5rem;
-      font-size: 1rem;
-      color: #444;
-    }
+
     .hidden { display: none; }
 
     /* ✅ 導覽列 */
@@ -89,6 +108,7 @@
       border-top: 2px solid #222;
       z-index: 999;
     }
+
     .tab-button {
       flex: 1;
       color: white;
@@ -99,6 +119,7 @@
       cursor: pointer;
       height: 100%;
     }
+
     .tab-button.active { background-color: #222; }
 
     /* ✅ 月曆 */
@@ -110,6 +131,7 @@
       font-size: 1.2rem;
       font-weight: bold;
     }
+
     .calendar-header button {
       background: none;
       border: none;
@@ -120,14 +142,17 @@
       padding: 0.3rem 0.6rem;
       transition: color 0.2s ease;
     }
+
     .calendar-header button:hover { color: #000; }
     .calendar-header button:focus { outline: none; }
+
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 5px;
       margin-bottom: 1rem;
     }
+
     .day-cell {
       position: relative;
       padding: 10px 0;
@@ -140,14 +165,17 @@
       align-items: center;
       justify-content: center;
     }
+
     .day-cell:hover { background-color: #f3f3f3; }
     .day-cell.today {
       border: 2px solid #111;
       font-weight: bold;
     }
+
     .day-cell.selected {
       background-color: #ddd;
     }
+
     .day-name {
       font-weight: bold;
       color: #666;
@@ -162,19 +190,16 @@
       border-radius: 50%;
       margin-top: 4px;
     }
+
     .shift-zhongshan .day-indicator { background-color: #e74c3c; }
     .shift-jingmei .day-indicator { background-color: #27ae60; }
 
-    /* ⏳ 日期載入動畫 */
-    .loading-cell {
-      position: relative;
-      color: transparent !important;
-    }
     /* ⭕ 旋轉圈圈載入動畫 */
     .loading-cell {
       position: relative;
       color: transparent !important;
     }
+
     .loading-cell::after {
       content: "";
       position: absolute;
@@ -188,6 +213,7 @@
       transform: translate(-50%, -50%);
       animation: spin 0.8s linear infinite;
     }
+
     @keyframes spin {
       0% { transform: translate(-50%, -50%) rotate(0deg); }
       100% { transform: translate(-50%, -50%) rotate(360deg); }
@@ -203,6 +229,7 @@
       background: #fff;
       box-shadow: 0 0 6px rgba(0,0,0,0.1);
     }
+
     .group-title {
       font-weight: bold;
       color: #000;
@@ -219,6 +246,7 @@
       border-radius: 8px;
       border: 1px solid #ccc;
     }
+
     #login-page button {
       padding: 0.8rem 1.5rem;
       font-size: 1rem;
@@ -249,7 +277,6 @@
         <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
         <button onclick="resetEmail()" class="change-btn">登出</button>
       </div>
-      <div id="shift-info">讀取班別中…</div>
       <div id="status"></div>
     </div>
 
@@ -382,10 +409,10 @@
           cell.classList.add("selected");
           selectedCell = cell;
 
-          // ⏳ 加入載入動畫
-          num.classList.add("loading-cell");
+          // ⭕ 加入旋轉圈動畫
+          cell.classList.add("loading-cell");
           loadAllShifts(dateStr)
-            .finally(() => num.classList.remove("loading-cell"));
+            .finally(() => cell.classList.remove("loading-cell"));
         };
         grid.appendChild(cell);
       }
