@@ -314,9 +314,9 @@
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
       const btn = document.getElementById("clockInBtn");
       if (totalMinutes >= 240 && totalMinutes <= 1140) {
-        btn.textContent = "上班打卡"; btn.dataset.type = "上班";
+        btn.textContent = "上班"; btn.dataset.type = "上班";
       } else {
-        btn.textContent = "下班打卡"; btn.dataset.type = "下班";
+        btn.textContent = "下班"; btn.dataset.type = "下班";
       }
     }
 
