@@ -29,19 +29,20 @@
       margin: 5vh auto;
       padding-bottom: 6rem;
     }
-    .logo {
-      width: 250px;
-      margin-bottom: 2rem;
+    .user-label {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
     }
     .button-row {
       display: flex;
       gap: 1rem;
-      margin-top: 1.5rem;
+      margin-top: 1rem;
     }
     .submit-btn {
       flex: 5;
-      padding: 1.5rem;
-      font-size: 1.4rem;
+      padding: 1.4rem;
+      font-size: 1.3rem;
       background-color: #111;
       color: #fff;
       border: none;
@@ -50,7 +51,7 @@
     }
     .change-btn {
       flex: 2;
-      padding: 1.5rem;
+      padding: 1.4rem;
       font-size: 1rem;
       background-color: #ddd;
       color: #222;
@@ -60,7 +61,7 @@
     }
     #status {
       margin-top: 1rem;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
     }
     #shift-info {
@@ -96,7 +97,7 @@
     }
     .tab-button.active { background-color: #222; }
 
-    /* ✅ 班表月曆 */
+    /* ✅ 月曆 */
     .calendar-header {
       display: flex;
       justify-content: space-between;
@@ -112,6 +113,7 @@
       margin-bottom: 1rem;
     }
     .day-cell {
+      position: relative;
       padding: 10px;
       border-radius: 8px;
       background: #fff;
@@ -131,6 +133,14 @@
       background: none;
       border: none;
     }
+    .has-shift::after {
+      content: "•";
+      position: absolute;
+      bottom: 6px;
+      right: 8px;
+      font-size: 1.2rem;
+      color: #e67e22;
+    }
     #selected-shift {
       font-size: 1rem;
       line-height: 1.8;
@@ -147,14 +157,31 @@
       margin-top: 1rem;
       margin-bottom: 0.5rem;
     }
+    .shift-zhongshan::after {
+      content: "•";
+      position: absolute;
+      bottom: 6px;
+      right: 8px;
+      font-size: 1.2rem;
+      color: #e74c3c; /* 紅色 */
+    }
+    .shift-jingmei::after {
+      content: "•";
+      position: absolute;
+      bottom: 6px;
+      right: 8px;
+      font-size: 1.2rem;
+      color: #27ae60; /* 綠色 */
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
 
     <!-- 打卡頁 -->
     <div id="page-clock">
+      <div id="user-label" class="user-label"></div>
       <div class="button-row">
         <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
         <button onclick="resetEmail()" class="change-btn">登出</button>
@@ -198,10 +225,17 @@
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
 
     function initLogin() {
-      loadCalendar(currentYear, currentMonth);
+      const savedEmail = localStorage.getItem("qoopio_email");
+      if (savedEmail && userData[savedEmail]) showUserInfo(savedEmail);
       updateButtonLabel();
       setInterval(updateButtonLabel, 60000);
-      loadAllShifts(); // 預設載入今日全員班表
+      loadCalendar(currentYear, currentMonth);
+      loadAllShifts(); // 預設今日全員班表
+    }
+
+    function showUserInfo(email) {
+      const name = userData[email]?.name || email;
+      document.getElementById("user-label").textContent = `${name} ${email}`;
     }
 
     function switchPage(page) {
@@ -210,6 +244,7 @@
       document.getElementById(`page-${page}`).classList.remove("hidden");
       document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
+      if (page === "schedule") updateMonthShiftMarkers();
     }
 
     function updateButtonLabel() {
@@ -223,15 +258,16 @@
       }
     }
 
-    /* === 月曆顯示 === */
+    /* === 月曆 === */
     function loadCalendar(year, month) {
       const title = document.getElementById("calendar-title");
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
-
       title.textContent = `${year} 年 ${month + 1} 月`;
 
-      const dayNames = ["日","一","二","三","四","五","六"];
+      const dayNames = ["一","二","三","四","五","六","日"];
+      const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // 星期一為首
+      
       dayNames.forEach(d => {
         const cell = document.createElement("div");
         cell.textContent = d;
@@ -255,6 +291,7 @@
         cell.onclick = () => loadAllShifts(dateStr);
         grid.appendChild(cell);
       }
+      updateMonthShiftMarkers();
     }
 
     function changeMonth(offset) {
@@ -264,7 +301,24 @@
       loadCalendar(currentYear, currentMonth);
     }
 
-    /* === 班表資料 === */
+    /* === 標記有班日 === */
+    function updateMonthShiftMarkers() {
+      const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+      fetch(`${scriptUrl}?month=${ym}&mode=summary`)
+        .then(res => res.json())
+        .then(data => {
+          const days = data.daysWithShift || [];
+          document.querySelectorAll(".day-cell").forEach(cell => {
+            const day = cell.textContent;
+            const full = `${ym}-${String(day).padStart(2, "0")}`;
+            if (zhongshanDays.includes(full)) cell.classList.add("shift-zhongshan");
+            if (jingmeiDays.includes(full)) cell.classList.add("shift-jingmei");
+          });
+        })
+        .catch(() => console.log("無法取得有班日"));
+    }
+
+    /* === 班表 === */
     function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
       fetch(`${scriptUrl}?date=${target}&mode=all`)
@@ -275,7 +329,6 @@
             document.getElementById("selected-shift").innerHTML = "無班表資料";
             return;
           }
-
           const zhongshan = [], jingmei = [], off = [];
           shifts.forEach(s => {
             const shift = s.shift || "";
@@ -283,36 +336,33 @@
             else if (/中山/.test(shift)) zhongshan.push(s);
             else if (/景美/.test(shift)) jingmei.push(s);
           });
-
           const sortOrder = ["櫃檯","彩妝","攝影","修圖"];
-          const sorter = (a, b) => {
-            const ai = sortOrder.findIndex(k => a.shift.includes(k));
-            const bi = sortOrder.findIndex(k => b.shift.includes(k));
-            return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+          const sorter = (a,b)=>{
+            const ai=sortOrder.findIndex(k=>a.shift.includes(k));
+            const bi=sortOrder.findIndex(k=>b.shift.includes(k));
+            return (ai===-1?99:ai)-(bi===-1?99:bi);
           };
           zhongshan.sort(sorter); jingmei.sort(sorter);
-
           let html = `📅 ${target} 全員班表<br><br>`;
           if (zhongshan.length) html += `<div class="group-title">[中山]</div>` + formatGroup(zhongshan);
           if (jingmei.length) html += `<div class="group-title">[景美]</div>` + formatGroup(jingmei);
           if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
-
           document.getElementById("selected-shift").innerHTML = html;
         })
-        .catch(() => document.getElementById("selected-shift").textContent = "讀取失敗");
+        .catch(()=>document.getElementById("selected-shift").textContent="讀取失敗");
     }
 
-    function formatGroup(list) {
-      const grouped = {};
-      list.forEach(s => {
-        const match = s.shift.match(/(櫃檯|彩妝|攝影|修圖)/);
-        const role = match ? match[1] : "其他";
-        if (!grouped[role]) grouped[role] = [];
+    function formatGroup(list){
+      const grouped={};
+      list.forEach(s=>{
+        const match=s.shift.match(/(櫃檯|彩妝|攝影|修圖)/);
+        const role=match?match[1]:"其他";
+        if(!grouped[role])grouped[role]=[];
         grouped[role].push(s.name);
       });
-      const store = list[0].shift.includes("中山") ? "中山" : "景美";
+      const store=list[0].shift.includes("中山")?"中山":"景美";
       return Object.keys(grouped)
-        .map(role => `${store}${role}：${grouped[role].join("、")}`)
+        .map(role=>`${store}${role}：${grouped[role].join("、")}`)
         .join("<br>");
     }
 
@@ -321,17 +371,17 @@
       const email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
       const type = document.getElementById("clockInBtn").dataset.type || "上班";
-      navigator.geolocation.getCurrentPosition(pos => {
-        const data = { email, type, lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const name = userData[email]?.name || email;
-        const timeStr = new Date().toLocaleTimeString();
-        document.getElementById("status").textContent = `✅ ${name} ${type}（${timeStr}）`;
-        document.getElementById("status").style.color = "green";
-        fetch(scriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-      }, () => alert("無法取得定位資訊"));
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const data={email,type,lat:pos.coords.latitude,lng:pos.coords.longitude};
+        const name=userData[email]?.name||email;
+        const timeStr=new Date().toLocaleTimeString();
+        document.getElementById("status").textContent=`✅ ${name} ${type}（${timeStr}）`;
+        document.getElementById("status").style.color="green";
+        fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+      },()=>alert("無法取得定位資訊"));
     }
 
-    function resetEmail() {
+    function resetEmail(){
       localStorage.removeItem("qoopio_email");
       location.reload();
     }
