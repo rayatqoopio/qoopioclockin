@@ -272,12 +272,13 @@
     let currentMonth = new Date().getMonth();
     let userData = {};
     let selectedCell = null;
-
+  
+    /* === 初始化 === */
     fetch("user.json")
       .then(res => res.json())
       .then(json => { userData = json; initLogin(); })
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
-
+  
     function initLogin() {
       const savedEmail = localStorage.getItem("qoopio_email");
       if (savedEmail && userData[savedEmail]) {
@@ -287,33 +288,42 @@
         document.getElementById("login-page").classList.remove("hidden");
       }
     }
-
+  
+    /* === 登入流程 === */
     function login() {
       const email = document.getElementById("login-email").value.trim();
       if (!email) return alert("請輸入 Email");
       if (!userData[email]) return alert("查無此帳號，請確認 Email 正確");
+  
       localStorage.setItem("qoopio_email", email);
       showUserInfo(email);
-      showMainPages();
-
-      // ✅ 登入後移除登入頁以防覆蓋
-      const loginEl = document.getElementById("login-page");
-      loginEl.parentNode.removeChild(loginEl);
-    }
-
-    function showMainPages() {
+  
+      // ✅ 立即顯示主畫面（不等待載入）
+      document.getElementById("login-page").remove();
       document.getElementById("page-clock").style.display = "flex";
       document.getElementById("tab-bar").classList.remove("hidden");
+  
+      // ⏳ 背景載入資料
+      setTimeout(() => showMainPages(), 100);
+    }
+  
+    /* === 主畫面初始化 === */
+    function showMainPages() {
       updateButtonLabel();
       setInterval(updateButtonLabel, 60000);
+  
+      // ✅ 確保班表頁解除 hidden（防止空白）
+      document.getElementById("page-schedule").classList.remove("hidden");
+  
       loadCalendar(currentYear, currentMonth);
     }
-
+  
     function showUserInfo(email) {
       const name = userData[email]?.name || email;
       document.getElementById("user-label").textContent = `${name} ${email}`;
     }
-
+  
+    /* === 頁面切換 === */
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -322,7 +332,8 @@
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
       if (page === "schedule") updateMonthShiftMarkers();
     }
-
+  
+    /* === 打卡按鈕邏輯 === */
     function updateButtonLabel() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
@@ -333,7 +344,7 @@
         btn.textContent = "下班打卡"; btn.dataset.type = "下班";
       }
     }
-
+  
     /* === 打卡 === */
     function submitClockIn() {
       const email = localStorage.getItem("qoopio_email");
@@ -353,19 +364,19 @@
         });
       }, () => alert("無法取得定位資訊"));
     }
-
+  
     function resetEmail() {
       localStorage.removeItem("qoopio_email");
       location.reload();
     }
-
+  
     /* === 月曆 === */
     function loadCalendar(year, month) {
       const title = document.getElementById("calendar-title");
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
       title.textContent = `${year} 年 ${month + 1} 月`;
-
+  
       const dayNames = ["一","二","三","四","五","六","日"];
       const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
       dayNames.forEach(d => {
@@ -374,10 +385,10 @@
         cell.className = "day-name";
         grid.appendChild(cell);
       });
-
+  
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("div"));
-
+  
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement("div");
         cell.className = "day-cell";
@@ -387,11 +398,11 @@
         dot.className = "day-indicator";
         cell.appendChild(num);
         cell.appendChild(dot);
-
+  
         const today = new Date();
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear())
           cell.classList.add("today");
-
+  
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         cell.onclick = () => {
           document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected"));
@@ -404,14 +415,14 @@
       }
       updateMonthShiftMarkers();
     }
-
+  
     function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       loadCalendar(currentYear, currentMonth);
     }
-
+  
     function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const email = localStorage.getItem("qoopio_email");
@@ -430,7 +441,7 @@
         })
         .catch(() => console.log("無法取得有班日"));
     }
-
+  
     function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
       fetch(`${scriptUrl}?date=${target}&mode=all`)
@@ -461,7 +472,7 @@
         })
         .catch(()=>document.getElementById("selected-shift").textContent="讀取失敗");
     }
-
+  
     function formatGroup(list) {
       const g = {};
       list.forEach(s => {
