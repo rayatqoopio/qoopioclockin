@@ -9,95 +9,43 @@
   <link rel="icon" href="icon.png" />
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js")
+      navigator.serviceWorker
+        .register("service-worker.js")
         .then(() => console.log("✅ Service Worker registered"))
-        .catch(err => console.error("❌ SW registration failed:", err));
+        .catch((error) => console.error("❌ SW registration failed:", error));
     }
   </script>
   <style>
-    /* ✅ 讓整頁可滾動 */
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
+      padding: 2rem;
       background-color: #fdf5e6;
       color: #333;
       text-align: center;
-      height: 100vh;
-      overflow-y: auto; /* 🆕 新增：允許頁面上下滾動 */
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
-    
-    /* ✅ 班表頁可獨立滾動 */
-    #page-schedule {
-      display: none;
-      overflow-y: auto; /* 🆕 新增：班表內容太長時可以滑動 */
-      max-height: calc(100vh - 100px); /* 🆕 保留底部導覽列空間 */
-      padding-bottom: 2rem; /* 保留底部距離，避免被 tab-bar 擋到 */
-    }
-
     .container {
-      width: 100%;
-      max-width: 480px;
-      padding: 2rem;
-      box-sizing: border-box;
+      max-width: 500px;
+      margin: 5vh auto;
       padding-bottom: 6rem;
-      position: relative;
     }
-
-    .logo { width: 180px; margin-bottom: 1.5rem; }
-    .hidden { display: none !important; }
-
-    /* 登入頁 */
-    #login-page {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #fdf5e6;
+    .logo {
+      width: 200px;
+      margin-bottom: 1.5rem;
+    }
+    .user-label {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .button-row {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
+      gap: 1rem;
+      margin-top: 1rem;
     }
-
-    #login-page input {
-      width: 80%;
-      padding: 0.9rem;
-      margin: 1rem 0;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-      background-color: #fffde8;
-    }
-
-    #login-page button {
-      padding: 0.8rem 2rem;
-      font-size: 1rem;
-      background: #111;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    /* 打卡頁 */
-    #page-clock {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 70vh;
-    }
-
-    .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 1.2rem; }
-
     .submit-btn {
-      width: 80%;
-      padding: 1.5rem;
+      flex: 5;
+      padding: 1.4rem;
       font-size: 1.3rem;
       background-color: #111;
       color: #fff;
@@ -105,19 +53,50 @@
       border-radius: 10px;
       cursor: pointer;
     }
-
-    .logout-btn {
-      margin-top: 0.8rem;
-      background: none;
+    .change-btn {
+      flex: 2;
+      padding: 1.4rem;
+      font-size: 1rem;
+      background-color: #ddd;
+      color: #222;
       border: none;
-      color: #777;
-      font-size: 0.7rem;
+      border-radius: 10px;
       cursor: pointer;
     }
+    #status {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    .hidden { display: none; }
 
-    #status { margin-top: 1rem; font-size: 1rem; font-weight: bold; }
+    /* ✅ 導覽列 */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 70px;
+      background-color: #000;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 2px solid #222;
+      z-index: 999;
+    }
+    .tab-button {
+      flex: 1;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: none;
+      border: none;
+      cursor: pointer;
+      height: 100%;
+    }
+    .tab-button.active { background-color: #222; }
 
-    /* 月曆頁 */
+    /* ✅ 月曆 */
     .calendar-header {
       display: flex;
       justify-content: space-between;
@@ -126,7 +105,6 @@
       font-size: 1.2rem;
       font-weight: bold;
     }
-
     .calendar-header button {
       background: none;
       border: none;
@@ -134,30 +112,28 @@
       font-weight: bold;
       color: #333;
       cursor: pointer;
+      padding: 0.3rem 0.6rem;
       transition: color 0.2s ease;
     }
     .calendar-header button:hover { color: #000; }
-
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 5px;
       margin-bottom: 1rem;
     }
-
     .day-cell {
       position: relative;
       padding: 10px 0;
       border-radius: 8px;
       border: 1px solid transparent;
       cursor: pointer;
+      transition: all 0.2s;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-
-    .day-cell:hover { background-color: #f3f3f3; }
     .day-cell.today { border: 2px solid #111; font-weight: bold; }
     .day-cell.selected { background-color: #ddd; }
 
@@ -172,20 +148,6 @@
     .shift-zhongshan .day-indicator { background-color: #e74c3c; }
     .shift-jingmei .day-indicator { background-color: #27ae60; }
 
-    /* 載入動畫 */
-    .loading-spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 3px solid #aaa;
-      border-top-color: #111;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
     #selected-shift {
       font-size: 1rem;
       line-height: 1.8;
@@ -195,54 +157,69 @@
       border-radius: 10px;
       background: #fff;
       box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      min-height: 100px;
+      position: relative;
     }
 
-    .group-title { font-weight: bold; color: #000; margin-top: 1rem; margin-bottom: 0.5rem; }
-
-    /* 導覽列 */
-    .tab-bar {
-      position: fixed;
-      bottom: 0; left: 0;
-      width: 100%;
-      height: 70px;
-      background-color: #000;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 2px solid #222;
-      z-index: 5;
+    /* ✅ 下方轉圈圈動畫 */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #bbb;
+      border-top-color: #111;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
     }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .tab-button {
-      flex: 1;
-      color: white;
-      font-size: 1.2rem;
+    .group-title {
       font-weight: bold;
-      background: none;
-      border: none;
-      cursor: pointer;
-      height: 100%;
+      color: #000;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
     }
 
-    .tab-button.active { background-color: #222; }
+    /* ✅ 登入頁 */
+    #login-page input {
+      width: 80%;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #login-page button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-
     <!-- 登入頁 -->
-    <div id="login-page">
+    <div id="login-page" class="hidden">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
+      <h3>請輸入您的 Email 登入</h3>
       <input type="email" id="login-email" placeholder="name@qoopio.com" />
-      <button id="login-btn" onclick="login()">登入</button>
+      <button onclick="login()">登入</button>
     </div>
 
     <!-- 打卡頁 -->
     <div id="page-clock" class="hidden">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
-      <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
-      <button onclick="resetEmail()" class="logout-btn">登出</button>
+      <div class="button-row">
+        <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
+        <button onclick="resetEmail()" class="change-btn">登出</button>
+      </div>
       <div id="status"></div>
     </div>
 
@@ -272,13 +249,16 @@
     let currentMonth = new Date().getMonth();
     let userData = {};
     let selectedCell = null;
-  
+
     /* === 初始化 === */
     fetch("user.json")
       .then(res => res.json())
-      .then(json => { userData = json; initLogin(); })
+      .then(json => {
+        userData = json;
+        initLogin();
+      })
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
-  
+
     function initLogin() {
       const savedEmail = localStorage.getItem("qoopio_email");
       if (savedEmail && userData[savedEmail]) {
@@ -288,42 +268,32 @@
         document.getElementById("login-page").classList.remove("hidden");
       }
     }
-  
-    /* === 登入流程 === */
+
+    /* === 登入 === */
     function login() {
       const email = document.getElementById("login-email").value.trim();
       if (!email) return alert("請輸入 Email");
-      if (!userData[email]) return alert("查無此帳號，請確認 Email 正確");
-  
+      if (!userData[email]) return alert("查無此帳號");
       localStorage.setItem("qoopio_email", email);
       showUserInfo(email);
-  
-      // ✅ 立即顯示主畫面（不等待載入）
-      document.getElementById("login-page").remove();
-      document.getElementById("page-clock").style.display = "flex";
-      document.getElementById("tab-bar").classList.remove("hidden");
-  
-      // ⏳ 背景載入資料
-      setTimeout(() => showMainPages(), 100);
+      showMainPages();
     }
-  
-    /* === 主畫面初始化 === */
-    function showMainPages() {
-      updateButtonLabel();
-      setInterval(updateButtonLabel, 60000);
-  
-      // ✅ 確保班表頁解除 hidden（防止空白）
-      document.getElementById("page-schedule").classList.remove("hidden");
-  
-      loadCalendar(currentYear, currentMonth);
-    }
-  
+
     function showUserInfo(email) {
       const name = userData[email]?.name || email;
       document.getElementById("user-label").textContent = `${name} ${email}`;
     }
-  
-    /* === 頁面切換 === */
+
+    /* === 主畫面 === */
+    function showMainPages() {
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("page-clock").classList.remove("hidden");
+      document.getElementById("tab-bar").classList.remove("hidden");
+      updateButtonLabel();
+      loadCalendar(currentYear, currentMonth);
+    }
+
+    /* === 切換頁面 === */
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -332,8 +302,8 @@
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
       if (page === "schedule") updateMonthShiftMarkers();
     }
-  
-    /* === 打卡按鈕邏輯 === */
+
+    /* === 打卡按鈕 === */
     function updateButtonLabel() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
@@ -344,39 +314,34 @@
         btn.textContent = "下班打卡"; btn.dataset.type = "下班";
       }
     }
-  
-    /* === 打卡 === */
+
+    /* === 打卡功能 === */
     function submitClockIn() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
       const type = document.getElementById("clockInBtn").dataset.type || "上班";
-      navigator.geolocation.getCurrentPosition(pos => {
-        const data = { email, type, lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const name = userData[email]?.name || email;
-        const timeStr = new Date().toLocaleTimeString();
-        const status = document.getElementById("status");
-        status.textContent = `✅ ${name} ${type}（${timeStr}）`;
-        status.style.color = "green";
-        fetch(scriptUrl, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-      }, () => alert("無法取得定位資訊"));
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const data={email,type,lat:pos.coords.latitude,lng:pos.coords.longitude};
+        const name=userData[email]?.name||email;
+        const timeStr=new Date().toLocaleTimeString();
+        document.getElementById("status").textContent=`✅ ${name} ${type}（${timeStr}）`;
+        document.getElementById("status").style.color="green";
+        fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+      },()=>alert("無法取得定位資訊"));
     }
-  
-    function resetEmail() {
+
+    function resetEmail(){
       localStorage.removeItem("qoopio_email");
       location.reload();
     }
-  
+
     /* === 月曆 === */
     function loadCalendar(year, month) {
       const title = document.getElementById("calendar-title");
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
       title.textContent = `${year} 年 ${month + 1} 月`;
-  
+
       const dayNames = ["一","二","三","四","五","六","日"];
       const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
       dayNames.forEach(d => {
@@ -385,10 +350,10 @@
         cell.className = "day-name";
         grid.appendChild(cell);
       });
-  
+
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("div"));
-  
+
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement("div");
         cell.className = "day-cell";
@@ -398,15 +363,17 @@
         dot.className = "day-indicator";
         cell.appendChild(num);
         cell.appendChild(dot);
-  
+
         const today = new Date();
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear())
           cell.classList.add("today");
-  
+
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         cell.onclick = () => {
-          document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected"));
+          if (selectedCell) selectedCell.classList.remove("selected");
           cell.classList.add("selected");
+          selectedCell = cell;
+
           const box = document.getElementById("selected-shift");
           box.innerHTML = `<div class='loading-spinner'></div> 讀取中...`;
           loadAllShifts(dateStr);
@@ -415,14 +382,15 @@
       }
       updateMonthShiftMarkers();
     }
-  
+
     function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       loadCalendar(currentYear, currentMonth);
     }
-  
+
+    /* === 標記有班日 === */
     function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const email = localStorage.getItem("qoopio_email");
@@ -441,15 +409,19 @@
         })
         .catch(() => console.log("無法取得有班日"));
     }
-  
+
+    /* === 讀取班表 === */
     function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
-      fetch(`${scriptUrl}?date=${target}&mode=all`)
+      return fetch(`${scriptUrl}?date=${target}&mode=all`)
         .then(res => res.json())
         .then(data => {
           const shifts = data.shifts || [];
           const box = document.getElementById("selected-shift");
-          if (!shifts.length) { box.innerHTML = "無班表資料"; return; }
+          if (!shifts.length) {
+            box.innerHTML = "無班表資料";
+            return;
+          }
           const z = [], j = [], off = [];
           shifts.forEach(s => {
             const sh = s.shift || "";
@@ -472,7 +444,7 @@
         })
         .catch(()=>document.getElementById("selected-shift").textContent="讀取失敗");
     }
-  
+
     function formatGroup(list) {
       const g = {};
       list.forEach(s => {
