@@ -118,11 +118,15 @@
     }
     .day-cell {
       position: relative;
-      padding: 10px;
+      padding: 10px 0;
       border-radius: 8px;
       border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .day-cell:hover { background-color: #f3f3f3; }
     .day-cell.today {
@@ -139,22 +143,18 @@
       border: none;
     }
 
-    /* 🔴🟢 班別標示點 */
-    .shift-zhongshan::after {
-      content: "•";
-      position: absolute;
-      bottom: 6px;
-      right: 8px;
-      font-size: 1.2rem;
-      color: #e74c3c;
+    /* 🔴🟢 日期底色標示 */
+    .day-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 4px;
     }
-    .shift-jingmei::before {
-      content: "•";
-      position: absolute;
-      bottom: 6px;
-      left: 8px;
-      font-size: 1.2rem;
-      color: #27ae60;
+    .shift-zhongshan .day-indicator {
+      background-color: #e74c3c; /* 紅色 */
+    }
+    .shift-jingmei .day-indicator {
+      background-color: #27ae60; /* 綠色 */
     }
 
     #selected-shift {
@@ -173,12 +173,40 @@
       margin-top: 1rem;
       margin-bottom: 0.5rem;
     }
+
+    /* ✅ 登入頁 */
+    #login-page input {
+      width: 80%;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #login-page button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+
+    <!-- 登入頁 -->
+    <div id="login-page" class="hidden">
+      <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
+      <h3>請輸入您的 Email 登入</h3>
+      <input type="email" id="login-email" placeholder="name@qoopio.com" />
+      <button onclick="login()">登入</button>
+    </div>
+
     <!-- 打卡頁 -->
-    <div id="page-clock">
+    <div id="page-clock" class="hidden">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
       <div class="button-row">
@@ -204,7 +232,7 @@
   </div>
 
   <!-- 導覽列 -->
-  <div class="tab-bar">
+  <div class="tab-bar hidden" id="tab-bar">
     <button class="tab-button active" onclick="switchPage('clock')">打卡</button>
     <button class="tab-button" onclick="switchPage('schedule')">班表</button>
   </div>
@@ -226,11 +254,31 @@
 
     function initLogin() {
       const savedEmail = localStorage.getItem("qoopio_email");
-      if (savedEmail && userData[savedEmail]) showUserInfo(savedEmail);
+      if (savedEmail && userData[savedEmail]) {
+        showUserInfo(savedEmail);
+        showMainPages();
+      } else {
+        document.getElementById("login-page").classList.remove("hidden");
+      }
+    }
+
+    function login() {
+      const email = document.getElementById("login-email").value.trim();
+      if (!email) return alert("請輸入 Email");
+      if (!userData[email]) return alert("查無此帳號，請確認 Email 正確");
+      localStorage.setItem("qoopio_email", email);
+      showUserInfo(email);
+      showMainPages();
+    }
+
+    function showMainPages() {
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("page-clock").classList.remove("hidden");
+      document.getElementById("tab-bar").classList.remove("hidden");
       updateButtonLabel();
       setInterval(updateButtonLabel, 60000);
       loadCalendar(currentYear, currentMonth);
-      loadAllShifts(); // 預設今日全員班表
+      loadAllShifts();
     }
 
     function showUserInfo(email) {
@@ -266,7 +314,7 @@
       title.textContent = `${year} 年 ${month + 1} 月`;
 
       const dayNames = ["一","二","三","四","五","六","日"];
-      const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // 星期一為首
+      const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
       
       dayNames.forEach(d => {
         const cell = document.createElement("div");
@@ -280,11 +328,18 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement("div");
-        cell.textContent = day;
         cell.className = "day-cell";
+        const num = document.createElement("div");
+        num.textContent = day;
+        const dot = document.createElement("div");
+        dot.className = "day-indicator";
+        cell.appendChild(num);
+        cell.appendChild(dot);
+
         const today = new Date();
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear())
           cell.classList.add("today");
+
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         cell.onclick = () => {
           if (selectedCell) selectedCell.classList.remove("selected");
@@ -315,7 +370,7 @@
           const jingmeiDays = data.jingmeiDays || [];
           document.querySelectorAll(".day-cell").forEach(cell => {
             cell.classList.remove("shift-zhongshan", "shift-jingmei");
-            const day = cell.textContent;
+            const day = cell.querySelector("div:first-child").textContent;
             const full = `${ym}-${String(day).padStart(2, "0")}`;
             if (zhongshanDays.includes(full)) cell.classList.add("shift-zhongshan");
             if (jingmeiDays.includes(full)) cell.classList.add("shift-jingmei");
@@ -383,14 +438,4 @@
         const timeStr=new Date().toLocaleTimeString();
         document.getElementById("status").textContent=`✅ ${name} ${type}（${timeStr}）`;
         document.getElementById("status").style.color="green";
-        fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
-      },()=>alert("無法取得定位資訊"));
-    }
-
-    function resetEmail(){
-      localStorage.removeItem("qoopio_email");
-      location.reload();
-    }
-  </script>
-</body>
-</html>
+        fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:
