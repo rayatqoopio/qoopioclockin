@@ -41,7 +41,10 @@
       margin-bottom: 1.5rem;
     }
 
-    .hidden { display: none; }
+    .hidden { 
+      display: none !important;
+      visibility: hidden;
+    }
 
     /* ✅ 登入頁 */
     #login-page {
@@ -60,6 +63,7 @@
       border-radius: 8px;
       border: 1px solid #ccc;
       text-align: center;
+      background-color: #fffde8;
     }
 
     #login-page button {
@@ -74,7 +78,7 @@
 
     /* ✅ 打卡頁 */
     #page-clock {
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -240,7 +244,7 @@
   <div class="container">
 
     <!-- 登入頁 -->
-    <div id="login-page" class="hidden">
+    <div id="login-page">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <input type="email" id="login-email" placeholder="name@qoopio.com" />
       <button onclick="login()">登入</button>
@@ -283,10 +287,7 @@
 
     fetch("user.json")
       .then(res => res.json())
-      .then(json => {
-        userData = json;
-        initLogin();
-      })
+      .then(json => { userData = json; initLogin(); })
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
 
     function initLogin() {
@@ -294,7 +295,9 @@
       if (savedEmail && userData[savedEmail]) {
         showUserInfo(savedEmail);
         showMainPages();
-      } else document.getElementById("login-page").classList.remove("hidden");
+      } else {
+        document.getElementById("login-page").classList.remove("hidden");
+      }
     }
 
     function login() {
@@ -307,9 +310,19 @@
     }
 
     function showMainPages() {
-      document.getElementById("login-page").classList.add("hidden");
-      document.getElementById("page-clock").classList.remove("hidden");
-      document.getElementById("tab-bar").classList.remove("hidden");
+      const loginPage = document.getElementById("login-page");
+      const clockPage = document.getElementById("page-clock");
+      const tabBar = document.getElementById("tab-bar");
+
+      // 🔧 強制隱藏登入頁
+      loginPage.classList.add("hidden");
+      loginPage.style.display = "none";
+
+      // ✅ 顯示打卡頁與底部導覽列
+      clockPage.classList.remove("hidden");
+      clockPage.style.display = "flex";
+      tabBar.classList.remove("hidden");
+
       updateButtonLabel();
       setInterval(updateButtonLabel, 60000);
       loadCalendar(currentYear, currentMonth);
@@ -324,6 +337,9 @@
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById(`page-${page}`).classList.remove("hidden");
+
+
+```html
       document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
       if (page === "schedule") updateMonthShiftMarkers();
@@ -347,8 +363,6 @@
       grid.innerHTML = "";
       title.textContent = `${year} 年 ${month + 1} 月`;
 
-
-```html
       const dayNames = ["一","二","三","四","五","六","日"];
       const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
       dayNames.forEach(d=>{
@@ -357,6 +371,7 @@
         cell.className="day-name";
         grid.appendChild(cell);
       });
+
       const daysInMonth = new Date(year, month+1, 0).getDate();
       for(let i=0;i<firstDay;i++) grid.appendChild(document.createElement("div"));
       for(let day=1;day<=daysInMonth;day++){
@@ -365,9 +380,11 @@
         const num=document.createElement("div"); num.textContent=day;
         const dot=document.createElement("div"); dot.className="day-indicator";
         cell.appendChild(num); cell.appendChild(dot);
+
         const today=new Date();
         if(day===today.getDate()&&month===today.getMonth()&&year===today.getFullYear())
           cell.classList.add("today");
+
         const dateStr=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
         cell.onclick=()=>{
           document.querySelectorAll(".day-cell").forEach(c=>c.classList.remove("selected"));
