@@ -194,29 +194,22 @@
     .shift-zhongshan .day-indicator { background-color: #e74c3c; }
     .shift-jingmei .day-indicator { background-color: #27ae60; }
 
-    /* ⭕ 旋轉圈圈載入動畫 */
-    .loading-cell {
-      position: relative;
-      color: transparent !important;
-    }
-
-    .loading-cell::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 14px;
-      height: 14px;
-      border: 2px solid #aaa;
+    /* ⭕ 下方旋轉圈圈載入動畫 */
+    .loading-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #aaa;
       border-top-color: #111;
       border-radius: 50%;
-      transform: translate(-50%, -50%);
       animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
     }
 
     @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     #selected-shift {
@@ -273,7 +266,7 @@
     <div id="page-clock" class="hidden">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
-      <div class="button-row">
+      <div class="button-row" id="clock-buttons">
         <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
         <button onclick="resetEmail()" class="change-btn">登出</button>
       </div>
@@ -353,6 +346,10 @@
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById(`page-${page}`).classList.remove("hidden");
+
+      // 👇 只在打卡頁顯示按鈕
+      document.getElementById("clock-buttons").style.display = (page === "clock") ? "flex" : "none";
+
       document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
       if (page === "schedule") updateMonthShiftMarkers();
@@ -409,10 +406,11 @@
           cell.classList.add("selected");
           selectedCell = cell;
 
-          // ⭕ 加入旋轉圈動畫
-          cell.classList.add("loading-cell");
-          loadAllShifts(dateStr)
-            .finally(() => cell.classList.remove("loading-cell"));
+          // 🔄 讓下方日期區顯示旋轉圈
+          const shiftBox = document.getElementById("selected-shift");
+          shiftBox.innerHTML = `<div class='loading-spinner'></div> 讀取中...`;
+
+          loadAllShifts(dateStr).finally(() => {});
         };
         grid.appendChild(cell);
       }
