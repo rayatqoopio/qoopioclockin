@@ -111,21 +111,17 @@
       font-weight: bold;
     }
     .calendar-header button {
-      background: none;         /* 移除底色 */
-      border: none;             /* 移除框線 */
-      font-size: 1.4rem;        /* 放大一點讓箭頭明顯 */
-      font-weight: bold;        /* 字重加粗 */
-      color: #333;              /* 設定箭頭顏色 */
-      cursor: pointer;          /* 滑鼠指標變手 */
-      padding: 0.3rem 0.6rem;   /* 適度內距 */
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+      padding: 0.3rem 0.6rem;
       transition: color 0.2s ease;
     }
-    .calendar-header button:hover {
-      color: #000;              /* 滑過時稍微加深顏色 */
-    }
-    .calendar-header button:focus {
-      outline: none;            /* 去掉點選後的藍色外框 */
-    }
+    .calendar-header button:hover { color: #000; }
+    .calendar-header button:focus { outline: none; }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -166,11 +162,35 @@
       border-radius: 50%;
       margin-top: 4px;
     }
-    .shift-zhongshan .day-indicator {
-      background-color: #e74c3c; /* 紅色 */
+    .shift-zhongshan .day-indicator { background-color: #e74c3c; }
+    .shift-jingmei .day-indicator { background-color: #27ae60; }
+
+    /* ⏳ 日期載入動畫 */
+    .loading-cell {
+      position: relative;
+      color: transparent !important;
     }
-    .shift-jingmei .day-indicator {
-      background-color: #27ae60; /* 綠色 */
+    /* ⭕ 旋轉圈圈載入動畫 */
+    .loading-cell {
+      position: relative;
+      color: transparent !important;
+    }
+    .loading-cell::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #aaa;
+      border-top-color: #111;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
     #selected-shift {
@@ -361,7 +381,11 @@
           if (selectedCell) selectedCell.classList.remove("selected");
           cell.classList.add("selected");
           selectedCell = cell;
-          loadAllShifts(dateStr);
+
+          // ⏳ 加入載入動畫
+          num.classList.add("loading-cell");
+          loadAllShifts(dateStr)
+            .finally(() => num.classList.remove("loading-cell"));
         };
         grid.appendChild(cell);
       }
@@ -398,7 +422,7 @@
     /* === 班表 === */
     function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
-      fetch(`${scriptUrl}?date=${target}&mode=all`)
+      return fetch(`${scriptUrl}?date=${target}&mode=all`)
         .then(res => res.json())
         .then(data => {
           const shifts = data.shifts || [];
