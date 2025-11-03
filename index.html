@@ -307,7 +307,8 @@
     /* === 標記有班日 === */
     function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
-      fetch(`${scriptUrl}?month=${ym}&mode=summary`)
+      const email = localStorage.getItem("qoopio_email");
+      fetch(`${scriptUrl}?month=${ym}&mode=summary&email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
           const zhongshanDays = data.zhongshanDays || [];
