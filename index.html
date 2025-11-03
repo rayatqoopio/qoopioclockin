@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -7,8 +8,7 @@
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
-
-    <script>
+  <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("service-worker.js")
@@ -16,249 +16,246 @@
         .catch((error) => console.error("❌ SW registration failed:", error));
     }
   </script>
-  
   <style>
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
-      padding: 0;
+      padding: 2rem;
       background-color: #fdf5e6;
       color: #333;
+      text-align: center;
     }
     .container {
       max-width: 500px;
-      margin: 0 auto;
-      padding: 2rem;
+      margin: 5vh auto;
     }
     .logo {
       width: 250px;
-      display: block;
-      margin: 2rem auto;
+      margin-bottom: 2rem;
     }
-    .hidden { display: none; }
-    .tab {
-      display: none;
-    }
-    .tab.active {
-      display: block;
-    }
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
+    .input-row {
       display: flex;
-      justify-content: space-around;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .input[type="email"] {
+      flex: 5;
+      font-size: 1.4rem;
+      padding: 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+    .login-btn {
+      flex: 2;
+      font-size: 1.4rem;
+      font-weight: bold;
+      padding: 1.5rem;
       background-color: #eee;
-      border-top: 1px solid #ccc;
-    }
-    .bottom-nav button {
-      flex: 1;
-      padding: 1rem;
-      font-size: 1.2rem;
-      background: none;
-      border: none;
+      border: 1px solid #ccc;
+      border-radius: 10px;
       cursor: pointer;
-    }
-    .input-row { 
-      display: flex; gap: 1rem; margin-top: 1rem; 
-    } 
-    .input[type="email"] { 
-      flex: 5; 
-      font-size: 1.4rem; 
-      padding: 1.5rem; 
-      border: 1px solid #ccc; 
-      border-radius: 10px; 
-      box-sizing: border-box; 
-    } 
-    .login-btn { 
-      flex: 2; 
-      font-size: 1.4rem; 
-      font-weight: bold; 
-      padding: 1.5rem; 
-      background-color: #eee; 
-      border: 1px solid #ccc; 
-      border-radius: 10px; 
-      cursor: pointer; 
     }
     .button-row {
       display: flex;
       gap: 1rem;
-      margin: 1rem 0;
+      margin-top: 1.5rem;
     }
-    .submit-btn, .change-btn {
-      flex: 1;
-      padding: 1rem;
-      font-size: 1rem;
-      border-radius: 10px;
-    }
-    .login-btn, .submit-btn {
+    .submit-btn {
+      flex: 5;
+      padding: 1.5rem;
+      font-size: 1.4rem;
       background-color: #111;
-      color: white;
+      color: #fff;
       border: none;
+      border-radius: 10px;
+      cursor: pointer;
     }
     .change-btn {
+      flex: 2;
+      padding: 1.5rem;
+      font-size: 1rem;
       background-color: #ddd;
       color: #222;
       border: none;
-    }
-    .calendar {
-      margin-top: 2rem;
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.5rem;
-      font-size: 0.9rem;
-    }
-    .calendar div {
-      padding: 0.5rem;
-      background-color: #fff;
-      border: 1px solid #ccc;
+      border-radius: 10px;
       cursor: pointer;
     }
-    .calendar div.today {
-      background-color: #ffe4b5;
+    .user-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
     }
-    #selected-shift {
+    #status {
       margin-top: 1rem;
+      font-size: 1.2rem;
       font-weight: bold;
     }
+    #shift-info {
+      margin-top: 1.5rem;
+      font-size: 1rem;
+      color: #444;
+    }
   </style>
+</head>
+<body>
+  <div class="container">
+    <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
+
+    <div id="user-info" style="display: none;">
+      <div id="user-label" class="user-label"></div>
+    </div>
+
+    <div id="email-input-area">
+      <div class="input-row">
+        <input type="email" id="email" placeholder="輸入公司 email" required />
+        <button onclick="handleLogin()" class="login-btn">登入</button>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button id="clockInBtn" class="submit-btn" onclick="submitClockIn()">打卡</button>
+      <button onclick="resetEmail()" class="change-btn">登出</button>
+    </div>
+
+    <div id="shift-info">讀取班別中…</div>
+    <div id="status"></div>
+  </div>
+
   <script>
     const scriptUrl = "https://script.google.com/macros/s/AKfycbzfCWSZCydOFXJMaOqHOA25HHW36RlONmD-DTgruSsx6xrO4RegK7CGlkwNwpG6QKlj/exec";
-    let userData = {}; let currentEmail = "";
+    let userData = {};
 
-    async function loadUserData() {
-      const res = await fetch("user.json");
-      userData = await res.json();
-    }
+    fetch("user.json")
+      .then(res => res.json())
+      .then(json => {
+        userData = json;
+        initLogin();
+      })
+      .catch(err => {
+        console.error("❌ 無法載入使用者資料", err);
+        alert("使用者資料載入失敗，請刷新頁面");
+      });
 
-    function init() {
-      currentEmail = localStorage.getItem("qoopio_email") || "";
-      if (userData[currentEmail]) {
-        document.getElementById("user-label").textContent = `${userData[currentEmail].name} ${currentEmail}`;
-        document.getElementById("email-input-area").classList.add("hidden");
-        document.getElementById("user-info").classList.remove("hidden");
-        loadShifts(currentEmail);
+    function initLogin() {
+      const savedEmail = localStorage.getItem("qoopio_email");
+      if (savedEmail && userData[savedEmail]) {
+        showUserInfo(savedEmail);
+      } else {
+        localStorage.removeItem("qoopio_email"); // 確保資料一致性
+        showEmailInput();
       }
-      renderCalendar();
+      updateButtonLabel();
+      setInterval(updateButtonLabel, 60000);
     }
 
     function handleLogin() {
       const email = document.getElementById("email").value.trim();
-      if (!userData[email]) return alert("查無此帳號");
+      if (!userData[email]) {
+        alert("查無此帳號，請重新確認 email！");
+        return;
+      }
       localStorage.setItem("qoopio_email", email);
+      showUserInfo(email);
+    }
+
+    function showUserInfo(email) {
+      const name = userData[email].name || email;
+      document.getElementById("user-label").textContent = `${name} ${email}`;
+      document.getElementById("user-info").style.display = "block";
+      document.getElementById("email-input-area").style.display = "none";
+      
+      loadShifts(email);
+    }
+
+    function showEmailInput() {
+      document.getElementById("user-info").style.display = "none";
+      document.getElementById("email-input-area").style.display = "block";
+    }
+
+    function resetEmail() {
+      localStorage.removeItem("qoopio_email");
       location.reload();
     }
 
+    let lastSubmitTime = 0;
+    function updateButtonLabel() {
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const btn = document.getElementById("clockInBtn");
+      if (totalMinutes >= 240 && totalMinutes <= 1140) {
+        btn.textContent = "上班打卡";
+        btn.dataset.type = "上班";
+      } else {
+        btn.textContent = "下班打卡";
+        btn.dataset.type = "下班";
+      }
+    }
+
     function loadShifts(email) {
+      document.getElementById("shift-info").textContent = "讀取班別中…";
       fetch(`${scriptUrl}?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
-          document.getElementById("shift-info").innerHTML = `
-            今日班別：${data.today || "—"}<br>
-            明日班別：${data.tomorrow || "—"}`;
+          document.getElementById("shift-info").innerHTML =
+            `今日班別：${data.today || "—"}<br>明日班別：${data.tomorrow || "—"}`;
         })
-        .catch(() => {
+        .catch(err => {
+          console.error("❌ 無法載入班別：", err);
           document.getElementById("shift-info").textContent = "無法讀取班表";
         });
     }
 
     function submitClockIn() {
-      const email = currentEmail;
-      if (!email) return alert("請先登入");
-      const type = "打卡";
-      navigator.geolocation.getCurrentPosition(pos => {
-        const payload = {
-          email,
-          type,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
+      const now = Date.now();
+      if (now - lastSubmitTime < 15000) {
+        alert("請勿重複打卡，請等待幾秒再試！");
+        return;
+      }
+
+      const email = localStorage.getItem("qoopio_email");
+      if (!email) {
+        alert("請先登入！");
+        return;
+      }
+
+      const type = document.getElementById("clockInBtn").dataset.type || "上班";
+      if (!navigator.geolocation) {
+        alert("您的瀏覽器不支援定位功能");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        const data = { email, type, lat, lng };
+        const name = userData[email].name || email;
+        const timeStr = new Date().toLocaleTimeString();
+
+        document.getElementById("status").textContent =
+          `✅ ${name} ${type}（${timeStr}）`;
+        document.getElementById("status").style.color = "green";
+
+        document.getElementById("clockInBtn").disabled = true;
+        setTimeout(() => {
+          document.getElementById("clockInBtn").disabled = false;
+        }, 15000);
+
+        lastSubmitTime = now;
+
         fetch(scriptUrl, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
         });
-        document.getElementById("status").textContent = `✅ ${userData[email].name} ${type}`;
+      }, () => {
+        alert("無法取得定位資訊，請確認瀏覽器權限！");
       });
     }
-
-    function showTab(tabId) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.getElementById(tabId).classList.add("active");
-    }
-
-    function renderCalendar() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDate = new Date(year, month + 1, 0).getDate();
-      const offset = firstDay.getDay();
-      const cal = document.getElementById("calendar");
-      cal.innerHTML = "";
-      for (let i = 0; i < offset; i++) cal.innerHTML += `<div></div>`;
-      for (let d = 1; d <= lastDate; d++) {
-        const div = document.createElement("div");
-        div.textContent = d;
-        if (d === today.getDate()) div.classList.add("today");
-        div.onclick = () => fetchShiftForDate(year, month + 1, d);
-        cal.appendChild(div);
-      }
-    }
-
-    function fetchShiftForDate(y, m, d) {
-      if (!currentEmail) return;
-      const emailParam = encodeURIComponent(currentEmail);
-      const target = new Date(y, m - 1, d);
-      const targetStr = target.toISOString().split("T")[0];
-      fetch(`${scriptUrl}?email=${emailParam}&date=${targetStr}`)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("selected-shift").textContent = `${y}/${m}/${d}：${data.today || "—"}`;
-        });
-    }
-
-    window.onload = async () => {
-      await loadUserData();
-      init();
-    }
   </script>
-</head>
-<body>
-  <div class="container">
-    <img src="qoopio logo.png" class="logo" alt="Logo" />
-
-    <div id="email-input-area">
-      <div class="input-row">
-        <input type="email" id="email" placeholder="輸入公司 email" class="input" />
-        <button onclick="handleLogin()" class="login-btn">登入</button>
-      </div>
-    </div>
-
-    <div id="user-info" class="hidden">
-      <div id="user-label"></div>
-    </div>
-
-    <div id="tab-clock" class="tab active">
-      <div class="button-row">
-        <button onclick="submitClockIn()" class="submit-btn">打卡</button>
-        <button onclick="localStorage.clear(); location.reload();" class="change-btn">登出</button>
-      </div>
-      <div id="shift-info">讀取班別中…</div>
-      <div id="status"></div>
-    </div>
-
-    <div id="tab-shift" class="tab">
-      <div class="calendar" id="calendar"></div>
-      <div id="selected-shift"></div>
-    </div>
-  </div>
-
-  <div class="bottom-nav">
-    <button onclick="showTab('tab-clock')">打卡</button>
-    <button onclick="showTab('tab-shift')">班表</button>
-  </div>
 </body>
 </html>
