@@ -12,7 +12,7 @@
       navigator.serviceWorker
         .register("service-worker.js")
         .then(() => console.log("✅ Service Worker registered"))
-        .catch((error) => console.error("❌ SW registration failed:", error));
+        .catch(err => console.error("❌ SW registration failed:", err));
     }
   </script>
   <style>
@@ -29,26 +29,12 @@
       margin: 5vh auto;
       padding-bottom: 6rem;
     }
-    .logo {
-      width: 250px;
-      margin-bottom: 1.6rem;
-    }
-    .user-label {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-    }
-    #status {
-      margin-top: 1rem;
-      font-size: 0.8rem;
-      font-weight: bold;
-    }
+    .logo { width: 200px; margin-bottom: 1.5rem; }
+    .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; }
     .hidden { display: none; }
 
     /* ✅ 打卡頁位置微調 */
-    #page-clock {
-      padding-top: 14vh; /* 下移至畫面中段 */
-    }
+    #page-clock { padding-top: 14vh; }
     #clockInBtn {
       width: 80%;
       padding: 1.5rem;
@@ -60,27 +46,24 @@
       cursor: pointer;
       display: block;
       margin: 0 auto 0.8rem auto;
+      transition: background-color 0.3s ease;
     }
     .logout-btn {
       background: none;
       border: none;
       color: #777;
-      font-size: 0.7rem;
+      font-size: 0.9rem;
       cursor: pointer;
+      text-decoration: underline;
       display: block;
       margin: 0 auto;
     }
-    #user-label {
-      font-size: 1rem;
-      font-weight: bold;
-      margin-bottom: 1.5rem;
-    }
+    #status { margin-top: 1rem; font-size: 1.1rem; font-weight: bold; }
 
     /* ✅ 導覽列 */
     .tab-bar {
       position: fixed;
-      bottom: 0;
-      left: 0;
+      bottom: 0; left: 0;
       width: 100%;
       height: 70px;
       background-color: #000;
@@ -142,18 +125,13 @@
     }
     .day-cell.today { border: 2px solid #111; font-weight: bold; }
     .day-cell.selected { background-color: #ddd; }
-
     .day-name { font-weight: bold; color: #666; }
-
     .day-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-top: 4px;
+      width: 8px; height: 8px;
+      border-radius: 50%; margin-top: 4px;
     }
     .shift-zhongshan .day-indicator { background-color: #e74c3c; }
     .shift-jingmei .day-indicator { background-color: #27ae60; }
-
     #selected-shift {
       font-size: 1rem;
       line-height: 1.8;
@@ -164,10 +142,7 @@
       background: #fff;
       box-shadow: 0 0 6px rgba(0,0,0,0.1);
       min-height: 100px;
-      position: relative;
     }
-
-    /* ✅ 下方轉圈圈動畫 */
     .loading-spinner {
       display: inline-block;
       width: 20px;
@@ -180,31 +155,11 @@
       margin-right: 8px;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
     .group-title {
       font-weight: bold;
       color: #000;
       margin-top: 1rem;
       margin-bottom: 0.5rem;
-    }
-
-    /* ✅ 登入頁 */
-    #login-page input {
-      width: 80%;
-      padding: 0.8rem;
-      margin: 1rem 0;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    #login-page button {
-      padding: 0.8rem 1.5rem;
-      font-size: 1rem;
-      background: #111;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -258,10 +213,7 @@
     /* === 初始化 === */
     fetch("user.json")
       .then(res => res.json())
-      .then(json => {
-        userData = json;
-        initLogin();
-      })
+      .then(json => { userData = json; initLogin(); })
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
 
     function initLogin() {
@@ -274,7 +226,6 @@
       }
     }
 
-    /* === 登入 === */
     function login() {
       const email = document.getElementById("login-email").value.trim();
       if (!email) return alert("請輸入 Email");
@@ -289,16 +240,15 @@
       document.getElementById("user-label").textContent = `${name} ${email}`;
     }
 
-    /* === 主畫面 === */
     function showMainPages() {
       document.getElementById("login-page").classList.add("hidden");
       document.getElementById("page-clock").classList.remove("hidden");
       document.getElementById("tab-bar").classList.remove("hidden");
       updateButtonLabel();
       loadCalendar(currentYear, currentMonth);
+      setInterval(updateButtonLabel, 60000);
     }
 
-    /* === 切換頁面 === */
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -308,34 +258,68 @@
       if (page === "schedule") updateMonthShiftMarkers();
     }
 
-    /* === 打卡按鈕 === */
+    /* === 打卡按鈕狀態 === */
     function updateButtonLabel() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
       const btn = document.getElementById("clockInBtn");
-      if (totalMinutes >= 240 && totalMinutes <= 1140) {
-        btn.textContent = "上班"; btn.dataset.type = "上班";
-      } else {
-        btn.textContent = "下班"; btn.dataset.type = "下班";
+      const email = localStorage.getItem("qoopio_email");
+      const stateKey = `qoopio_state_${email}`;
+      const savedState = localStorage.getItem(stateKey);
+
+      if (totalMinutes >= 120 && totalMinutes < 840) { // 02:00–14:00
+        if (savedState === "working") setButton("上班中", true, "#aaa");
+        else setButton("上班打卡", false, "#111", "上班");
       }
+      else if (totalMinutes >= 960 || totalMinutes < 120) { // 16:00–02:00
+        if (savedState === "offwork") setButton("下班掰掰", true, "#aaa");
+        else setButton("下班打卡", false, "#111", "下班");
+      }
+      else setButton("非打卡時間", true, "#bbb");
     }
 
-    /* === 打卡功能 === */
+    function setButton(text, disabled, color, type = "") {
+      const btn = document.getElementById("clockInBtn");
+      btn.textContent = text;
+      btn.disabled = disabled;
+      btn.style.backgroundColor = color;
+      btn.dataset.type = type;
+    }
+
     function submitClockIn() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
-      const type = document.getElementById("clockInBtn").dataset.type || "上班";
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const data={email,type,lat:pos.coords.latitude,lng:pos.coords.longitude};
-        const name=userData[email]?.name||email;
-        const timeStr=new Date().toLocaleTimeString();
-        document.getElementById("status").textContent=`✅ ${name} ${type}（${timeStr}）`;
-        document.getElementById("status").style.color="green";
-        fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
-      },()=>alert("無法取得定位資訊"));
+      const btn = document.getElementById("clockInBtn");
+      const type = btn.dataset.type || "上班";
+      const stateKey = `qoopio_state_${email}`;
+
+      navigator.geolocation.getCurrentPosition(pos => {
+        const data = { email, type, lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const name = userData[email]?.name || email;
+        const timeStr = new Date().toLocaleTimeString();
+        const status = document.getElementById("status");
+        status.textContent = `✅ ${name} ${type}（${timeStr}）`;
+        status.style.color = "green";
+
+        if (type === "上班") {
+          setButton("上班中", true, "#aaa");
+          localStorage.setItem(stateKey, "working");
+        } else if (type === "下班") {
+          setButton("下班掰掰", true, "#aaa");
+          localStorage.setItem(stateKey, "offwork");
+        }
+
+        fetch(scriptUrl, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+      }, () => alert("無法取得定位資訊"));
     }
 
-    function resetEmail(){
+    function resetEmail() {
+      const email = localStorage.getItem("qoopio_email");
+      if (email) localStorage.removeItem(`qoopio_state_${email}`);
       localStorage.removeItem("qoopio_email");
       location.reload();
     }
@@ -395,7 +379,6 @@
       loadCalendar(currentYear, currentMonth);
     }
 
-    /* === 標記有班日 === */
     function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const email = localStorage.getItem("qoopio_email");
@@ -415,7 +398,6 @@
         .catch(() => console.log("無法取得有班日"));
     }
 
-    /* === 讀取班表 === */
     function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
       return fetch(`${scriptUrl}?date=${target}&mode=all`)
@@ -423,10 +405,7 @@
         .then(data => {
           const shifts = data.shifts || [];
           const box = document.getElementById("selected-shift");
-          if (!shifts.length) {
-            box.innerHTML = "無班表資料";
-            return;
-          }
+          if (!shifts.length) { box.innerHTML = "無班表資料"; return; }
           const z = [], j = [], off = [];
           shifts.forEach(s => {
             const sh = s.shift || "";
