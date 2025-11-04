@@ -282,13 +282,25 @@
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
       const btn = document.getElementById("clockInBtn");
       const email = localStorage.getItem("qoopio_email");
-      const stateKey = `qoopio_state_${email}`;
-      const savedState = localStorage.getItem(stateKey);
-    
       if (!email) return;
     
+      const stateKey = `qoopio_state_${email}`;
+      const dateKey = `qoopio_date_${email}`;
+      const savedState = localStorage.getItem(stateKey);
+      const lastDate = localStorage.getItem(dateKey);
+    
+      // 🕛 檢查是否進入新的一天（凌晨 2:00 之後自動清除狀態）
+      const todayStr = now.toISOString().split("T")[0];
+      if (lastDate && lastDate !== todayStr && totalMinutes >= 120) {
+        localStorage.removeItem(stateKey);
+        localStorage.setItem(dateKey, todayStr);
+        console.log("🧹 已清除昨日打卡狀態");
+      } else if (!lastDate) {
+        localStorage.setItem(dateKey, todayStr);
+      }
+    
       // 🔍 查詢當日班別
-      const dateStr = now.toISOString().split("T")[0];
+      const dateStr = todayStr;
       let shift = "";
       try {
         const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${dateStr}`);
@@ -317,7 +329,6 @@
         setButton("非打卡時間", true, "#bbb");
       }
     }
-
     function setButton(text, disabled, color, type = "") {
       const btn = document.getElementById("clockInBtn");
       btn.textContent = text;
