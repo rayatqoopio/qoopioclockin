@@ -23,18 +23,20 @@
       background-color: #fdf5e6;
       color: #333;
       text-align: center;
+      overflow-x: hidden;
     }
     .container {
       max-width: 500px;
       margin: 5vh auto;
       padding-bottom: 6rem;
+      position: relative;
     }
     .logo { width: 230px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; }
     .hidden { display: none; }
 
     /* ✅ 打卡頁位置微調 */
-    #page-clock { padding-top: 14vh; }
+    #page-clock { padding-top: 14vh; position: relative; z-index: 1; }
     #clockInBtn {
       width: 80%;
       padding: 1.7rem;
@@ -142,25 +144,14 @@
       box-shadow: 0 0 6px rgba(0,0,0,0.1);
       min-height: 100px;
     }
-    .loading-spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #bbb;
-      border-top-color: #111;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .group-title {
       font-weight: bold;
       color: #000;
       margin-top: 1rem;
       margin-bottom: 0.5rem;
     }
-        /* ✅ 登入頁 */
+
+    /* ✅ 登入頁 */
     #login-page input {
       width: 80%;
       padding: 0.8rem;
@@ -178,18 +169,27 @@
       border-radius: 8px;
       cursor: pointer;
     }
-        /* ✅ 打卡頁載入動畫 */
-    .loading-screen {
+
+    /* ✅ 全螢幕載入遮罩動畫 */
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #fdf5e6;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 60vh;
-      color: #555;
+      z-index: 1000;
+      transition: opacity 0.3s ease;
     }
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
+    #loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-screen .spinner {
+      width: 50px;
+      height: 50px;
       border: 4px solid #ccc;
       border-top-color: #111;
       border-radius: 50%;
@@ -200,12 +200,15 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>資料載入中，請稍候...</p>
+  </div>
 
+  <div class="container">
     <!-- 登入頁 -->
     <div id="login-page" class="hidden">
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
@@ -216,10 +219,6 @@
 
     <!-- 打卡頁 -->
     <div id="page-clock" class="hidden">
-    <div class="loading-screen" id="loading-screen">
-      <div class="loading-spinner"></div>
-      <p>資料載入中，請稍候...</p>
-    </div>
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
       <button id="clockInBtn" onclick="submitClockIn()">打卡</button>
@@ -254,7 +253,6 @@
     let userData = {};
     let selectedCell = null;
 
-    /* === 初始化 === */
     fetch("user.json")
       .then(res => res.json())
       .then(json => { userData = json; initLogin(); })
@@ -267,6 +265,7 @@
         showMainPages();
       } else {
         document.getElementById("login-page").classList.remove("hidden");
+        document.getElementById("loading-screen").classList.add("hidden");
       }
     }
 
@@ -279,10 +278,26 @@
       showMainPages();
     }
 
+    async function showMainPages() {
+      const loading = document.getElementById("loading-screen");
+      loading.classList.remove("hidden");
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("page-clock").classList.remove("hidden");
+      document.getElementById("tab-bar").classList.remove("hidden");
+
+      try {
+        await updateButtonLabel();
+        loadCalendar(currentYear, currentMonth);
+      } finally {
+        setTimeout(() => loading.classList.add("hidden"), 600);
+      }
+    }
+
     function showUserInfo(email) {
       const name = userData[email]?.name || email;
       document.getElementById("user-label").textContent = `${name} ${email}`;
     }
+
 
     function showMainPages() {
       document.getElementById("login-page").classList.add("hidden");
