@@ -267,11 +267,11 @@
       const stateKey = `qoopio_state_${email}`;
       const savedState = localStorage.getItem(stateKey);
 
-      if (totalMinutes >= 120 && totalMinutes < 840) { // 02:00–14:00
+      if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
         if (savedState === "working") setButton("上班中", true, "#aaa");
         else setButton("上班打卡", false, "#111", "上班");
       }
-      else if (totalMinutes >= 960 || totalMinutes < 120) { // 16:00–02:00
+      else if (totalMinutes >= 1080|| totalMinutes < 120) { // 18:00–02:00
         if (savedState === "offwork") setButton("下班掰掰", true, "#aaa");
         else setButton("下班打卡", false, "#111", "下班");
       }
