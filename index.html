@@ -29,7 +29,7 @@
       margin: 5vh auto;
       padding-bottom: 6rem;
     }
-    .logo { width: 200px; margin-bottom: 1.5rem; }
+    .logo { width: 250px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; }
     .hidden { display: none; }
 
@@ -161,6 +161,25 @@
       margin-top: 1rem;
       margin-bottom: 0.5rem;
     }
+        /* ✅ 登入頁 */
+    #login-page input {
+      width: 80%;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #login-page button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
   </style>
 </head>
 <body>
@@ -259,23 +278,45 @@
     }
 
     /* === 打卡按鈕狀態 === */
-    function updateButtonLabel() {
+    async function updateButtonLabel() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
       const btn = document.getElementById("clockInBtn");
       const email = localStorage.getItem("qoopio_email");
       const stateKey = `qoopio_state_${email}`;
       const savedState = localStorage.getItem(stateKey);
-
+    
+      if (!email) return;
+    
+      // 🔍 查詢當日班別
+      const dateStr = now.toISOString().split("T")[0];
+      let shift = "";
+      try {
+        const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${dateStr}`);
+        const data = await res.json();
+        shift = (data.shift || "").trim();
+      } catch (e) {
+        console.warn("班別查詢失敗", e);
+      }
+    
+      // 💤 若為假期或無排班 → 灰階「休假中」
+      if (!shift || shift === "—" || /假/.test(shift) || (!/中山/.test(shift) && !/景美/.test(shift))) {
+        setButton("休假中", true, "#bbb");
+        return;
+      }
+    
+      // 🕒 時段邏輯
       if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
         if (savedState === "working") setButton("上班中", true, "#aaa");
-        else setButton("上班打卡", false, "#111", "上班");
+        else setButton("上班", false, "#111", "上班");
       }
-      else if (totalMinutes >= 1080|| totalMinutes < 120) { // 18:00–02:00
+      else if (totalMinutes >= 1080 || totalMinutes < 120) { // 18:00–02:00
         if (savedState === "offwork") setButton("下班掰掰", true, "#aaa");
-        else setButton("下班打卡", false, "#111", "下班");
+        else setButton("下班", false, "#111", "下班");
       }
-      else setButton("非打卡時間", true, "#bbb");
+      else {
+        setButton("非打卡時間", true, "#bbb");
+      }
     }
 
     function setButton(text, disabled, color, type = "") {
