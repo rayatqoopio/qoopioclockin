@@ -265,12 +265,13 @@
     let currentMonth = new Date().getMonth();
     let userData = {};
     let selectedCell = null;
-
+  
+    // 🟢 初始化
     fetch("user.json")
       .then(res => res.json())
       .then(json => { userData = json; initLogin(); })
       .catch(() => alert("使用者資料載入失敗，請刷新頁面"));
-
+  
     function initLogin() {
       const savedEmail = localStorage.getItem("qoopio_email");
       if (savedEmail && userData[savedEmail]) {
@@ -281,52 +282,45 @@
         document.getElementById("loading-screen").classList.add("hidden");
       }
     }
-
+  
     function login() {
       const email = document.getElementById("login-email").value.trim();
       if (!email) return alert("請輸入 Email");
       if (!userData[email]) return alert("查無此帳號");
-    
       localStorage.setItem("qoopio_email", email);
       showUserInfo(email);
-    
-      // 🟢 新增：重新顯示載入畫面
-      const loading = document.getElementById("loading-screen");
-      loading.classList.remove("hidden");
-    
+      document.getElementById("loading-screen").classList.remove("hidden");
       showMainPages();
     }
-
+  
+    // 🟣 單一版主畫面函式（Promise.all 加速）
     async function showMainPages() {
       const loading = document.getElementById("loading-screen");
       loading.classList.remove("hidden");
       document.getElementById("login-page").classList.add("hidden");
       document.getElementById("page-clock").classList.remove("hidden");
       document.getElementById("tab-bar").classList.remove("hidden");
-
+  
       try {
-        await updateButtonLabel();
-        loadCalendar(currentYear, currentMonth);
+        // 同步啟動兩個載入任務
+        await Promise.all([
+          updateButtonLabel(),
+          new Promise(r => { loadCalendar(currentYear, currentMonth); r(); })
+        ]);
+      } catch (e) {
+        console.warn("載入中發生錯誤", e);
       } finally {
-        setTimeout(() => loading.classList.add("hidden"), 600);
+        // 🟢 載入完成後才隱藏 loading
+        loading.classList.add("hidden");
       }
     }
-
+  
     function showUserInfo(email) {
       const name = userData[email]?.name || email;
       document.getElementById("user-label").textContent = `${name} ${email}`;
     }
-
-
-    function showMainPages() {
-      document.getElementById("login-page").classList.add("hidden");
-      document.getElementById("page-clock").classList.remove("hidden");
-      document.getElementById("tab-bar").classList.remove("hidden");
-      updateButtonLabel();
-      loadCalendar(currentYear, currentMonth);
-      setInterval(updateButtonLabel, 60000);
-    }
-
+  
+    // 🟢 切換分頁
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -335,22 +329,7 @@
       document.querySelector(`.tab-button[onclick="switchPage('${page}')"]`).classList.add("active");
       if (page === "schedule") updateMonthShiftMarkers();
     }
-    async function showMainPages() {
-      const loading = document.getElementById("loading-screen");
-      loading.style.display = "flex"; // 顯示載入動畫
-      document.getElementById("login-page").classList.add("hidden");
-      document.getElementById("page-clock").classList.remove("hidden");
-      document.getElementById("tab-bar").classList.remove("hidden");
-    
-      try {
-        await updateButtonLabel(); // 等待班別與狀態載入
-        showUserInfo(localStorage.getItem("qoopio_email"));
-        loadCalendar(currentYear, currentMonth);
-      } finally {
-        // 🟢 載入完成後才顯示內容
-        loading.style.display = "none";
-      }
-    }
+  
     /* === 打卡按鈕狀態 === */
     async function updateButtonLabel() {
       const now = new Date();
@@ -358,52 +337,39 @@
       const btn = document.getElementById("clockInBtn");
       const email = localStorage.getItem("qoopio_email");
       if (!email) return;
-    
+  
       const stateKey = `qoopio_state_${email}`;
       const dateKey = `qoopio_date_${email}`;
       const savedState = localStorage.getItem(stateKey);
       const lastDate = localStorage.getItem(dateKey);
-    
-      // 🕛 檢查是否進入新的一天（凌晨 2:00 之後自動清除狀態）
       const todayStr = now.toISOString().split("T")[0];
+  
       if (lastDate && lastDate !== todayStr && totalMinutes >= 120) {
         localStorage.removeItem(stateKey);
         localStorage.setItem(dateKey, todayStr);
-        console.log("🧹 已清除昨日打卡狀態");
-      } else if (!lastDate) {
-        localStorage.setItem(dateKey, todayStr);
-      }
-    
-      // 🔍 查詢當日班別
-      const dateStr = todayStr;
+      } else if (!lastDate) localStorage.setItem(dateKey, todayStr);
+  
+      // 🔍 查詢當日班別（若 API 慢，畫面仍可先顯示）
       let shift = "";
       try {
-        const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${dateStr}`);
+        const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`);
         const data = await res.json();
         shift = (data.shift || "").trim();
-      } catch (e) {
-        console.warn("班別查詢失敗", e);
+      } catch {}
+  
+      // 💤 無班者顯示休假中
+      if (!shift || /假/.test(shift) || (!/中山/.test(shift) && !/景美/.test(shift))) {
+        return setButton("休假中", true, "#bbb");
       }
-    
-      // 💤 若為假期或無排班 → 灰階「休假中」
-      if (!shift || shift === "—" || /假/.test(shift) || (!/中山/.test(shift) && !/景美/.test(shift))) {
-        setButton("休假中", true, "#bbb");
-        return;
-      }
-    
-      // 🕒 時段邏輯
-      if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
-        if (savedState === "working") setButton("上班中", true, "#aaa");
-        else setButton("上班", false, "#111", "上班");
-      }
-      else if (totalMinutes >= 1080 || totalMinutes < 120) { // 18:00–02:00
-        if (savedState === "offwork") setButton("下班掰掰", true, "#aaa");
-        else setButton("下班", false, "#111", "下班");
-      }
-      else {
-        setButton("非打卡時間", true, "#bbb");
+  
+      // 🕒 按鈕邏輯
+      if (totalMinutes >= 120 && totalMinutes < 1080) {
+        savedState === "working" ? setButton("上班中", true, "#aaa") : setButton("上班", false, "#111", "上班");
+      } else {
+        savedState === "offwork" ? setButton("下班掰掰", true, "#aaa") : setButton("下班", false, "#111", "下班");
       }
     }
+  
     function setButton(text, disabled, color, type = "") {
       const btn = document.getElementById("clockInBtn");
       btn.textContent = text;
@@ -411,14 +377,13 @@
       btn.style.backgroundColor = color;
       btn.dataset.type = type;
     }
-
+  
     function submitClockIn() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
       const btn = document.getElementById("clockInBtn");
       const type = btn.dataset.type || "上班";
       const stateKey = `qoopio_state_${email}`;
-
       navigator.geolocation.getCurrentPosition(pos => {
         const data = { email, type, lat: pos.coords.latitude, lng: pos.coords.longitude };
         const name = userData[email]?.name || email;
@@ -426,37 +391,33 @@
         const status = document.getElementById("status");
         status.textContent = `✅ ${name} ${type}（${timeStr}）`;
         status.style.color = "green";
-
         if (type === "上班") {
           setButton("上班中", true, "#aaa");
           localStorage.setItem(stateKey, "working");
-        } else if (type === "下班") {
+        } else {
           setButton("下班掰掰", true, "#aaa");
           localStorage.setItem(stateKey, "offwork");
         }
-
-        fetch(scriptUrl, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+        fetch(scriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       }, () => alert("無法取得定位資訊"));
     }
-
+  
     function resetEmail() {
       const email = localStorage.getItem("qoopio_email");
       if (email) localStorage.removeItem(`qoopio_state_${email}`);
       localStorage.removeItem("qoopio_email");
       location.reload();
     }
-
+  
     /* === 月曆 === */
+    const monthCache = {}; // 🔹 加入快取避免重複載入
+  
     function loadCalendar(year, month) {
       const title = document.getElementById("calendar-title");
       const grid = document.getElementById("calendar-grid");
       grid.innerHTML = "";
       title.textContent = `${year} 年 ${month + 1} 月`;
-
+  
       const dayNames = ["一","二","三","四","五","六","日"];
       const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
       dayNames.forEach(d => {
@@ -465,10 +426,10 @@
         cell.className = "day-name";
         grid.appendChild(cell);
       });
-
+  
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("div"));
-
+  
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement("div");
         cell.className = "day-cell";
@@ -478,17 +439,15 @@
         dot.className = "day-indicator";
         cell.appendChild(num);
         cell.appendChild(dot);
-
+  
         const today = new Date();
-        if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear())
-          cell.classList.add("today");
-
+        if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add("today");
+  
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         cell.onclick = () => {
           if (selectedCell) selectedCell.classList.remove("selected");
           cell.classList.add("selected");
           selectedCell = cell;
-
           const box = document.getElementById("selected-shift");
           box.innerHTML = `<div class='loading-spinner'></div> 讀取中...`;
           loadAllShifts(dateStr);
@@ -497,64 +456,69 @@
       }
       updateMonthShiftMarkers();
     }
-
+  
     function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       loadCalendar(currentYear, currentMonth);
     }
-
-    function updateMonthShiftMarkers() {
+  
+    async function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const email = localStorage.getItem("qoopio_email");
-      fetch(`${scriptUrl}?month=${ym}&mode=summary&email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-          const zs = data.zhongshanDays || [];
-          const jm = data.jingmeiDays || [];
-          document.querySelectorAll(".day-cell").forEach(c => {
-            c.classList.remove("shift-zhongshan", "shift-jingmei");
-            const day = c.querySelector("div:first-child").textContent;
-            const full = `${ym}-${String(day).padStart(2, "0")}`;
-            if (zs.includes(full)) c.classList.add("shift-zhongshan");
-            if (jm.includes(full)) c.classList.add("shift-jingmei");
-          });
-        })
-        .catch(() => console.log("無法取得有班日"));
+      if (monthCache[ym]) return applyMarkers(monthCache[ym]);
+      try {
+        const res = await fetch(`${scriptUrl}?month=${ym}&mode=summary&email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        monthCache[ym] = data;
+        applyMarkers(data);
+      } catch (e) {
+        console.log("無法取得有班日", e);
+      }
     }
-
-    function loadAllShifts(dateStr) {
+  
+    function applyMarkers(data) {
+      const zs = data.zhongshanDays || [];
+      const jm = data.jingmeiDays || [];
+      document.querySelectorAll(".day-cell").forEach(c => {
+        c.classList.remove("shift-zhongshan", "shift-jingmei");
+        const day = c.querySelector("div:first-child").textContent;
+        const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+        const full = `${ym}-${String(day).padStart(2, "0")}`;
+        if (zs.includes(full)) c.classList.add("shift-zhongshan");
+        if (jm.includes(full)) c.classList.add("shift-jingmei");
+      });
+    }
+  
+    async function loadAllShifts(dateStr) {
       const target = dateStr || new Date().toISOString().split("T")[0];
-      return fetch(`${scriptUrl}?date=${target}&mode=all`)
-        .then(res => res.json())
-        .then(data => {
-          const shifts = data.shifts || [];
-          const box = document.getElementById("selected-shift");
-          if (!shifts.length) { box.innerHTML = "無班表資料"; return; }
-          const z = [], j = [], off = [];
-          shifts.forEach(s => {
-            const sh = s.shift || "";
-            if (/假/.test(sh)) off.push(s);
-            else if (/中山/.test(sh)) z.push(s);
-            else if (/景美/.test(sh)) j.push(s);
-          });
-          const order = ["櫃檯","彩妝","攝影","修圖"];
-          const sort = (a,b)=>{
-            const ai=order.findIndex(k=>a.shift.includes(k));
-            const bi=order.findIndex(k=>b.shift.includes(k));
-            return (ai===-1?99:ai)-(bi===-1?99:bi);
-          };
-          z.sort(sort); j.sort(sort);
-          let html = `${target}<br><br>`;
-          if (z.length) html += `<div class="group-title">[中山]</div>` + formatGroup(z);
-          if (j.length) html += `<div class="group-title">[景美]</div>` + formatGroup(j);
-          if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
-          box.innerHTML = html;
-        })
-        .catch(()=>document.getElementById("selected-shift").textContent="讀取失敗");
+      const box = document.getElementById("selected-shift");
+      try {
+        const res = await fetch(`${scriptUrl}?date=${target}&mode=all`);
+        const data = await res.json();
+        const shifts = data.shifts || [];
+        if (!shifts.length) return box.innerHTML = "無班表資料";
+        const z = [], j = [], off = [];
+        shifts.forEach(s => {
+          const sh = s.shift || "";
+          if (/假/.test(sh)) off.push(s);
+          else if (/中山/.test(sh)) z.push(s);
+          else if (/景美/.test(sh)) j.push(s);
+        });
+        const order = ["櫃檯","彩妝","攝影","修圖"];
+        const sort = (a,b)=>order.findIndex(k=>a.shift.includes(k))-order.findIndex(k=>b.shift.includes(k));
+        z.sort(sort); j.sort(sort);
+        let html = `${target}<br><br>`;
+        if (z.length) html += `<div class="group-title">[中山]</div>` + formatGroup(z);
+        if (j.length) html += `<div class="group-title">[景美]</div>` + formatGroup(j);
+        if (off.length) html += `<div class="group-title">[放假]</div>` + off.map(s=>`・${s.name}`).join("<br>");
+        box.innerHTML = html;
+      } catch {
+        box.textContent = "讀取失敗";
+      }
     }
-
+  
     function formatGroup(list) {
       const g = {};
       list.forEach(s => {
