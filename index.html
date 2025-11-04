@@ -273,8 +273,14 @@
       const email = document.getElementById("login-email").value.trim();
       if (!email) return alert("請輸入 Email");
       if (!userData[email]) return alert("查無此帳號");
+    
       localStorage.setItem("qoopio_email", email);
       showUserInfo(email);
+    
+      // 🟢 新增：重新顯示載入畫面
+      const loading = document.getElementById("loading-screen");
+      loading.classList.remove("hidden");
+    
       showMainPages();
     }
 
