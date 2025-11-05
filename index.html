@@ -457,17 +457,24 @@
       updateMonthShiftMarkers();
     }
   
-    function changeMonth(offset) {
+    async function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    
       loadCalendar(currentYear, currentMonth);
+      await updateMonthShiftMarkers(); // 🟢 自動刷新紅綠點
     }
-  
+    
     async function updateMonthShiftMarkers() {
       const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const email = localStorage.getItem("qoopio_email");
-      if (monthCache[ym]) return applyMarkers(monthCache[ym]);
+    
+      if (monthCache[ym]) {
+        applyMarkers(monthCache[ym]); // 🟢 套用快取
+        return;
+      }
+    
       try {
         const res = await fetch(`${scriptUrl}?month=${ym}&mode=summary&email=${encodeURIComponent(email)}`);
         const data = await res.json();
