@@ -359,22 +359,22 @@
       // 預設顯示讀取中
       setButton("讀取中...", true, "#bbb");
 
-      let shift = "";
-      try {
-        const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`);
-        const data = await res.json();
-        shift = (data.shift || "").trim();
-      } catch {
-        setButton("讀取失敗", true, "#bbb");
-        return;
-      }
-
-      if (!shift) return setButton("讀取失敗", true, "#bbb");
-
-      // 判斷是否休假
-      if (/假/.test(shift) || !/(中山|景美)/.test(shift)) {
-        return setButton("休假中", true, "#bbb");
-      }
+    let shift = "";
+    try {
+      const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`);
+      const data = await res.json();
+      shift = (data.shift || data.data?.shift || "").trim().replace(/\s+/g, "");
+    } catch (e) {
+      setButton("讀取失敗", true, "#bbb");
+      return;
+    }
+    
+    if (!shift) return setButton("讀取失敗", true, "#bbb");
+    
+    // ✅ 改進：更寬鬆條件
+    if (/假/.test(shift) || !/(中山|景美)/.test(shift)) {
+      return setButton("休假中", true, "#bbb");
+    }
 
       // 時段邏輯
       if (totalMinutes >= 120 && totalMinutes < 1080) {
