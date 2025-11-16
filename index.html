@@ -411,7 +411,11 @@
       <button onclick="resetEmail()" class="logout-btn">登出</button>
       <div id="status"></div>
     </div>
-
+    <section id="leave-latest-section">
+      <h3 class="section-title">最新 5 筆請假申請</h3>
+      <div id="leave-latest-list" class="leave-latest-list"></div>
+    </section>
+    
     <!-- 班表頁 -->
     <div id="page-schedule" class="hidden">
       <div class="calendar-view">
@@ -904,7 +908,43 @@
         msg.textContent = "❌ 送出失敗，請稍後再試";
       }
     }
-
+    async function loadLatestLeaves() {
+      const box = document.getElementById("leave-latest-list");
+      if (!box) return;
+    
+      try {
+        const res = await fetch(`${scriptUrl}?action=latestLeaves&limit=5`);
+        const data = await res.json();
+        const list = data.items || [];
+    
+        if (!list.length) {
+          box.innerHTML = `<p class="empty-text">目前尚無請假申請紀錄</p>`;
+          return;
+        }
+    
+        box.innerHTML = list.map(item => `
+          <div class="leave-card">
+            <div class="row-1">
+              <span class="name">${item.name || "(未填姓名)"}</span>
+              <span class="status-badge status-${item.status}">
+                ${item.status}
+              </span>
+            </div>
+            <div class="row-2">
+              <span>${item.date || "（未填日期）"}｜${item.leaveType || ""}</span>
+            </div>
+            <div class="row-3">
+              <span>申請：${item.appliedAt || ""}</span>
+              ${item.reviewedAt ? `<span>審核時間：${item.reviewedAt}</span>` : ""}
+            </div>
+            ${item.reviewNote ? `<div class="row-4 note">備註：${item.reviewNote}</div>` : ""}
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+        box.innerHTML = `<p class="error-text">載入請假紀錄失敗</p>`;
+      }
+    }
     /* === 紅字：請假待審核提示 === */
     async function updateLeavePendingBanner(email) {
       const banner = document.getElementById("leave-pending-banner");
