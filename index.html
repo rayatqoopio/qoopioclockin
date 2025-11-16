@@ -898,13 +898,13 @@
       document.getElementById("leave-form").classList.add("hidden");
     }
 
-    // 目前先提供「今日起算未來 31 天」供選擇
+    // 目前先提供「今日起算未來 60 天」供選擇
     function prepareLeaveDates() {
       const select = document.getElementById("leave-date-select");
       select.innerHTML = "";
-      const weekNames = ["日","一","二","三","四","五","六"];
+      const weekNames = ["一","二","三","四","五","六","日"];
       const today = new Date();
-      for (let i = 0; i < 31; i++) {
+      for (let i = 0; i < 60; i++) {
         const d = new Date(today);
         d.setDate(d.getDate() + i);
         const y = d.getFullYear();
