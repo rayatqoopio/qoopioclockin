@@ -607,78 +607,55 @@
 
     /* --- 打卡按鈕狀態 --- */
     async function updateButtonLabel() {
-      const now = new Date();
-      const todayStr = getLocalDateStr(now);
-      const totalMinutes = now.getHours() * 60 + now.getMinutes();
       const btn = document.getElementById("clockInBtn");
       const email = localStorage.getItem("qoopio_email");
-      if (!email || !btn) return;
-
-      const stateKey = `qoopio_state_${email}`;
-      const stateDateKey = `qoopio_state_date_${email}`;
-      const shiftKey = `qoopio_shift_${email}`;
-      const shiftDateKey = `qoopio_shift_date_${email}`;
-
-      let savedState = localStorage.getItem(stateKey);
-      const lastStateDate = localStorage.getItem(stateDateKey);
-      const lastShiftDate = localStorage.getItem(shiftDateKey);
-
-      // 換日清空狀態 / 班別快取
-      if (lastStateDate !== todayStr) {
-        localStorage.removeItem(stateKey);
-        savedState = null;
-        localStorage.setItem(stateDateKey, todayStr);
-      }
-      if (lastShiftDate !== todayStr) {
-        localStorage.removeItem(shiftKey);
-        localStorage.setItem(shiftDateKey, todayStr);
-      }
-
-      // 嘗試抓取「今日班別」
-      let shift = localStorage.getItem(shiftKey);
-      let shiftKnown = !!shift;
-
-      if (!shiftKnown) {
-        try {
-          const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`);
-          const data = await res.json();
-          shift = (data.shift || data.today || "").toString().trim();
-          shiftKnown = true;
-          localStorage.setItem(shiftKey, shift);
-        } catch (e) {
-          console.warn("班別查詢失敗，改用時間規則", e);
-          shiftKnown = false;
-        }
-      }
-
-      // 有班別且判定為休假（不含門市關鍵字）→ 顯示「休假中」
-      if (shiftKnown) {
-        const isOff =
-          !shift ||
-          shift === "—" ||
-          (/假/.test(shift) && !/中山/.test(shift) && !/景美/.test(shift));
-        if (isOff) {
-          setButton("休假中", true, "#bbb");
+      if (!btn || !email) return;
+    
+      // 先顯示「判定中…」
+      setButton("判定中…", true, "#aaa");
+    
+      const todayStr = getLocalDateStr(); // yyyy-MM-dd
+      try {
+        // 向後端詢問今天「伺服器端」打卡狀態
+        const res = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${todayStr}`);
+        const data = await res.json();
+    
+        if (data.ok !== false) {
+          // 以伺服器為準
+          if (data.state === "working") {
+            // 已上班、尚未下班
+            setButton("上班中", true, "#aaa");  // 鎖住，避免重複打上班
+            // 但把「打卡」行為切到「準備下班」
+            btn.dataset.type = "下班";
+          } else if (data.state === "offwork") {
+            // 已下班
+            setButton("下班掰掰", true, "#aaa");
+            btn.dataset.type = "上班";
+          } else {
+            // 今天尚無打卡紀錄 → 給「上班」按鈕
+            setButton("上班", false, "#111", "上班");
+          }
           return;
         }
+    
+        // 走到這裡代表 API 傳回 ok:false，走 fallback
+        fallbackByTime();
+      } catch (e) {
+        console.warn("clockState 查詢失敗，使用時間規則 fallback", e);
+        fallbackByTime();
       }
-
-      // 02:00–18:00 視為上班時段，其餘為下班時段
-      if (totalMinutes >= 0 && totalMinutes < 1600) { // 00:00–20:00
-        if (savedState === "working") {
-          setButton("上班中", true, "#aaa");
-        } else {
+    
+      function fallbackByTime() {
+        // 舊的時間帶判定（若伺服器不可用時才用）
+        const now = new Date();
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
+        if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
           setButton("上班", false, "#111", "上班");
-        }
-      } else { // 20:00–00:00
-        if (savedState === "offwork") {
-          setButton("下班掰掰", true, "#aaa");
         } else {
           setButton("下班", false, "#111", "下班");
         }
       }
     }
-
     function setButton(text, disabled, color, type = "") {
       const btn = document.getElementById("clockInBtn");
       if (!btn) return;
