@@ -362,21 +362,29 @@
       font-size: 0.95rem;
       color: #111;
     }
-    .status-審核中 {
-      color: #e67e22;
-      border-color: #e67e22;
-      background: #fdf1e3;
+    .status-bar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      min-width: 76px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      line-height: 1;
+      white-space: nowrap;
     }
-    .status-通過 {
-      color: #27ae60;
-      border-color: #27ae60;
-      background: #e6f6ec;
-    }
-    .status-退回 {
-      color: #c0392b;
-      border-color: #c0392b;
-      background: #fbe9e7;
-    }
+    
+    /* 狀態色 */
+    .status-審核中 { background: #e67e22; } /* 橘色 */
+    .status-通過   { background: #27ae60; } /* 綠色 */
+    .status-退回   { background: #c0392b; } /* 紅色 */
+    
+    /* 舊樣式移除或保留無效化（避免干擾）
+    .status-badge, .status-審核中, .status-通過, .status-退回 { ... }  */
     .leave-card .row-2,
     .leave-card .row-3,
     .leave-card .row-4 {
@@ -1050,6 +1058,86 @@
         }
       } catch (e) {
         console.error("leaveStatus 查詢失敗", e);
+      }
+    }
+
+    function formatLeaveDateDotWeek(dateStr) {
+      if (!dateStr) return '';
+      // 支援 yyyy-mm-dd / yyyy/mm/dd / yyyy.mm.dd
+      const norm = String(dateStr).trim().replace(/[.]/g, '-').replace(/\//g, '-');
+      const d = new Date(norm);
+      if (isNaN(d.getTime())) return dateStr; // 解析不到就原樣顯示
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const weekNames = ['一','二','三','四','五','六','日'];
+      return `${y}.${m}.${day}（${weekNames[d.getDay()]}）`;
+    }
+    
+    // 移除字串中的「台北標準時間」與 GMT 片段
+    function stripTaipeiTZ(s) {
+      if (!s) return '';
+      return String(s)
+        .replace(/GMT[^\(]*/g, '')           // 移除 GMT+0800 之類
+        .replace(/\(台北標準時間\)/g, '')      // 拿掉 (台北標準時間)
+        .replace(/\s+/g, ' ')                 // 多餘空白壓成單一空白
+        .trim();
+    }
+
+    async function loadLeaveHistory(email) {
+      const box = document.getElementById("leave-history");
+      if (!box) return;
+      const realEmail = email || localStorage.getItem("qoopio_email");
+      if (!realEmail) {
+        box.textContent = "請先登入";
+        return;
+      }
+    
+      box.textContent = "載入中...";
+    
+      try {
+        const res = await fetch(`${scriptUrl}?action=leaveHistory&email=${encodeURIComponent(realEmail)}&limit=5`);
+        const data = await res.json();
+        const list = data.items || [];
+    
+        if (!list.length) {
+          box.innerHTML = `<p class="leave-history-empty">目前沒有請假紀錄</p>`;
+          return;
+        }
+    
+        box.innerHTML = list.map(item => {
+          // 正規化狀態字（把「審核中...」→「審核中」）
+          let status = (item.status || "審核中").replace(/\.+$/, "");
+          if (status === "已核准") status = "通過"; // 若後端哪天改詞，這裡也支援
+    
+          const statusClass = `status-${status}`;
+          const leaveDateText = formatLeaveDateDotWeek(item.date || "");     // yyyy.mm.dd（星期X）
+          const appliedAt = stripTaipeiTZ(item.appliedAt || "");             // 拿掉台北標準時間
+          const reviewedAt = stripTaipeiTZ(item.reviewedAt || "");           // 同上
+          const leaveType = item.leaveType || "";
+          const reason = item.reason ? `理由：${item.reason}` : "";
+          const note = item.reviewNote ? `審核備註：${item.reviewNote}` : "";
+    
+          return `
+            <div class="leave-card">
+              <div class="row-1" style="gap:.6rem;">
+                <span class="title">[${leaveType || "-"}] ${leaveDateText || ""}</span>
+                <span class="status-bar ${statusClass}">${status}</span>
+              </div>
+              <div class="row-2">申請時間：${appliedAt || "—"}</div>
+              ${reason ? `<div class="row-3">${reason}</div>` : ""}
+              ${(reviewedAt || note) ? `
+                <div class="row-4">
+                  ${reviewedAt ? `審核時間：${reviewedAt}<br>` : ""}
+                  ${note ? note : ""}
+                </div>` : ""
+              }
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error(err);
+        box.innerHTML = `<p class="leave-history-error">載入請假紀錄失敗</p>`;
       }
     }
   </script>
