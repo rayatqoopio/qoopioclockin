@@ -391,7 +391,6 @@
     .leave-card .row-4 {
       color: #999;
     }
-
   </style>
 </head>
 <body>
@@ -483,7 +482,8 @@
   </div>
 
   <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec"; // ← 記得換成你部署後的 URL
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
+
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let userData = {};
@@ -689,39 +689,43 @@
       const stateKey = `qoopio_state_${email}`;
       const stateDateKey = `qoopio_state_date_${email}`;
 
-      navigator.geolocation.getCurrentPosition(pos => {
-        const data = {
-          email,
-          type,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
-        const name = userData[email]?.name || email;
-        const timeStr = new Date().toLocaleTimeString();
-        const status = document.getElementById("status");
-        status.textContent = `✅ ${name} ${type}（${timeStr}）`;
-        status.style.color = "green";
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const name = userData[email]?.name || email;
+          const timeStr = new Date().toLocaleTimeString();
+          const status = document.getElementById("status");
 
-        if (type === "上班") {
-          setButton("上班中", true, "#aaa");
-          localStorage.setItem(stateKey, "working");
-        } else if (type === "下班") {
-          setButton("下班掰掰", true, "#aaa");
-          localStorage.setItem(stateKey, "offwork");
+          status.textContent = `✅ ${name} ${type}（${timeStr}）`;
+          status.style.color = "green";
+
+          if (type === "上班") {
+            setButton("上班中", true, "#aaa");
+            localStorage.setItem(stateKey, "working");
+          } else if (type === "下班") {
+            setButton("下班掰掰", true, "#aaa");
+            localStorage.setItem(stateKey, "offwork");
+          }
+          localStorage.setItem(stateDateKey, getLocalDateStr());
+
+          // 寫入打卡紀錄到 Apps Script（B 表）
+          fetch(scriptUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "clockIn",
+              email: email,
+              type: type,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude
+            })
+          }).catch(err => {
+            console.error("clockIn error", err);
+          });
+        },
+        () => {
+          alert("無法取得定位資訊");
         }
-        localStorage.setItem(stateDateKey, getLocalDateStr());
-
-    fetch(scriptUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "clockIn",
-        email: email,
-        type: type,
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      })
-      }, () => alert("無法取得定位資訊"));
+      );
     }
 
     function resetEmail() {
