@@ -481,22 +481,27 @@
     <button class="tab-button" data-page="schedule" onclick="switchPage('schedule')">班表</button>
   </div>
 
+  <!-- ↓↓↓ 第 2 部分：完整 JS 將會貼在這個 <script> 之後 ↓↓↓ -->
   <script>
+    // ✅ 你的 Apps Script Web App 發佈的網址（/exec）
     const scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
 
+    // 月曆狀態
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
-    let userData = {};
     let selectedCell = null;
     const monthCache = {}; // 月曆紅綠點快取
 
-    // 有「請假待審核」提示權限的 email
+    // 使用者表（由 user.json 載入）
+    let userData = {};
+
+    // 顯示「請假待審核提示」的帳號
     const LEAVE_PENDING_USERS = [
       "ray.at.qoopio@gmail.com",
       "lilian6337@gmail.com",
     ];
 
-    /* === 小工具：本地日期字串 YYYY-MM-DD === */
+    /* --- 小工具：日期字串 --- */
     function getLocalDateStr(d = new Date()) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -504,7 +509,7 @@
       return `${y}-${m}-${day}`;
     }
 
-    /* === 初始化 === */
+    /* --- 啟動：載入使用者清單後決定是否顯示登入頁 --- */
     fetch("user.json")
       .then(res => res.json())
       .then(json => { userData = json; initLogin(); })
@@ -540,7 +545,7 @@
       document.getElementById("leave-name").textContent = name;
     }
 
-    // 🟣 主畫面
+    /* --- 進入主畫面：預設顯示打卡頁、載入月曆 / 請假資訊 --- */
     async function showMainPages() {
       const loading = document.getElementById("loading-screen");
       loading.classList.remove("hidden");
@@ -551,7 +556,7 @@
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("tab-bar").classList.remove("hidden");
 
-      // 預設 Tab 高亮：打卡
+      // Tab 高亮：打卡
       document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
       document.querySelector('.tab-button[data-page="clock"]').classList.add("active");
 
@@ -568,7 +573,7 @@
         console.warn("載入中發生錯誤", e);
       } finally {
         loading.classList.add("hidden");
-        // 每分鐘重算打卡按鈕與請假待審核提示
+        // 每分鐘更新一次打卡按鈕與待審核提示
         setInterval(() => {
           updateButtonLabel();
           const emailNow = localStorage.getItem("qoopio_email");
@@ -577,7 +582,7 @@
       }
     }
 
-    /* === Tab 切換 === */
+    /* --- Tab 切換 --- */
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -596,7 +601,7 @@
       }
     }
 
-    /* === 打卡按鈕狀態 === */
+    /* --- 打卡按鈕狀態 --- */
     async function updateButtonLabel() {
       const now = new Date();
       const todayStr = getLocalDateStr(now);
@@ -614,7 +619,7 @@
       const lastStateDate = localStorage.getItem(stateDateKey);
       const lastShiftDate = localStorage.getItem(shiftDateKey);
 
-      // ✅ 換日邏輯
+      // 換日清空狀態 / 班別快取
       if (lastStateDate !== todayStr) {
         localStorage.removeItem(stateKey);
         savedState = null;
@@ -625,7 +630,7 @@
         localStorage.setItem(shiftDateKey, todayStr);
       }
 
-      // 🔍 本地快取班別
+      // 嘗試抓取「今日班別」
       let shift = localStorage.getItem(shiftKey);
       let shiftKnown = !!shift;
 
@@ -642,20 +647,19 @@
         }
       }
 
-      // 💤 有成功取得班別且為「休假」才顯示休假中
+      // 有班別且判定為休假（不含門市關鍵字）→ 顯示「休假中」
       if (shiftKnown) {
         const isOff =
           !shift ||
           shift === "—" ||
           (/假/.test(shift) && !/中山/.test(shift) && !/景美/.test(shift));
-
         if (isOff) {
           setButton("休假中", true, "#bbb");
           return;
         }
       }
 
-      // 🕒 按鈕邏輯：02:00–18:00 視為上班時段，其餘為下班時段
+      // 02:00–18:00 視為上班時段，其餘為下班時段
       if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
         if (savedState === "working") {
           setButton("上班中", true, "#aaa");
@@ -680,7 +684,7 @@
       btn.dataset.type = type;
     }
 
-    /* === 打卡送出 === */
+    /* --- 打卡送出 --- */
     function submitClockIn() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
@@ -707,17 +711,20 @@
           }
           localStorage.setItem(stateDateKey, getLocalDateStr());
 
-          // 寫入打卡紀錄到 Apps Script（B 表）
+          // ✅ 送到 Apps Script：使用 no-cors + text/plain，避免 CORS 被擋
+          const payload = {
+            action: "clockIn",
+            email,
+            type,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          };
+
           fetch(scriptUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "clockIn",
-              email: email,
-              type: type,
-              lat: pos.coords.latitude,
-              lng: pos.coords.longitude
-            })
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
           }).catch(err => {
             console.error("clockIn error", err);
           });
@@ -740,7 +747,7 @@
       location.reload();
     }
 
-    /* === 月曆 === */
+    /* --- 月曆 --- */
     function loadCalendar(year, month) {
       const title = document.getElementById("calendar-title");
       const grid = document.getElementById("calendar-grid");
@@ -750,6 +757,7 @@
       const dayNames = ["一","二","三","四","五","六","日"];
       const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
 
+      // 週標題
       dayNames.forEach(d => {
         const cell = document.createElement("div");
         cell.textContent = d;
@@ -882,7 +890,7 @@
       return Object.keys(g).map(r => `${store}${r}：${g[r].join("、")}`).join("<br>");
     }
 
-    /* === 請假頁：表單 === */
+    /* --- 請假：表單與送出 --- */
     function openLeaveForm() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) {
@@ -898,11 +906,11 @@
       document.getElementById("leave-form").classList.add("hidden");
     }
 
-    // 目前先提供「今日起算未來 60 天」供選擇
+    // 提供未來 60 天日期選擇
     function prepareLeaveDates() {
       const select = document.getElementById("leave-date-select");
       select.innerHTML = "";
-      const weekNames = ["一","二","三","四","五","六","日"];
+      const weekNames = ["日","一","二","三","四","五","六"];
       const today = new Date();
       for (let i = 0; i < 60; i++) {
         const d = new Date(today);
@@ -944,10 +952,11 @@
       };
 
       try {
+        // ✅ 同樣使用 no-cors + text/plain 避免 CORS
         await fetch(scriptUrl, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload),
         });
         msg.textContent = "✅ 已送出請假申請，等待審核";
@@ -967,7 +976,7 @@
       }
     }
 
-    /* === 載入個人請假紀錄（最近 5 筆） === */
+    /* --- 載入個人請假紀錄（最近 5 筆） --- */
     async function loadLeaveHistory(email) {
       const box = document.getElementById("leave-history");
       if (!box) return;
@@ -1024,12 +1033,12 @@
       }
     }
 
-    /* === 紅字：請假待審核提示 === */
+    /* --- 紅字：請假待審核提示 --- */
     async function updateLeavePendingBanner(email) {
       const banner = document.getElementById("leave-pending-banner");
       if (!banner || !email) return;
 
-      // 只有特定帳號才顯示提示
+      // 僅指定帳號顯示提示
       if (!LEAVE_PENDING_USERS.includes(email)) {
         banner.textContent = "";
         return;
