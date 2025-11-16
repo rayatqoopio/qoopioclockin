@@ -362,12 +362,6 @@
       font-size: 0.95rem;
       color: #111;
     }
-    .status-badge {
-      font-size: 0.8rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      border: 1px solid transparent;
-    }
     .status-審核中 {
       color: #e67e22;
       border-color: #e67e22;
@@ -662,13 +656,13 @@
       }
 
       // 02:00–18:00 視為上班時段，其餘為下班時段
-      if (totalMinutes >= 120 && totalMinutes < 1080) { // 02:00–18:00
+      if (totalMinutes >= 0 && totalMinutes < 1600) { // 00:00–20:00
         if (savedState === "working") {
           setButton("上班中", true, "#aaa");
         } else {
           setButton("上班", false, "#111", "上班");
         }
-      } else { // 18:00–隔日 02:00
+      } else { // 20:00–00:00
         if (savedState === "offwork") {
           setButton("下班掰掰", true, "#aaa");
         } else {
