@@ -96,7 +96,11 @@
       justify-content: space-around;
       align-items: center;
       border-top: 2px solid #222;
-      z-index: 999;
+      z-index: 9999;      /* 加大 z-index */
+      pointer-events: auto;
+    }
+    body {
+      overscroll-behavior-y: none;  /* 🔥 避免 iOS 錨點跟著一起滾動 */
     }
     .tab-button {
       flex: 1;
@@ -883,6 +887,7 @@
       try {
         await fetch(scriptUrl, {
           method: "POST",
+          mode: "no-cors",   // 🔥 必加！
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
