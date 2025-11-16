@@ -711,12 +711,16 @@
         }
         localStorage.setItem(stateDateKey, getLocalDateStr());
 
-        fetch(scriptUrl, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+    fetch(scriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "clockIn",
+        email: email,
+        type: type,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      })
       }, () => alert("無法取得定位資訊"));
     }
 
