@@ -561,33 +561,42 @@
       }
     }
 
-    /* --- 打卡按鈕狀態 --- */
-    async function updateButtonLabel() {
-      var btn = document.getElementById("clockInBtn");
-      var email = localStorage.getItem("qoopio_email");
-      if (!btn || !email) return;
-
-      setButton("讀取中…", true, "#aaa");
-
-      var todayStr = getLocalDateStr();
-      try {
-        var res = await fetch(scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr);
-        var data = await res.json();
-
-        if (data.ok !== false) {
-          if (data.state === "working") {
-            setButton("上班中", true, "#aaa"); btn.dataset.type = "下班";
-          } else if (data.state === "offwork") {
-            setButton("下班掰掰", true, "#aaa"); btn.dataset.type = "上班";
-          } else {
-            setButton("上班", false, "#111", "上班");
+      /* --- 打卡按鈕狀態（無讀取中文字；working=顯示「下班」可點）--- */
+      async function updateButtonLabel() {
+        var btn = document.getElementById("clockInBtn");
+        var email = localStorage.getItem("qoopio_email");
+        if (!btn || !email) return;
+      
+        var statusEl = document.getElementById("status");
+        var todayStr = getLocalDateStr();
+      
+        try {
+          var res = await fetch(
+            scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr,
+            { cache: "no-store" }
+          );
+          var data = await res.json();
+      
+          if (data && data.ok !== false) {
+            if (data.state === "working") {
+              // 上班中 → 顯示「下班」（可點），type=下班；狀態文字顯示上班中
+              if (statusEl) { statusEl.textContent = "上班中"; statusEl.style.color = "#333"; }
+              setButton("下班", false, "#111", "下班");
+            } else if (data.state === "offwork") {
+              // 已下班 → 鎖住，type=上班
+              if (statusEl) { statusEl.textContent = "今天已下班"; statusEl.style.color = "#27ae60"; }
+              setButton("下班掰掰", true, "#aaa", "上班");
+            } else {
+              // idle → 顯示「上班」（可點）
+              if (statusEl) { statusEl.textContent = ""; statusEl.style.color = "#333"; }
+              setButton("上班", false, "#111", "上班");
+            }
           }
-          return;
+          // data.ok === false 時不動 UI
+        } catch (e) {
+          console.warn("clockState 失敗：保持現況", e);
+          // 不動 UI；如果你想要時間規則 fallback，這裡再呼叫 fallbackByTime() 即可
         }
-        fallbackByTime();
-      } catch (e) {
-        console.warn("clockState 查詢失敗，使用時間規則 fallback", e);
-        fallbackByTime();
       }
 
       function fallbackByTime() {
