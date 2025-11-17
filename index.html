@@ -1181,30 +1181,30 @@
     function drawGacha(){
       const email = localStorage.getItem("qoopio_email");
       if (!email) return;
-      const ledger = readTokenLedger(email);
+    
       const tokens = calcTokenCount(email);
-      if (tokens < 1){ alert("代幣不足"); return; }
-
-      const d = new Date(clean);
-      if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
-      // 無法判讀 → 回傳中午後 1 秒（不發代幣）
-      return `${dateStr}T12:00:01`;
-    }
+      if (tokens < 1){
+        alert("代幣不足");
+        return;
+      }
+    
       // 消耗一枚代幣（移除最早一天）
+      const ledger = readTokenLedger(email);
       const days = Object.keys(ledger).sort();
       if (days.length){
         delete ledger[days[0]];
         writeTokenLedger(email, ledger);
       }
-
-      const win = Math.random() < 0.01; // 1%
+    
+      // 1% 中獎
+      const win = Math.random() < 0.01;
       const log = readGachaLog(email);
       log.push({ time: new Date().toISOString(), result: win ? 'win' : 'lose' });
       writeGachaLog(email, log);
-
+    
       refreshCoinUi();
       switchGachaTab('gacha');
-
+    
       setTimeout(()=>{ alert(win ? "截圖去找Ray領獎" : "哈哈沒中啦"); }, 10);
     }
   </script>
