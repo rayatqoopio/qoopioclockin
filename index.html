@@ -85,7 +85,7 @@
     .tab-button.active { background-color: #222; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 12vh; }
+    #page-schedule { padding-top: 9vh; }
     .calendar-header {
       padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
       font-size: 1.2rem; font-weight: bold;
@@ -138,10 +138,25 @@
       padding-bottom: calc(70px + 72px + env(safe-area-inset-bottom, 0px));
     }
     .leave-btn-main {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px)); z-index: 9998; display: none;
-      width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
+      z-index: 9998;
+      display: block;          /* ← 改這裡 */
+      width: calc(100% - 24px);
+      max-width: 500px;
+      padding: 0.9rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: none;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
+    
+    /* 保持用 .hidden 控制隱藏就好 */
     .leave-btn-main.hidden { display: none; }
     
     #leave-form { padding: 0.8rem 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
@@ -494,8 +509,13 @@
       // 請假頁底部主按鈕
       var leaveBtnMain = document.querySelector('.leave-btn-main');
       if (leaveBtnMain) {
-        if (page !== 'leave') leaveBtnMain.classList.add('hidden');
-        else leaveBtnMain.classList.remove('hidden');
+        if (page !== 'leave') {
+          leaveBtnMain.classList.add('hidden');
+          leaveBtnMain.style.display = 'none';
+        } else {
+          leaveBtnMain.classList.remove('hidden');
+          leaveBtnMain.style.display = 'block'; // ← 多這行也可
+        }
       }
 
       if (page === "schedule") {
