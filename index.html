@@ -79,7 +79,7 @@
     .tab-button.active { background-color: #222; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 9vh; }
+    #page-schedule { padding-top: 12vh; }
     .calendar-header {
       padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
       font-size: 1.2rem; font-weight: bold;
@@ -361,14 +361,6 @@
     // ✅ Apps Script Web App（/exec）
     var scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
 
-    // --- 打卡按鈕輪詢與快取控制 ---
-    var currentPage = "clock";
-    var btnStateCache = { state: null, updatedAt: 0, label: "" };
-    var btnFetchLock = false;
-    var btnPollTimer = null;
-    var BTN_POLL_MS = 180000;     // 每 3 分鐘輪詢一次
-    var BTN_MAX_STALE_MS = 300000; // 超過 5 分鐘沒成功取到才強制改畫面
-    
     // 月曆狀態
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
@@ -483,7 +475,6 @@
       document.querySelector('.tab-button[data-page="clock"]').classList.add("active");
 
       var email = localStorage.getItem("qoopio_email");
-      var _b = document.getElementById("clockInBtn");
 
       try {
         await Promise.all([
@@ -511,7 +502,6 @@
 
     /* --- Tab 切換 --- */
     function switchPage(page) {
-      currentPage = page; // 追蹤目前頁面（之後若要做較慢輪詢也會用到）
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("page-leave").classList.add("hidden");
@@ -538,68 +528,52 @@
       }
     }
 
-    function setButton(text, disabled, color, type) {
-      var btn = document.getElementById("clockInBtn");
-      if (!btn) return;
-      if (text != null) btn.textContent = text;
-      if (disabled != null) btn.disabled = !!disabled;
-      if (color) btn.style.backgroundColor = color;
-      btn.dataset.type = type || btn.dataset.type || "";
-    }
-    
+    /* --- 打卡按鈕狀態 --- */
     async function updateButtonLabel() {
       var btn = document.getElementById("clockInBtn");
       var email = localStorage.getItem("qoopio_email");
       if (!btn || !email) return;
-    
-      // 不顯示「讀取中」、不動 UI，只在有結論時才更新
-      if (btnFetchLock) return;
-      btnFetchLock = true;
-    
+
+      setButton("讀取中…", true, "#aaa");
+
       var todayStr = getLocalDateStr();
-      var decided = null;
-    
-      // 先問 clockState（3 秒超時）
-      var controller = new AbortController();
-      var t = setTimeout(function(){ controller.abort(); }, 3000);
       try {
-        var res = await fetch(
-          scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr,
-          { signal: controller.signal, cache: "no-store" }
-        );
-        clearTimeout(t);
+        var res = await fetch(scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr);
         var data = await res.json();
-    
-        if (data && data.ok !== false) {
-          if (data.state === "working") decided = "working";
-          else if (data.state === "offwork") decided = "offwork";
-          else decided = null; // idle 交由紀錄推論
+
+        if (data.ok !== false) {
+          if (data.state === "working") {
+            setButton("上班中", true, "#aaa"); btn.dataset.type = "下班";
+          } else if (data.state === "offwork") {
+            setButton("下班掰掰", true, "#aaa"); btn.dataset.type = "上班";
+          } else {
+            setButton("上班", false, "#111", "上班");
+          }
+          return;
         }
-      } catch(e) {
-        clearTimeout(t);
+        fallbackByTime();
+      } catch (e) {
+        console.warn("clockState 查詢失敗，使用時間規則 fallback", e);
+        fallbackByTime();
       }
-    
-      // 若還沒結論，用「當日打卡紀錄」推論（最後一筆）
-      if (!decided) {
-        try { decided = await inferStateFromLogs(email, todayStr); } catch(_) {}
-      }
-    
-      // 有結論才動 UI；沒有就維持原樣（但保底把 type 校正成「上班」）
-      if (decided === "working") {
-        setButton("上班中", true, "#aaa", "下班");
-        btnStateCache = { state: "working", updatedAt: Date.now(), label: "上班中" };
-      } else if (decided === "offwork") {
-        setButton("下班掰掰", true, "#aaa", "上班");
-        btnStateCache = { state: "offwork", updatedAt: Date.now(), label: "下班掰掰" };
-      } else {
-        // idle 或無法判斷：不改文字與 disabled，只把 type 校正到「上班」
-        if (!btn.dataset.type || btn.dataset.type === "讀取中") {
-          setButton(btn.textContent, false, null, "上班");
-          btnStateCache = { state: "idle", updatedAt: Date.now(), label: btn.textContent };
+
+      function fallbackByTime() {
+        var now = new Date();
+        var totalMinutes = now.getHours() * 60 + now.getMinutes();
+        if (totalMinutes >= 120 && totalMinutes < 1080) {
+          setButton("上班", false, "#111", "上班");
+        } else {
+          setButton("下班", false, "#111", "下班");
         }
       }
-    
-      btnFetchLock = false;
+    }
+    function setButton(text, disabled, color, type) {
+      var btn = document.getElementById("clockInBtn");
+      if (!btn) return;
+      btn.textContent = text;
+      btn.disabled = !!disabled;
+      btn.style.backgroundColor = color;
+      btn.dataset.type = type || "";
     }
 
     /* --- 打卡送出 + 12:00 前代幣 --- */
@@ -608,12 +582,6 @@
       if (!email) return alert("請先登入！");
       var btn = document.getElementById("clockInBtn");
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
-      var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
-      // ✨ 保障：若 type 非上班/下班（例如不小心變成「讀取中」），強制改回上班
-      if (type !== "上班" && type !== "下班") {
-        type = "上班";
-        setButton(btn.textContent, false, null, "上班");
-      }
 
       navigator.geolocation.getCurrentPosition(
         function (pos) {
@@ -1085,44 +1053,6 @@
       var d = new Date(clean);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
       return dateStr + "T12:00:01";
-    }
-
-    async function inferStateFromLogs(email, dateStr){
-      // 先看 clockLogs
-      try{
-        var r = await fetch(scriptUrl + "?action=clockLogs&email=" + encodeURIComponent(email) + "&date=" + dateStr);
-        var j = await r.json();
-        if (Array.isArray(j.logs) && j.logs.length){
-          var arr = j.logs
-            .filter(function(x){ return x && x.time && x.type; })
-            .map(function(x){ return { t: normalizeToISO(dateStr, String(x.time)), type: String(x.type) }; })
-            .sort(function(a,b){ return a.t.localeCompare(b.t); });
-          var last = arr[arr.length - 1];
-          if (last){
-            if (/下班/.test(last.type)) return "offwork";
-            if (/上班/.test(last.type)) return "working";
-          }
-        }
-      }catch(e){}
-    
-      // 再看 clockHistory
-      try{
-        var r2 = await fetch(scriptUrl + "?action=clockHistory&email=" + encodeURIComponent(email) + "&date=" + dateStr);
-        var j2 = await r2.json();
-        if (Array.isArray(j2.items) && j2.items.length){
-          var arr2 = j2.items
-            .filter(function(x){ return x && x.time && x.type; })
-            .map(function(x){ return { t: normalizeToISO(dateStr, String(x.time)), type: String(x.type) }; })
-            .sort(function(a,b){ return a.t.localeCompare(b.t); });
-          var last2 = arr2[arr2.length - 1];
-          if (last2){
-            if (/下班/.test(last2.type)) return "offwork";
-            if (/上班/.test(last2.type)) return "working";
-          }
-        }
-      }catch(e){}
-    
-      return null; // 推不出來就交回給 UI 維持原狀（預設可打「上班」）
     }
   </script>
 </body>
