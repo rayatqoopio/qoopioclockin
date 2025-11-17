@@ -424,30 +424,24 @@
       </svg>
       <span class="coin-count" id="coin-count">0</span>
     </div>
-
-  <div class="gacha-btn" id="gachaBtn" title="扭蛋機">
-    <!-- 極簡黑白扭蛋機：符合全站黑白質感 -->
-    <svg class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
-      <g fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <!-- 圓頂 -->
-        <path d="M12 30a20 20 0 1 1 40 0" />
-        <!-- 機身外框 -->
-        <rect x="14" y="30" width="36" height="28" rx="6" />
-        <!-- 出球口 -->
-        <rect x="24" y="44" width="16" height="8" rx="2" />
-        <!-- 投幣口 -->
-        <rect x="28" y="34" width="8" height="4" rx="1" />
-        <!-- 透明艙內膠囊 -->
-        <circle cx="24" cy="28" r="3" />
-        <circle cx="40" cy="26" r="3" />
-        <circle cx="32" cy="22" r="3" />
-        <!-- 底座 -->
-        <path d="M18 58h28" />
-      </g>
-    </svg>
+  
+    <div class="gacha-btn" id="gachaBtn" title="扭蛋機">
+      <svg class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
+        <g fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 30a20 20 0 1 1 40 0" />
+          <rect x="14" y="30" width="36" height="28" rx="6" />
+          <rect x="24" y="44" width="16" height="8" rx="2" />
+          <rect x="28" y="34" width="8" height="4" rx="1" />
+          <circle cx="24" cy="28" r="3" />
+          <circle cx="40" cy="26" r="3" />
+          <circle cx="32" cy="22" r="3" />
+          <path d="M18 58h28" />
+        </g>
+      </svg>
+    </div>
   </div>
-
-  <!-- ✅ 扭蛋機 Modal -->
+  
+  <!-- ✅ 扭蛋機 Modal（請放在 hud-right 外面） -->
   <div class="modal" id="gacha-modal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -593,7 +587,7 @@
       }
 
       // 扭蛋機入口
-      document.getElementById("gacha-btn").onclick = openGacha;
+      document.getElementById("gachaBtn").onclick = openGacha;
     }
 
     /* --- Tab 切換（保證頁面互不干擾） --- */
@@ -1039,14 +1033,13 @@
       if (type !== "上班") return;
       const email = localStorage.getItem("qoopio_email");
       if (!email) return;
-      const h = now.getHours();
-      const m = now.getMinutes();
-      const beforeNoon = (h < 12) || (h === 12 && m === 0 && now.getSeconds() === 0);
+    
+      const beforeNoon = now.getHours() < 12; // 改成單純午前
       if (!beforeNoon) return;
-
+    
       const today = getLocalDateStr(now);
       const ledger = readTokenLedger(email);
-      if (ledger[today]) return; // 今日已領
+      if (ledger[today]) return;
       ledger[today] = true;
       writeTokenLedger(email, ledger);
       refreshCoinUi();
@@ -1103,14 +1096,8 @@
         }
       }
     }
-    function drawGacha(){
-      const email = localStorage.getItem("qoopio_email");
-      if (!email) return;
-      const ledger = readTokenLedger(email);
-      const tokens = calcTokenCount(email);
-      if (tokens < 1){ alert("代幣不足"); return; }
 
-      /* === 代幣補發：從指定日期起，依每日第一筆「上班」是否 <= 12:00 補發 === */
+    // === 回補代幣：從指定日期起，依「當日第一筆上班是否 <= 12:00」補發 ===
     function backfillFlagKey(email, start){ return `qoopio_backfill_${email}_${start}`; }
     
     async function backfillTokensFrom(startDateStr){
@@ -1126,7 +1113,6 @@
       for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
         const ymd = getLocalDateStr(d);
         if (ledger[ymd]) continue; // 已領過就跳過
-    
         try {
           const firstInISO = await getFirstClockInTime(email, ymd);
           if (!firstInISO) continue;
@@ -1142,9 +1128,9 @@
       refreshCoinUi();
     }
     
-    /* 嘗試多種後端回傳格式 / action 名稱，拿到「第一筆上班時間」 */
+    /* 從後端取得「第一筆上班時間」；相容多種 action / 欄位名稱 */
     async function getFirstClockInTime(email, dateStr){
-      // 試 1：clockState 可能含 firstIn / firstInTime / inAt
+      // 1) clockState
       try{
         const r = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${dateStr}`);
         const j = await r.json();
@@ -1152,7 +1138,7 @@
         if (t) return normalizeToISO(dateStr, String(t));
       }catch(e){}
     
-      // 試 2：clockLogs（單日紀錄陣列），取最早的「上班」
+      // 2) clockLogs
       try{
         const r2 = await fetch(`${scriptUrl}?action=clockLogs&email=${encodeURIComponent(email)}&date=${dateStr}`);
         const j2 = await r2.json();
@@ -1165,7 +1151,7 @@
         }
       }catch(e){}
     
-      // 試 3：clockHistory（若你的後端用這個名字）
+      // 3) clockHistory
       try{
         const r3 = await fetch(`${scriptUrl}?action=clockHistory&email=${encodeURIComponent(email)}&date=${dateStr}`);
         const j3 = await r3.json();
@@ -1181,12 +1167,24 @@
       return null;
     }
     
-    /* 把各種時間字串正規化成 ISO（不足則拼上 dateStr） */
     function normalizeToISO(dateStr, timeStr){
       const clean = stripTaipeiTZ(timeStr).replace(/\//g,'-').trim();
       if (/^\d{2}:\d{2}(:\d{2})?$/.test(clean)){
         return `${dateStr}T${clean.length===5 ? clean+":00" : clean}`;
       }
+      const d = new Date(clean);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
+      // 無法判讀 → 避免誤發，視為 12:00:01
+      return `${dateStr}T12:00:01`;
+    }
+    
+    function drawGacha(){
+      const email = localStorage.getItem("qoopio_email");
+      if (!email) return;
+      const ledger = readTokenLedger(email);
+      const tokens = calcTokenCount(email);
+      if (tokens < 1){ alert("代幣不足"); return; }
+
       const d = new Date(clean);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
       // 無法判讀 → 回傳中午後 1 秒（不發代幣）
