@@ -50,7 +50,7 @@
 
     /* ✅ 打卡頁位置微調（保留原風格） */
     #page-clock {
-      padding-top: 10vh;
+      padding-top: 14vh;
       position: relative;
       z-index: 1;
       text-align: center;
@@ -121,6 +121,7 @@
 
     /* ✅ 月曆 */
     .calendar-header {
+      padding-top: 4vh;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -259,11 +260,8 @@
       text-align: left;
       padding-top: 16vh;
     }
-    #page-leave h3 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
     .leave-btn-main {
+      padding-top: 16vh;
       display: block;
       width: 100%;
       padding: 0.9rem;
@@ -675,13 +673,17 @@
       const email = localStorage.getItem("qoopio_email");
 
       try {
-        await Promise.all([
-          updateButtonLabel(),
-          new Promise(r => { loadCalendar(currentYear, currentMonth); r(); }),
-          updateLeavePendingBanner(email),
-          loadLeaveHistory(email),
-          refreshCoinUi()
-        ]);
+      await Promise.all([
+        updateButtonLabel(),
+        new Promise(r => { loadCalendar(currentYear, currentMonth); r(); }),
+        updateLeavePendingBanner(email),
+        loadLeaveHistory(email),
+        refreshCoinUi()
+      ]);
+      
+      // ✅ 登入後自動回補（只跑一次，避免重複）
+      await backfillTokensFrom("2025-11-10");
+        
       } catch (e) {
         console.warn("載入中發生錯誤", e);
       } finally {
@@ -1204,6 +1206,88 @@
       const tokens = calcTokenCount(email);
       if (tokens < 1){ alert("代幣不足"); return; }
 
+      /* === 代幣補發：從指定日期起，依每日第一筆「上班」是否 <= 12:00 補發 === */
+    function backfillFlagKey(email, start){ return `qoopio_backfill_${email}_${start}`; }
+    
+    async function backfillTokensFrom(startDateStr){
+      const email = localStorage.getItem("qoopio_email");
+      if (!email) return;
+      const flagKey = backfillFlagKey(email, startDateStr);
+      if (localStorage.getItem(flagKey) === "done") return;
+    
+      const start = new Date(startDateStr);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const ledger = readTokenLedger(email);
+    
+      for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
+        const ymd = getLocalDateStr(d);
+        if (ledger[ymd]) continue; // 已領過就跳過
+    
+        try {
+          const firstInISO = await getFirstClockInTime(email, ymd);
+          if (!firstInISO) continue;
+          const first = new Date(firstInISO);
+          const noon = new Date(`${ymd}T12:00:00`);
+          if (first <= noon) { ledger[ymd] = true; }
+        } catch(e){
+          console.warn("backfill failed:", ymd, e);
+        }
+      }
+      writeTokenLedger(email, ledger);
+      localStorage.setItem(flagKey, "done");
+      refreshCoinUi();
+    }
+    
+    /* 嘗試多種後端回傳格式 / action 名稱，拿到「第一筆上班時間」 */
+    async function getFirstClockInTime(email, dateStr){
+      // 試 1：clockState 可能含 firstIn / firstInTime / inAt
+      try{
+        const r = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${dateStr}`);
+        const j = await r.json();
+        const t = j.firstIn || j.firstInTime || j.firstClockIn || j.inAt || j.firstInTs || j.first_in;
+        if (t) return normalizeToISO(dateStr, String(t));
+      }catch(e){}
+    
+      // 試 2：clockLogs（單日紀錄陣列），取最早的「上班」
+      try{
+        const r2 = await fetch(`${scriptUrl}?action=clockLogs&email=${encodeURIComponent(email)}&date=${dateStr}`);
+        const j2 = await r2.json();
+        if (Array.isArray(j2.logs)){
+          const ins = j2.logs
+            .filter(x => /上班/.test(x.type||"") && x.time)
+            .map(x => normalizeToISO(dateStr, String(x.time)))
+            .sort();
+          if (ins[0]) return ins[0];
+        }
+      }catch(e){}
+    
+      // 試 3：clockHistory（若你的後端用這個名字）
+      try{
+        const r3 = await fetch(`${scriptUrl}?action=clockHistory&email=${encodeURIComponent(email)}&date=${dateStr}`);
+        const j3 = await r3.json();
+        if (Array.isArray(j3.items)){
+          const ins = j3.items
+            .filter(x => /上班/.test(x.type||"") && x.time)
+            .map(x => normalizeToISO(dateStr, String(x.time)))
+            .sort();
+          if (ins[0]) return ins[0];
+        }
+      }catch(e){}
+    
+      return null;
+    }
+    
+    /* 把各種時間字串正規化成 ISO（不足則拼上 dateStr） */
+    function normalizeToISO(dateStr, timeStr){
+      const clean = stripTaipeiTZ(timeStr).replace(/\//g,'-').trim();
+      if (/^\d{2}:\d{2}(:\d{2})?$/.test(clean)){
+        return `${dateStr}T${clean.length===5 ? clean+":00" : clean}`;
+      }
+      const d = new Date(clean);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
+      // 無法判讀 → 回傳中午後 1 秒（不發代幣）
+      return `${dateStr}T12:00:01`;
+    }
       // 消耗一枚代幣（移除最早一天）
       const days = Object.keys(ledger).sort();
       if (days.length){
