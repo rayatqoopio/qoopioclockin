@@ -483,6 +483,8 @@
       document.querySelector('.tab-button[data-page="clock"]').classList.add("active");
 
       var email = localStorage.getItem("qoopio_email");
+      var _b = document.getElementById("clockInBtn");
+      if (_b && !_b.dataset.type) setButton(_b.textContent, false, null, "讀取中");
 
       try {
         await Promise.all([
@@ -510,6 +512,7 @@
 
     /* --- Tab 切換 --- */
     function switchPage(page) {
+      currentPage = page; // 追蹤目前頁面（之後若要做較慢輪詢也會用到）
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("page-leave").classList.add("hidden");
@@ -550,13 +553,11 @@
       var email = localStorage.getItem("qoopio_email");
       if (!btn || !email) return;
     
-      // 避免重入
+      // 不顯示「讀取中」，也不改 UI，只做請求
       if (btnFetchLock) return;
       btnFetchLock = true;
     
       var todayStr = getLocalDateStr();
-    
-      // 建立 3 秒超時的 fetch
       var controller = new AbortController();
       var t = setTimeout(function(){ controller.abort(); }, 3000);
     
@@ -568,52 +569,29 @@
         clearTimeout(t);
         var data = await res.json();
     
-        var nextState;
-        if (data.ok !== false) {
+        if (data && data.ok !== false) {
           if (data.state === "working") {
-            nextState = { label: "上班中", disabled: true, color: "#aaa", type: "下班", state: "working" };
+            // 已上班 → 顯示「上班中」並鎖住，type 改為「下班」
+            setButton("上班中", true, "#aaa", "下班");
+            btnStateCache = { state: "working", updatedAt: Date.now(), label: "上班中" };
           } else if (data.state === "offwork") {
-            nextState = { label: "下班掰掰", disabled: true, color: "#aaa", type: "上班", state: "offwork" };
+            // 已下班 → 顯示「下班掰掰」並鎖住，type 改為「上班」
+            setButton("下班掰掰", true, "#aaa", "上班");
+            btnStateCache = { state: "offwork", updatedAt: Date.now(), label: "下班掰掰" };
           } else {
-            nextState = { label: "上班", disabled: false, color: "#111", type: "上班", state: "idle" };
+            // idle：維持現況；只有在首次（沒有 type）時才補上預設 type=上班
+            if (!btn.dataset.type) {
+              setButton(btn.textContent, false, null, "上班");
+              btnStateCache = { state: "idle", updatedAt: Date.now(), label: btn.textContent };
+            }
           }
-        } else {
-          nextState = null; // 交給 fallback
         }
-    
-        // 只有狀態改變才更新 UI，避免閃爍
-        if (nextState) {
-          if (btnStateCache.state !== nextState.state || btnStateCache.label !== nextState.label) {
-            setButton(nextState.label, nextState.disabled, nextState.color, nextState.type);
-          }
-          btnStateCache = { state: nextState.state, updatedAt: Date.now(), label: nextState.label };
-          return;
-        }
-    
-        // 若回傳不可用，走 fallback（僅在沒有快取或太舊時才動 UI）
-        fallbackByTimeIfNeeded();
-    
+        // 若 data.ok === false，也不動 UI
       } catch (e) {
         clearTimeout(t);
-        // 失敗：如果已有新鮮快取，就維持畫面不動；只有第一輪或太久未更新才 fallback
-        fallbackByTimeIfNeeded();
+        // 讀取失敗：完全不動 UI（不顯示讀取、不做 fallback）
       } finally {
         btnFetchLock = false;
-      }
-    
-      function fallbackByTimeIfNeeded() {
-        var now = Date.now();
-        var hasFreshCache = (now - (btnStateCache.updatedAt || 0) < BTN_MAX_STALE_MS);
-        if (hasFreshCache) return; // 有新鮮快取 → 不動 UI
-    
-        var totalMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-        if (totalMinutes >= 120 && totalMinutes < 1080) {
-          setButton("上班", false, "#111", "上班");
-          btnStateCache = { state: "idle", updatedAt: now, label: "上班" };
-        } else {
-          setButton("下班", false, "#111", "下班");
-          btnStateCache = { state: "idle", updatedAt: now, label: "下班" };
-        }
       }
     }
 
