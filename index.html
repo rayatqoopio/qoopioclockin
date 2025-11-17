@@ -27,12 +27,10 @@
               }
             });
           });
-        })
-        .catch(function (err) {
-          console.error("❌ SW registration failed:", err);
-        });
+      }).catch(function (err) {
+        console.error("❌ SW registration failed:", err);
+      });
       navigator.serviceWorker.addEventListener("controllerchange", function () {
-        // SW 已接管 → 重新載入以取新版本
         window.location.reload();
       });
     })();
@@ -85,7 +83,7 @@
     .tab-button.active { background-color: #222; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 9vh; }
+    #page-schedule { padding-top: 12vh; }
     .calendar-header {
       padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
       font-size: 1.2rem; font-weight: bold;
@@ -137,60 +135,52 @@
       text-align: left; padding-top: 10vh;
       padding-bottom: calc(70px + 72px + env(safe-area-inset-bottom, 0px));
     }
+    /* 只有底部主按鈕留在頁面，表單移到 Modal */
     .leave-btn-main {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
-      z-index: 9998;
-      display: block;          /* ← 改這裡 */
-      width: calc(100% - 24px);
-      max-width: 500px;
-      padding: 0.9rem;
-      font-size: 1rem;
-      border-radius: 10px;
-      border: none;
-      background: #111;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px)); z-index: 9998;
+      display: block; /* 重要：保持顯示，用 .hidden 控制 */
+      width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
-    
-    /* 保持用 .hidden 控制隱藏就好 */
     .leave-btn-main.hidden { display: none; }
-    
-    #leave-form { padding: 0.8rem 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
-    #leave-form label { display: block; margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
-    #leave-form select, #leave-form textarea { width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.5rem; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; font-family: inherit; }
-    #leave-form textarea { min-height: 60px; resize: vertical; }
-    .leave-form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem; }
-    .leave-submit-btn { padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 999px; border: none; background: #111; color: #fff; cursor: pointer; }
-    .leave-cancel-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid #aaa; background: #f5f5f5; color: #555; cursor: pointer; }
-    #leave-status-msg { margin-top: 0.4rem; font-size: 0.85rem; color: #555; }
     #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
     .leave-history-empty, .leave-history-error { font-size: 0.9rem; color: #999; }
     .leave-card { padding: 0.6rem 0.8rem; border-radius: 10px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.06); margin-bottom: 0.6rem; }
     .leave-card .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem; font-weight: bold; gap: .6rem; }
     .leave-card .row-1 .title { font-size: 0.95rem; color: #111; }
-    .status-bar { display: inline-flex; align-items: center; justify-content: center; height: 24px; min-width: 76px; padding: 0 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #fff; text-align: center; line-height: 1; white-space: nowrap; }
+    .status-bar { display: inline-flex; align-items: center; justify-content: center; height: 24px; min-width: 76px; padding: 0 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #fff; text-align: center; white-space: nowrap; }
     .status-審核中 { background: #e67e22; } .status-通過 { background: #27ae60; } .status-退回 { background: #c0392b; }
     .leave-card .row-2, .leave-card .row-3, .leave-card .row-4 { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     .leave-card .row-4 { color: #999; }
 
-    /* ====== HUD：代幣 & 扭蛋機 ====== */
+    /* ====== HUD：右下單一扭蛋按鈕 + 徽章（整合代幣數） ====== */
     .hud-right{
       position: fixed; right: 12px; bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
-      display: none; flex-direction: column; gap: 10px; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
+      display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
     }
-    .coin-widget, .gacha-btn{
-      display: flex; align-items: center; gap: 6px; background:#fff; border:1px solid #222; border-radius:12px; padding:6px 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08); color:#111;
+    .gacha-btn{
+      position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 56px; height: 56px; border-radius: 14px;
+      background:#fff; border:1px solid #222; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor:pointer;
     }
-    .coin-svg{ width:22px; height:22px; }
-    .coin-count{ font-weight: 800; color:#111; }
-    .gacha-svg{ width:42px; height:42px; cursor:pointer; display:block; }
+    /* 代幣徽章 */
+    .gacha-badge{
+      position: absolute; right: -6px; top: -6px;
+      min-width: 22px; height: 22px; padding: 0 6px;
+      border-radius: 999px; background:#111; color:#fff; font-weight: 800; font-size: 12px;
+      display: inline-flex; align-items: center; justify-content:center;
+      border: 1px solid #fff;
+    }
+    /* 實心扭蛋機圖示（非線條） */
+    .gacha-svg{ width: 36px; height: 36px; display:block; }
+    /* Icon 顏色（黑白質感） */
+    .gacha-svg .body{ fill:#111; }
+    .gacha-svg .window{ fill:#fff; }
+    .gacha-svg .ball{ fill:#111; opacity:.9; }
 
-    /* Modal */
+    /* ====== 共用 Modal（扭蛋 / 請假） ====== */
     .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
     .modal.open{ display:flex; }
     .modal-card{ width: min(520px, 92%); background:#fff; border-radius:16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align:left; }
@@ -205,6 +195,18 @@
     .gacha-tip{ color:#666; font-size:0.9rem; margin-top:8px; }
     .gacha-log{ margin-top:8px; }
     .gacha-item{ padding:8px 10px; border:1px solid #eee; border-radius:8px; margin:6px 0; font-size:0.92rem; color:#333; }
+
+    /* 請假表單（放在 Modal 內） */
+    #leave-form label { display:block; margin-top: 0.5rem; font-size:0.9rem; color:#555; }
+    #leave-form select, #leave-form textarea {
+      width: 100%; box-sizing: border-box; margin-top: 0.2rem;
+      padding: 0.4rem 0.5rem; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; font-family: inherit;
+    }
+    #leave-form textarea { min-height: 60px; resize: vertical; }
+    .leave-form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem; }
+    .leave-submit-btn { padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 999px; border: none; background: #111; color: #fff; cursor: pointer; }
+    .leave-cancel-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid #aaa; background: #f5f5f5; color: #555; cursor: pointer; }
+    #leave-status-msg { margin-top: 0.4rem; font-size: 0.85rem; color: #555; }
   </style>
 </head>
 <body>
@@ -223,39 +225,10 @@
       <button onclick="login()">登入</button>
     </div>
 
-    <!-- 請假頁 -->
+    <!-- 請假頁（表單改為 Modal，只保留底部主按鈕與紀錄） -->
     <div id="page-leave" class="hidden">
       <h3>請假</h3>
       <button class="leave-btn-main" onclick="openLeaveForm()">申請請假</button>
-
-      <div id="leave-form" class="hidden">
-        <div><strong>申請人：</strong><span id="leave-name">—</span></div>
-
-        <label> 請假日期
-          <select id="leave-date-select"></select>
-        </label>
-
-        <label> 假別
-          <select id="leave-type-select">
-            <option value="事假">事假</option>
-            <option value="病假">病假</option>
-            <option value="休假">休假</option>
-            <option value="例假">例假</option>
-            <option value="特休假">特休假</option>
-            <option value="國定假日補休">國定假日補休</option>
-          </select>
-        </label>
-
-        <label> 請假原因（選填）
-          <textarea id="leave-reason" placeholder="例如：看醫生、家庭事務等"></textarea>
-        </label>
-
-        <div class="leave-form-actions">
-          <button class="leave-cancel-btn" type="button" onclick="closeLeaveForm()">取消</button>
-          <button class="leave-submit-btn" type="button" onclick="submitLeave()">送出申請</button>
-        </div>
-        <div id="leave-status-msg"></div>
-      </div>
 
       <h4>請假紀錄</h4>
       <div id="leave-history">載入中...</div>
@@ -292,30 +265,26 @@
     <button class="tab-button" data-page="schedule" onclick="switchPage('schedule')">班表</button>
   </div>
 
-  <!-- HUD（打卡頁顯示） -->
+  <!-- HUD（右下單一：扭蛋機 + 代幣徽章） -->
   <div class="hud-right" id="hud-right">
-    <div class="coin-widget" id="coin-widget" title="每日 12:00 前上班可得 1 代幣">
-      <svg class="coin-svg" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" fill="#f4c430" stroke="#c89e2b" stroke-width="2"></circle>
-        <circle cx="12" cy="12" r="4" fill="#ffd766"></circle>
-      </svg>
-      <span class="coin-count" id="coin-count">0</span>
-    </div>
-
-    <div class="gacha-btn" id="gachaBtn" title="扭蛋機">
+    <button class="gacha-btn" id="gachaBtn" title="扭蛋機">
+      <!-- 實心扭蛋機：黑白 -->
       <svg class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
-        <g fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 30a20 20 0 1 1 40 0" />
-          <rect x="14" y="30" width="36" height="28" rx="6" />
-          <rect x="24" y="44" width="16" height="8" rx="2" />
-          <rect x="28" y="34" width="8" height="4" rx="1" />
-          <circle cx="24" cy="28" r="3" />
-          <circle cx="40" cy="26" r="3" />
-          <circle cx="32" cy="22" r="3" />
-          <path d="M18 58h28" />
-        </g>
+        <!-- 機體 -->
+        <rect class="body" x="12" y="26" rx="8" ry="8" width="40" height="30"/>
+        <!-- 透明櫥窗 -->
+        <rect class="window" x="16" y="30" rx="6" ry="6" width="32" height="18"/>
+        <!-- 上蓋半圓 -->
+        <path class="body" d="M12,28 A20,20 0 0 1 52,28 L52,26 A20,20 0 0 0 12,26 Z"/>
+        <!-- 投口與拉桿 -->
+        <rect class="body" x="24" y="48" width="16" height="8" rx="2"/>
+        <!-- 裡面的球 -->
+        <circle class="ball" cx="24" cy="39" r="3"/>
+        <circle class="ball" cx="40" cy="39" r="3"/>
+        <circle class="ball" cx="32" cy="36" r="3"/>
       </svg>
-    </div>
+      <span class="gacha-badge" id="gacha-badge">0</span>
+    </button>
   </div>
 
   <!-- 扭蛋機 Modal -->
@@ -337,21 +306,57 @@
     </div>
   </div>
 
+  <!-- 請假 Modal（表單浮在畫面上） -->
+  <div class="modal" id="leave-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>申請請假</h3>
+        <button class="modal-close" onclick="closeLeaveForm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="leave-form">
+          <div><strong>申請人：</strong><span id="leave-name">—</span></div>
+
+          <label> 請假日期
+            <select id="leave-date-select"></select>
+          </label>
+
+          <label> 假別
+            <select id="leave-type-select">
+              <option value="事假">事假</option>
+              <option value="病假">病假</option>
+              <option value="休假">休假</option>
+              <option value="例假">例假</option>
+              <option value="特休假">特休假</option>
+              <option value="國定假日補休">國定假日補休</option>
+            </select>
+          </label>
+
+          <label> 請假原因（選填）
+            <textarea id="leave-reason" placeholder="例如：看醫生、家庭事務等"></textarea>
+          </label>
+
+          <div class="leave-form-actions">
+            <button class="leave-cancel-btn" type="button" onclick="closeLeaveForm()">取消</button>
+            <button class="leave-submit-btn" type="button" onclick="submitLeave()">送出申請</button>
+          </div>
+          <div id="leave-status-msg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- JS -->
   <script>
     // —— 全域錯誤攔截（避免卡在 Loading）——
     window.addEventListener('error', function (e) {
       try { var box = document.getElementById('loading-screen'); if (box) box.classList.add('hidden'); } catch(_) {}
       try { console.error(e.error || e.message || e); } catch(_) {}
-      // 可暫時註解掉 alert 以免打擾使用者
-      // alert('JS 錯誤：' + (e.message || e));
     });
     window.addEventListener('unhandledrejection', function (e) {
       try { var box = document.getElementById('loading-screen'); if (box) box.classList.add('hidden'); } catch(_) {}
       try { console.error('Promise 錯誤：', e.reason); } catch(_) {}
-      // alert('Promise 錯誤：' + (e.reason && e.reason.message ? e.reason.message : e.reason));
     });
-    // 最終保險：3 秒後強制關閉 Loading 並顯示登入
     setTimeout(function(){
       var box = document.getElementById('loading-screen');
       if (box) box.classList.add('hidden');
@@ -366,7 +371,7 @@
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
     var selectedCell = null;
-    var monthCache = {}; // 月曆紅綠點快取
+    var monthCache = {};
 
     // 使用者表（由 user.json 載入）
     var userData = {};
@@ -436,7 +441,7 @@
     function showUserInfo(email) {
       var name = (userData[email] && userData[email].name) || email;
       document.getElementById("user-label").textContent = name + " " + email;
-      document.getElementById("leave-name").textContent = name;
+      document.getElementById("leave-name").textContent = name; // 在請假 Modal 顯示
     }
 
     /* --- 進入主畫面 --- */
@@ -452,7 +457,7 @@
 
       // HUD 僅在打卡頁顯示
       var hud = document.getElementById("hud-right");
-      if (hud) hud.style.display = "flex";
+      if (hud) hud.style.display = "inline-flex";
 
       var tabs = document.querySelectorAll(".tab-button");
       for (var i=0;i<tabs.length;i++){ tabs[i].classList.remove("active"); }
@@ -468,13 +473,11 @@
           loadLeaveHistory(email),
           refreshCoinUi()
         ]);
-        // ✅ 登入後自動回補（只跑一次，避免重複）
         await backfillTokensFrom("2025-11-10");
       } catch (e) {
         console.warn("載入中發生錯誤", e);
       } finally {
         loading.classList.add("hidden");
-        // 每分鐘更新一次
         setInterval(function(){
           updateButtonLabel();
           var emailNow = localStorage.getItem("qoopio_email");
@@ -482,7 +485,6 @@
         }, 60000);
       }
 
-      // 扭蛋機入口
       var gbtn = document.getElementById("gachaBtn");
       if (gbtn) gbtn.onclick = openGacha;
     }
@@ -498,7 +500,7 @@
       // HUD 只在打卡頁
       var hud = document.getElementById("hud-right");
       if (hud) {
-        if (page === "clock") { hud.classList.remove("hidden"); hud.style.display = "flex"; }
+        if (page === "clock") { hud.classList.remove("hidden"); hud.style.display = "inline-flex"; }
         else { hud.classList.add("hidden"); hud.style.display = "none"; }
       }
 
@@ -509,13 +511,8 @@
       // 請假頁底部主按鈕
       var leaveBtnMain = document.querySelector('.leave-btn-main');
       if (leaveBtnMain) {
-        if (page !== 'leave') {
-          leaveBtnMain.classList.add('hidden');
-          leaveBtnMain.style.display = 'none';
-        } else {
-          leaveBtnMain.classList.remove('hidden');
-          leaveBtnMain.style.display = 'block'; // ← 多這行也可
-        }
+        if (page !== 'leave') leaveBtnMain.classList.add('hidden');
+        else leaveBtnMain.classList.remove('hidden');
       }
 
       if (page === "schedule") {
@@ -738,18 +735,12 @@
           else if (/景美/.test(sh)) j.push(s);
         }
         var order = ["櫃檯","彩妝","攝影","修圖"];
-        var sort = function(a,b){
-          function idx(x){
-            for (var k=0;k<order.length;k++){ if ((a.shift||"").indexOf(order[k])>-1) return k; }
-            return 99;
-          }
-          function idxb(x){
-            for (var k=0;k<order.length;k++){ if ((b.shift||"").indexOf(order[k])>-1) return k; }
-            return 99;
-          }
-          return idx(a) - idxb(b);
-        };
-        z.sort(sort); j.sort(sort);
+        function rank(shift){
+          for (var k=0;k<order.length;k++){ if ((shift||"").indexOf(order[k])>-1) return k; }
+          return 99;
+        }
+        z.sort(function(a,b){ return rank(a.shift)-rank(b.shift); });
+        j.sort(function(a,b){ return rank(a.shift)-rank(b.shift); });
 
         var html = target + "<br><br>";
         if (z.length) html += '<div class="group-title">[中山]</div>' + formatGroup(z);
@@ -779,15 +770,17 @@
       return out.join("<br>");
     }
 
-    /* --- 請假：表單與送出 --- */
+    /* --- 請假：表單 Modal 開關與送出 --- */
     function openLeaveForm() {
       var email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入");
       prepareLeaveDates();
       document.getElementById("leave-status-msg").textContent = "";
-      document.getElementById("leave-form").classList.remove("hidden");
+      document.getElementById("leave-modal").classList.add("open");
     }
-    function closeLeaveForm() { document.getElementById("leave-form").classList.add("hidden"); }
+    function closeLeaveForm() {
+      document.getElementById("leave-modal").classList.remove("open");
+    }
 
     // 未來 60 天日期
     function prepareLeaveDates() {
@@ -909,13 +902,9 @@
       var raw = localStorage.getItem(tokenLedgerKey(email));
       return raw ? JSON.parse(raw) : {}; // { "yyyy-mm-dd": true }
     }
-    function writeTokenLedger(email, obj){
-      localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj));
-    }
-    function calcTokenCount(email){
-      var ledger = readTokenLedger(email);
-      return Object.keys(ledger).length;
-    }
+    function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
+    function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
+
     function awardTokenIfEligible(type, now){
       now = now || new Date();
       if (type !== "上班") return;
@@ -930,14 +919,19 @@
       writeTokenLedger(email, ledger);
       refreshCoinUi();
     }
+
     async function refreshCoinUi(){
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
       var count = calcTokenCount(email);
-      var cc = document.getElementById("coin-count");
-      if (cc) cc.textContent = count;
+
+      // 右下徽章
+      var badge = document.getElementById("gacha-badge");
+      if (badge) badge.textContent = String(count);
+
+      // Modal 顯示
       var mc = document.getElementById("modal-coin-count");
-      if (mc) mc.textContent = count;
+      if (mc) mc.textContent = String(count);
     }
 
     // 扭蛋機
@@ -1038,17 +1032,14 @@
       refreshCoinUi();
     }
 
-    // 從後端取得「第一筆上班時間」；相容多種 action / 欄位名稱
+    // 從後端取得「第一筆上班時間」
     async function getFirstClockInTime(email, dateStr){
-      // 1) clockState
       try{
         var r = await fetch(scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + dateStr);
         var j = await r.json();
         var t = j.firstIn || j.firstInTime || j.firstClockIn || j.inAt || j.firstInTs || j.first_in;
         if (t) return normalizeToISO(dateStr, String(t));
       }catch(e){}
-
-      // 2) clockLogs
       try{
         var r2 = await fetch(scriptUrl + "?action=clockLogs&email=" + encodeURIComponent(email) + "&date=" + dateStr);
         var j2 = await r2.json();
@@ -1060,8 +1051,6 @@
           if (ins[0]) return ins[0];
         }
       }catch(e){}
-
-      // 3) clockHistory
       try{
         var r3 = await fetch(scriptUrl + "?action=clockHistory&email=" + encodeURIComponent(email) + "&date=" + dateStr);
         var j3 = await r3.json();
@@ -1073,7 +1062,6 @@
           if (ins2[0]) return ins2[0];
         }
       }catch(e){}
-
       return null;
     }
 
@@ -1084,7 +1072,6 @@
       }
       var d = new Date(clean);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
-      // 無法判讀 → 避免誤發，視為 12:00:01
       return dateStr + "T12:00:01";
     }
   </script>
