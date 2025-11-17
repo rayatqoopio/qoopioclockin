@@ -5,7 +5,6 @@
   <title>Qoopio 打卡系統</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#111111" />
-  <!-- 加版本參數避免舊快取 -->
   <link rel="manifest" href="manifest.json?v=20251117" />
   <link rel="icon" href="icon.png" />
   <script>
@@ -16,8 +15,8 @@
         .register("service-worker.js?v=20251117")
         .then(function (reg) {
           console.log("✅ Service Worker registered");
-          if (reg.waiting) { try { reg.waiting.postMessage({ type: "SKIP_WAITING" }); } catch(_){} }
-          if (reg.installing) { try { reg.installing.postMessage({ type: "SKIP_WAITING" }); } catch(_){} }
+          if (reg.waiting)   { try { reg.waiting.postMessage({ type: "SKIP_WAITING"   }); } catch(_){} }
+          if (reg.installing){ try { reg.installing.postMessage({ type: "SKIP_WAITING" }); } catch(_){} }
           reg.addEventListener("updatefound", function () {
             var sw = reg.installing;
             if (!sw) return;
@@ -27,12 +26,9 @@
               }
             });
           });
-      }).catch(function (err) {
-        console.error("❌ SW registration failed:", err);
-      });
-      navigator.serviceWorker.addEventListener("controllerchange", function () {
-        window.location.reload();
-      });
+        })
+        .catch(function (err) { console.error("❌ SW registration failed:", err); });
+      navigator.serviceWorker.addEventListener("controllerchange", function () { window.location.reload(); });
     })();
   </script>
   <style>
@@ -83,7 +79,7 @@
     .tab-button.active { background-color: #222; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 12vh; }
+    #page-schedule { padding-top: 9vh; }
     .calendar-header {
       padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
       font-size: 1.2rem; font-weight: bold;
@@ -129,17 +125,16 @@
     #loading-screen.hidden { opacity: 0; pointer-events: none; }
     #loading-screen .spinner { width: 50px; height: 50px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
 
-    /* ====== 請假頁 ====== */
+    /* ====== 請假頁（按鈕固定 + 記錄卡片） ====== */
     #page-leave h3 { display: none; }
     #page-leave {
       text-align: left; padding-top: 10vh;
       padding-bottom: calc(70px + 72px + env(safe-area-inset-bottom, 0px));
     }
-    /* 只有底部主按鈕留在頁面，表單移到 Modal */
     .leave-btn-main {
       position: fixed; left: 50%; transform: translateX(-50%);
       bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px)); z-index: 9998;
-      display: block; /* 重要：保持顯示，用 .hidden 控制 */
+      display: block;
       width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
     .leave-btn-main.hidden { display: none; }
@@ -153,7 +148,7 @@
     .leave-card .row-2, .leave-card .row-3, .leave-card .row-4 { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     .leave-card .row-4 { color: #999; }
 
-    /* ====== HUD：右下單一扭蛋按鈕 + 徽章（整合代幣數） ====== */
+    /* ====== HUD：右下扭蛋機 + 代幣徽章 ====== */
     .hud-right{
       position: fixed; right: 12px; bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
       display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
@@ -165,7 +160,6 @@
       background:#fff; border:1px solid #222; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       cursor:pointer;
     }
-    /* 代幣徽章 */
     .gacha-badge{
       position: absolute; right: -6px; top: -6px;
       min-width: 22px; height: 22px; padding: 0 6px;
@@ -173,12 +167,11 @@
       display: inline-flex; align-items: center; justify-content:center;
       border: 1px solid #fff;
     }
-    /* 實心扭蛋機圖示（非線條） */
     .gacha-svg{ width: 36px; height: 36px; display:block; }
-    /* Icon 顏色（黑白質感） */
     .gacha-svg .body{ fill:#111; }
     .gacha-svg .window{ fill:#fff; }
     .gacha-svg .ball{ fill:#111; opacity:.9; }
+    .gacha-img{ width:36px; height:36px; display:block; }
 
     /* ====== 共用 Modal（扭蛋 / 請假） ====== */
     .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
@@ -222,13 +215,13 @@
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <h3>請輸入您的 Email 登入</h3>
       <input type="email" id="login-email" placeholder="name@qoopio.com" />
-      <button onclick="login()">登入</button>
+      <button type="button" onclick="login()">登入</button>
     </div>
 
     <!-- 請假頁（表單改為 Modal，只保留底部主按鈕與紀錄） -->
     <div id="page-leave" class="hidden">
       <h3>請假</h3>
-      <button class="leave-btn-main" onclick="openLeaveForm()">申請請假</button>
+      <button class="leave-btn-main" type="button" onclick="openLeaveForm()">申請請假</button>
 
       <h4>請假紀錄</h4>
       <div id="leave-history">載入中...</div>
@@ -239,8 +232,8 @@
       <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
       <div id="leave-pending-banner"></div>
-      <button id="clockInBtn" onclick="submitClockIn()">打卡</button>
-      <button onclick="resetEmail()" class="logout-btn">登出</button>
+      <button id="clockInBtn" type="button" onclick="submitClockIn()">打卡</button>
+      <button type="button" onclick="resetEmail()" class="logout-btn">登出</button>
       <div id="status"></div>
     </div>
 
@@ -248,9 +241,9 @@
     <div id="page-schedule" class="hidden">
       <div class="calendar-view">
         <div class="calendar-header">
-          <button onclick="changeMonth(-1)">〈</button>
+          <button type="button" onclick="changeMonth(-1)">〈</button>
           <span id="calendar-title"></span>
-          <button onclick="changeMonth(1)">〉</button>
+          <button type="button" onclick="changeMonth(1)">〉</button>
         </div>
         <div id="calendar-grid" class="calendar-grid"></div>
         <div id="selected-shift">📅 請選擇日期</div>
@@ -260,25 +253,21 @@
 
   <!-- 導覽列：請假｜打卡｜班表 -->
   <div class="tab-bar hidden" id="tab-bar">
-    <button class="tab-button" data-page="leave" onclick="switchPage('leave')">請假</button>
-    <button class="tab-button active" data-page="clock" onclick="switchPage('clock')">打卡</button>
-    <button class="tab-button" data-page="schedule" onclick="switchPage('schedule')">班表</button>
+    <button class="tab-button" type="button" data-page="leave" onclick="switchPage('leave')">請假</button>
+    <button class="tab-button active" type="button" data-page="clock" onclick="switchPage('clock')">打卡</button>
+    <button class="tab-button" type="button" data-page="schedule" onclick="switchPage('schedule')">班表</button>
   </div>
 
   <!-- HUD（右下單一：扭蛋機 + 代幣徽章） -->
   <div class="hud-right" id="hud-right">
-    <button class="gacha-btn" id="gachaBtn" title="扭蛋機">
-      <!-- 實心扭蛋機：黑白 -->
-      <svg class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
-        <!-- 機體 -->
+    <button class="gacha-btn" id="gachaBtn" type="button" title="扭蛋機">
+      <!-- 若找到自訂圖檔就用 <img>，否則 fallback 成這個 SVG -->
+      <img id="gacha-img" class="gacha-img hidden" alt="扭蛋機" width="36" height="36" />
+      <svg id="gacha-svg" class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
         <rect class="body" x="12" y="26" rx="8" ry="8" width="40" height="30"/>
-        <!-- 透明櫥窗 -->
         <rect class="window" x="16" y="30" rx="6" ry="6" width="32" height="18"/>
-        <!-- 上蓋半圓 -->
         <path class="body" d="M12,28 A20,20 0 0 1 52,28 L52,26 A20,20 0 0 0 12,26 Z"/>
-        <!-- 投口與拉桿 -->
         <rect class="body" x="24" y="48" width="16" height="8" rx="2"/>
-        <!-- 裡面的球 -->
         <circle class="ball" cx="24" cy="39" r="3"/>
         <circle class="ball" cx="40" cy="39" r="3"/>
         <circle class="ball" cx="32" cy="36" r="3"/>
@@ -292,15 +281,15 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>扭蛋機</h3>
-        <button class="modal-close" onclick="closeGacha()">✕</button>
+        <button class="modal-close" type="button" onclick="closeGacha()">✕</button>
       </div>
       <div class="modal-tabs">
-        <button id="tab-gacha" class="active" onclick="switchGachaTab('gacha')">扭蛋</button>
-        <button id="tab-log" onclick="switchGachaTab('log')">扭蛋紀錄</button>
+        <button id="tab-gacha" type="button" class="active" onclick="switchGachaTab('gacha')">扭蛋</button>
+        <button id="tab-log" type="button" onclick="switchGachaTab('log')">扭蛋紀錄</button>
       </div>
       <div class="modal-body" id="gacha-body">
         <p><b>代幣：</b><span id="modal-coin-count">0</span></p>
-        <button class="gacha-primary" onclick="drawGacha()">扭蛋</button>
+        <button class="gacha-primary" type="button" onclick="drawGacha()">扭蛋</button>
         <div class="gacha-tip">中獎機率 1%。未中顯示「哈哈沒中啦」，中獎顯示「截圖去找Ray領獎」。</div>
       </div>
     </div>
@@ -311,7 +300,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>申請請假</h3>
-        <button class="modal-close" onclick="closeLeaveForm()">✕</button>
+        <button class="modal-close" type="button" onclick="closeLeaveForm()">✕</button>
       </div>
       <div class="modal-body">
         <div id="leave-form">
@@ -357,16 +346,29 @@
       try { var box = document.getElementById('loading-screen'); if (box) box.classList.add('hidden'); } catch(_) {}
       try { console.error('Promise 錯誤：', e.reason); } catch(_) {}
     });
-    setTimeout(function(){
-      var box = document.getElementById('loading-screen');
-      if (box) box.classList.add('hidden');
-      var lp = document.getElementById('login-page');
-      if (lp && lp.classList.contains('hidden')) lp.classList.remove('hidden');
+
+    // ✅「開機保險」：只有未登入才會強制回登入頁
+    var bootReady = false;
+    var bootTimer = setTimeout(function(){
+      if (!bootReady && !localStorage.getItem('qoopio_email')) {
+        var box = document.getElementById('loading-screen');
+        if (box) box.classList.add('hidden');
+        var lp = document.getElementById('login-page');
+        if (lp) lp.classList.remove('hidden');
+      }
     }, 3000);
 
     // ✅ Apps Script Web App（/exec）
     var scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
 
+    // --- 打卡按鈕輪詢與快取控制 ---
+    var currentPage = "clock";
+    var btnStateCache = { state: null, updatedAt: 0, label: "" };
+    var btnFetchLock = false;
+    var btnPollTimer = null;
+    var BTN_POLL_MS = 180000;     // 每 3 分鐘輪詢一次
+    var BTN_MAX_STALE_MS = 300000; // 超過 5 分鐘沒成功取到才強制改畫面
+    
     // 月曆狀態
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
@@ -377,10 +379,10 @@
     var userData = {};
 
     // 顯示「請假待審核提示」的帳號
-    var LEAVE_PENDING_USERS = [
-      "ray.at.qoopio@gmail.com",
-      "lilian6337@gmail.com"
-    ];
+    var LEAVE_PENDING_USERS = ["ray.at.qoopio@gmail.com","lilian6337@gmail.com"];
+
+    // 自訂扭蛋 icon（存在就啟用）
+    var GACHA_ICON = "gacha-icon.png?v=20251117";
 
     /* --- 小工具：日期字串 --- */
     function getLocalDateStr(d){
@@ -420,12 +422,27 @@
     function initLogin() {
       var savedEmail = localStorage.getItem("qoopio_email");
       if (savedEmail && userData[savedEmail]) {
+        bootReady = true; clearTimeout(bootTimer);
         showUserInfo(savedEmail);
         showMainPages();
       } else {
-        document.getElementById("login-page").classList.remove("hidden");
-        document.getElementById("loading-screen").classList.add("hidden");
+        var lp = document.getElementById("login-page");
+        if (lp) lp.classList.remove("hidden");
+        var load = document.getElementById("loading-screen");
+        if (load) load.classList.add("hidden");
       }
+
+      // 嘗試載入自訂扭蛋圖示
+      try {
+        var imgProbe = new Image();
+        imgProbe.onload = function(){
+          var img = document.getElementById("gacha-img");
+          var svg = document.getElementById("gacha-svg");
+          if (img) { img.src = GACHA_ICON; img.classList.remove("hidden"); }
+          if (svg) svg.classList.add("hidden");
+        };
+        imgProbe.src = GACHA_ICON;
+      } catch(_) {}
     }
 
     function login() {
@@ -434,6 +451,7 @@
       if (!userData[email]) return alert("查無此帳號");
       localStorage.setItem("qoopio_email", email);
       showUserInfo(email);
+      bootReady = true; clearTimeout(bootTimer);
       document.getElementById("loading-screen").classList.remove("hidden");
       showMainPages();
     }
@@ -441,11 +459,12 @@
     function showUserInfo(email) {
       var name = (userData[email] && userData[email].name) || email;
       document.getElementById("user-label").textContent = name + " " + email;
-      document.getElementById("leave-name").textContent = name; // 在請假 Modal 顯示
+      document.getElementById("leave-name").textContent = name;
     }
 
     /* --- 進入主畫面 --- */
     async function showMainPages() {
+      bootReady = true; clearTimeout(bootTimer);
       var loading = document.getElementById("loading-screen");
       loading.classList.remove("hidden");
 
@@ -508,13 +527,7 @@
       for (var i=0;i<tabs.length;i++){ tabs[i].classList.remove("active"); }
       document.querySelector('.tab-button[data-page="'+page+'"]').classList.add("active");
 
-      // 請假頁底部主按鈕
-      var leaveBtnMain = document.querySelector('.leave-btn-main');
-      if (leaveBtnMain) {
-        if (page !== 'leave') leaveBtnMain.classList.add('hidden');
-        else leaveBtnMain.classList.remove('hidden');
-      }
-
+      // 請假頁 → 重新載入歷史
       if (page === "schedule") {
         updateMonthShiftMarkers();
       } else if (page === "leave") {
@@ -523,52 +536,85 @@
       }
     }
 
-    /* --- 打卡按鈕狀態 --- */
+    function setButton(text, disabled, color, type) {
+      var btn = document.getElementById("clockInBtn");
+      if (!btn) return;
+      if (text != null) btn.textContent = text;
+      if (disabled != null) btn.disabled = !!disabled;
+      if (color) btn.style.backgroundColor = color;
+      btn.dataset.type = type || btn.dataset.type || "";
+    }
+    
     async function updateButtonLabel() {
       var btn = document.getElementById("clockInBtn");
       var email = localStorage.getItem("qoopio_email");
       if (!btn || !email) return;
-
-      setButton("讀取中…", true, "#aaa");
-
+    
+      // 避免重入
+      if (btnFetchLock) return;
+      btnFetchLock = true;
+    
       var todayStr = getLocalDateStr();
+    
+      // 建立 3 秒超時的 fetch
+      var controller = new AbortController();
+      var t = setTimeout(function(){ controller.abort(); }, 3000);
+    
       try {
-        var res = await fetch(scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr);
+        var res = await fetch(
+          scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr,
+          { signal: controller.signal, cache: "no-store" }
+        );
+        clearTimeout(t);
         var data = await res.json();
-
+    
+        var nextState;
         if (data.ok !== false) {
           if (data.state === "working") {
-            setButton("上班中", true, "#aaa"); btn.dataset.type = "下班";
+            nextState = { label: "上班中", disabled: true, color: "#aaa", type: "下班", state: "working" };
           } else if (data.state === "offwork") {
-            setButton("下班掰掰", true, "#aaa"); btn.dataset.type = "上班";
+            nextState = { label: "下班掰掰", disabled: true, color: "#aaa", type: "上班", state: "offwork" };
           } else {
-            setButton("上班", false, "#111", "上班");
+            nextState = { label: "上班", disabled: false, color: "#111", type: "上班", state: "idle" };
           }
+        } else {
+          nextState = null; // 交給 fallback
+        }
+    
+        // 只有狀態改變才更新 UI，避免閃爍
+        if (nextState) {
+          if (btnStateCache.state !== nextState.state || btnStateCache.label !== nextState.label) {
+            setButton(nextState.label, nextState.disabled, nextState.color, nextState.type);
+          }
+          btnStateCache = { state: nextState.state, updatedAt: Date.now(), label: nextState.label };
           return;
         }
-        fallbackByTime();
+    
+        // 若回傳不可用，走 fallback（僅在沒有快取或太舊時才動 UI）
+        fallbackByTimeIfNeeded();
+    
       } catch (e) {
-        console.warn("clockState 查詢失敗，使用時間規則 fallback", e);
-        fallbackByTime();
+        clearTimeout(t);
+        // 失敗：如果已有新鮮快取，就維持畫面不動；只有第一輪或太久未更新才 fallback
+        fallbackByTimeIfNeeded();
+      } finally {
+        btnFetchLock = false;
       }
-
-      function fallbackByTime() {
-        var now = new Date();
-        var totalMinutes = now.getHours() * 60 + now.getMinutes();
+    
+      function fallbackByTimeIfNeeded() {
+        var now = Date.now();
+        var hasFreshCache = (now - (btnStateCache.updatedAt || 0) < BTN_MAX_STALE_MS);
+        if (hasFreshCache) return; // 有新鮮快取 → 不動 UI
+    
+        var totalMinutes = new Date().getHours() * 60 + new Date().getMinutes();
         if (totalMinutes >= 120 && totalMinutes < 1080) {
           setButton("上班", false, "#111", "上班");
+          btnStateCache = { state: "idle", updatedAt: now, label: "上班" };
         } else {
           setButton("下班", false, "#111", "下班");
+          btnStateCache = { state: "idle", updatedAt: now, label: "下班" };
         }
       }
-    }
-    function setButton(text, disabled, color, type) {
-      var btn = document.getElementById("clockInBtn");
-      if (!btn) return;
-      btn.textContent = text;
-      btn.disabled = !!disabled;
-      btn.style.backgroundColor = color;
-      btn.dataset.type = type || "";
     }
 
     /* --- 打卡送出 + 12:00 前代幣 --- */
@@ -590,7 +636,6 @@
           if (type === "上班")      setButton("上班中", true, "#aaa");
           else if (type === "下班") setButton("下班掰掰", true, "#aaa");
 
-          // 寫入打卡紀錄到 Apps Script（B 表）
           fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
@@ -598,7 +643,6 @@
             body: JSON.stringify({ action: "clockIn", email: email, type: type, lat: pos.coords.latitude, lng: pos.coords.longitude })
           }).catch(function(err){ console.error("clockIn error", err); });
 
-          // 12:00 前上班 → +1 代幣
           awardTokenIfEligible(type, new Date());
         },
         function () { alert("無法取得定位資訊"); }
@@ -629,7 +673,6 @@
       var dayNames = ["一","二","三","四","五","六","日"];
       var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
 
-      // 週標題
       for (var i=0;i<dayNames.length;i++){
         var cell = document.createElement("div");
         cell.textContent = dayNames[i];
@@ -735,10 +778,7 @@
           else if (/景美/.test(sh)) j.push(s);
         }
         var order = ["櫃檯","彩妝","攝影","修圖"];
-        function rank(shift){
-          for (var k=0;k<order.length;k++){ if ((shift||"").indexOf(order[k])>-1) return k; }
-          return 99;
-        }
+        function rank(shift){ for (var k=0;k<order.length;k++){ if ((shift||"").indexOf(order[k])>-1) return k; } return 99; }
         z.sort(function(a,b){ return rank(a.shift)-rank(b.shift); });
         j.sort(function(a,b){ return rank(a.shift)-rank(b.shift); });
 
@@ -778,9 +818,7 @@
       document.getElementById("leave-status-msg").textContent = "";
       document.getElementById("leave-modal").classList.add("open");
     }
-    function closeLeaveForm() {
-      document.getElementById("leave-modal").classList.remove("open");
-    }
+    function closeLeaveForm() { document.getElementById("leave-modal").classList.remove("open"); }
 
     // 未來 60 天日期
     function prepareLeaveDates() {
@@ -898,10 +936,7 @@
 
     /* === 代幣（12:00 前上班 +1）、扭蛋機（1%） === */
     function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
-    function readTokenLedger(email){
-      var raw = localStorage.getItem(tokenLedgerKey(email));
-      return raw ? JSON.parse(raw) : {}; // { "yyyy-mm-dd": true }
-    }
+    function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
     function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
     function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
 
@@ -925,7 +960,7 @@
       if (!email) return;
       var count = calcTokenCount(email);
 
-      // 右下徽章
+      // HUD 徽章
       var badge = document.getElementById("gacha-badge");
       if (badge) badge.textContent = String(count);
 
@@ -936,21 +971,10 @@
 
     // 扭蛋機
     function gachaKey(email){ return "qoopio_gacha_" + email; } // [{time, result:'win'|'lose'}]
-    function readGachaLog(email){
-      var raw = localStorage.getItem(gachaKey(email));
-      return raw ? JSON.parse(raw) : [];
-    }
-    function writeGachaLog(email, list){
-      localStorage.setItem(gachaKey(email), JSON.stringify(list));
-    }
-    function openGacha(){
-      document.getElementById("gacha-modal").classList.add("open");
-      switchGachaTab('gacha');
-      refreshCoinUi();
-    }
-    function closeGacha(){
-      document.getElementById("gacha-modal").classList.remove("open");
-    }
+    function readGachaLog(email){ var raw = localStorage.getItem(gachaKey(email)); return raw ? JSON.parse(raw) : []; }
+    function writeGachaLog(email, list){ localStorage.setItem(gachaKey(email), JSON.stringify(list)); }
+    function openGacha(){ document.getElementById("gacha-modal").classList.add("open"); switchGachaTab('gacha'); refreshCoinUi(); }
+    function closeGacha(){ document.getElementById("gacha-modal").classList.remove("open"); }
     function switchGachaTab(which){
       document.getElementById("tab-gacha").classList.toggle("active", which==='gacha');
       document.getElementById("tab-log").classList.toggle("active", which==='log');
@@ -959,7 +983,7 @@
       if (which === 'gacha'){
         body.innerHTML =
           '<p><b>代幣：</b><span id="modal-coin-count">' + calcTokenCount(email) + '</span></p>' +
-          '<button class="gacha-primary" onclick="drawGacha()">扭蛋</button>' +
+          '<button class="gacha-primary" type="button" onclick="drawGacha()">扭蛋</button>' +
           '<div class="gacha-tip">祝您中獎(´≖◞౪◟≖)</div>';
       } else {
         var log = readGachaLog(email).slice().reverse();
@@ -986,10 +1010,7 @@
       // 消耗一枚代幣（移除最早一天）
       var ledger = readTokenLedger(email);
       var days = Object.keys(ledger).sort();
-      if (days.length){
-        delete ledger[days[0]];
-        writeTokenLedger(email, ledger);
-      }
+      if (days.length){ delete ledger[days[0]]; writeTokenLedger(email, ledger); }
 
       var win = Math.random() < 0.01; // 1%
       var log = readGachaLog(email);
