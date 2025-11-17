@@ -1,6 +1,6 @@
 {
   "name": "Qoopio 打卡系統",
-  "short_name": "打卡！",
+  "short_name": "qoopio",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
