@@ -33,9 +33,7 @@
   </script>
   <style>
     @supports (height: 100dvh) {
-      .container {
-        min-height: calc(100dvh - 70px - env(safe-area-inset-bottom, 0px));
-      }
+      .container { min-height: calc(100dvh - 70px - env(safe-area-inset-bottom, 0px)); }
     }
     /* ====== 全域 ====== */
     html, body { margin: 0; padding: 0; height: 100%; }
@@ -70,23 +68,17 @@
     .logout-btn {
       background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto;
     }
-    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; }
+    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; min-height: 1.2em; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
-    /* ====== 固定底部 tab-bar ====== */
+    /* ====== 固定底部 tab-bar（穩定版） ====== */
     .tab-bar {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
+      position: fixed; left: 0; right: 0; bottom: 0;
       padding-bottom: env(safe-area-inset-bottom, 0px);
-      height: 70px;
-      background-color: #000;
-      display: flex; justify-content: space-around; align-items: center;
-      border-top: 2px solid #222;
-      z-index: 20000;
-      transform: none !important;
-      -webkit-transform: none !important;
-      backface-visibility: visible !important;
-      -webkit-backface-visibility: visible !important;
+      height: 70px; background-color: #000; display: flex; justify-content: space-around; align-items: center;
+      border-top: 2px solid #222; z-index: 20000;
+      transform: none !important; -webkit-transform: none !important;
+      backface-visibility: visible !important; -webkit-backface-visibility: visible !important;
       pointer-events: auto;
     }
     .tab-button { flex: 1; color: #fff; font-size: 1.2rem; font-weight: bold; background: none; border: none; cursor: pointer; height: 100%; }
@@ -94,10 +86,7 @@
 
     /* ====== 月曆（班表頁） ====== */
     #page-schedule { padding-top: 4vh; }
-    .calendar-header {
-      padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
-      font-size: 1.2rem; font-weight: bold;
-    }
+    .calendar-header { padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
     .calendar-header button {
       background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer;
       padding: 0.3rem 0.6rem; transition: color 0.2s ease;
@@ -134,22 +123,18 @@
     /* ====== 全螢幕載入遮罩 ====== */
     #loading-screen {
       position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 30000; transition: opacity 0.3s ease;
+      z-index: 20000; transition: opacity 0.3s ease;
     }
     #loading-screen.hidden { opacity: 0; pointer-events: none; }
     #loading-screen .spinner { width: 50px; height: 50px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
 
-    /* ====== 請假頁 ====== */
+    /* ====== 請假頁（按鈕固定 + 記錄卡片） ====== */
     #page-leave h3 { display: none; }
-    #page-leave {
-      text-align: left; padding-top: 10vh;
-      padding-bottom: calc(70px + 72px + env(safe-area-inset-bottom, 0px));
-    }
+    #page-leave { text-align: left; padding-top: 10vh; padding-bottom: calc(70px + 72px + env(safe-area-inset-bottom, 0px)); }
     .leave-btn-main {
       position: fixed; left: 50%; transform: translateX(-50%);
       bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px)); z-index: 9998;
-      display: block;
-      width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      display: block; width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
     .leave-btn-main.hidden { display: none; }
     #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
@@ -162,27 +147,27 @@
     .leave-card .row-2, .leave-card .row-3, .leave-card .row-4 { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     .leave-card .row-4 { color: #999; }
 
-    /* ====== HUD：扭蛋機 ====== */
+    /* ====== HUD：右下扭蛋機 + 代幣徽章 ====== */
     .hud-right{
       position: fixed; right: 12px; bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
       display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
     }
     .gacha-btn{
       background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0;
-      width: auto; height: auto; border-radius: 0; -webkit-tap-highlight-color: transparent; cursor: pointer;
+      width: auto; height: auto; border-radius: 0; -webkit-tap-highlight-color: transparent;
     }
-    .gacha-img,.gacha-svg{ width: 96px; height: 96px; display:block; }
+    .gacha-img,.gacha-svg{ width: 96px; height: 96px; }
     .gacha-img:not(.hidden) + .gacha-svg { display: none !important; }
     .gacha-badge{
-      position: absolute; right: -6px; top: -6px;
-      min-width: 22px; height: 22px; padding: 0 6px;
+      position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px;
       border-radius: 999px; background:#111; color:#fff; font-weight: 800; font-size: 12px;
-      display: inline-flex; align-items: center; justify-content:center;
-      border: 1px solid #fff;
+      display: inline-flex; align-items: center; justify-content:center; border: 1px solid #fff;
     }
+    .gacha-svg{ display:block; }
     .gacha-svg .body{ fill:#111; } .gacha-svg .window{ fill:#fff; } .gacha-svg .ball{ fill:#111; opacity:.9; }
+    .gacha-img{ display:block; }
 
-    /* ====== 共用 Modal ====== */
+    /* ====== 共用 Modal（扭蛋 / 請假） ====== */
     .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
     .modal.open{ display:flex; }
     .modal-card{ width: min(520px, 92%); background:#fff; border-radius:16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align:left; }
@@ -198,7 +183,7 @@
     .gacha-log{ margin-top:8px; }
     .gacha-item{ padding:8px 10px; border:1px solid #eee; border-radius:8px; margin:6px 0; font-size:0.92rem; color:#333; }
 
-    /* 請假表單 */
+    /* 請假表單（Modal 內） */
     #leave-form label { display:block; margin-top: 0.5rem; font-size:0.9rem; color:#555; }
     #leave-form select, #leave-form textarea {
       width: 100%; box-sizing: border-box; margin-top: 0.2rem;
@@ -269,7 +254,7 @@
   <!-- HUD（右下：扭蛋機 + 代幣徽章） -->
   <div class="hud-right" id="hud-right">
     <button class="gacha-btn" id="gachaBtn" type="button" title="扭蛋機">
-      <img id="gacha-img" class="gacha-img hidden" alt="扭蛋機" width="96" height="96" />
+      <img id="gacha-img" class="gacha-img hidden" alt="扭蛋機" width="36" height="36" />
       <svg id="gacha-svg" class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
         <rect class="body" x="12" y="26" rx="8" ry="8" width="40" height="30"/>
         <rect class="window" x="16" y="30" rx="6" ry="6" width="32" height="18"/>
@@ -372,13 +357,7 @@
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
     var selectedCell = null;
-
-    // ✅ 防重入 / 單一輪詢
-    var appBooting = false;
-    var tickId = null;
-
-    // ✅ 分帳號的月曆快取
-    var monthCache = {}; // { [email]: { [ym]: data } }
+    var monthCache = {};
 
     // 使用者表（由 user.json 載入）
     var userData = {};
@@ -389,31 +368,23 @@
     // 自訂扭蛋 icon（存在就啟用）
     var GACHA_ICON = "gacha-icon.png?v=20251117";
 
-    // ===== 打卡時段（上班/下班前後各 1 小時）=====
-    var CLOCK_WINDOWS = [
-      [11*60, 14*60],   // 11:00–14:00（含 12:00 上班）
-      [20*60, 23*60]    // 20:00–23:00（含 21:00 下班）
-    ];
-    function minutesNow(d){
-      d = d || new Date();
-      return d.getHours()*60 + d.getMinutes();
-    }
-    function inClockWindow(d){
-      var m = minutesNow(d);
-      for (var i=0;i<CLOCK_WINDOWS.length;i++){
-        var w = CLOCK_WINDOWS[i];
-        if (m >= w[0] && m <= w[1]) return true;
-      }
-      return false;
-    }
-
-    /* --- 小工具：日期字串 --- */
+    // ===== 工具：時間與視窗判定 =====
     function getLocalDateStr(d){
       d = d || new Date();
       var y = d.getFullYear();
       var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
       var day = String(d.getDate()); if (day.length < 2) day = "0" + day;
       return y + "-" + m + "-" + day;
+    }
+    function inWindowFor(type, now){
+      now = now || new Date();
+      var min = now.getHours() * 60 + now.getMinutes();
+      if (type === "上班") return (min >= 11*60 && min <= 14*60);
+      if (type === "下班") return (min >= 20*60 && min <= 23*60);
+      return false;
+    }
+    function windowTextFor(type){
+      return type === "上班" ? "上班打卡開放 11:00–14:00" : "下班打卡開放 20:00–23:00";
     }
     function formatLeaveDateDotWeek(dateStr) {
       if (!dateStr) return '';
@@ -423,8 +394,7 @@
       var y = d.getFullYear();
       var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
       var day = String(d.getDate()); if (day.length < 2) day = "0" + day;
-      var wkList = ['日','一','二','三','四','五','六'];
-      var wk = wkList[d.getDay()];
+      var wkList = ['日','一','二','三','四','五','六']; var wk = wkList[d.getDay()];
       return y + "." + m + "." + day + "（" + wk + "）";
     }
     function stripTaipeiTZ(s) {
@@ -432,19 +402,17 @@
       return String(s).replace(/GMT[^\(]*/g, '').replace(/\(台北標準時間\)/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    // ===== 狀態永久保存（每個 email + 每日）=====
-    function stateKey(email, date){ return "qoopio_clock_state_" + email + "_" + date; } // value: working|offwork|none
-    function saveClockState(email, date, state){ try{ localStorage.setItem(stateKey(email,date), state||"none"); }catch(_){ } }
-    function readClockState(email, date){ try{ return localStorage.getItem(stateKey(email,date)) || null; }catch(_){ return null; } }
+    // ===== 自動帶入 email（querystring ?email= 也支援）=====
+    (function autoEmailFromQuery(){
+      try {
+        var q = new URLSearchParams(location.search);
+        var qmail = q.get("email");
+        if (qmail) localStorage.setItem("qoopio_email", qmail.trim());
+      } catch(_) {}
+    })();
 
-    // ===== 代幣（每帳號永久保存）=====
-    function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
-    function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
-    function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
-    function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
-
-    /* --- 啟動：載入使用者清單（不快取） --- */
-    fetch("user.json?v=20251117", { cache: "no-store" })
+    // ===== 啟動：載入使用者清單 =====
+    fetch("user.json?v=20251117")
       .then(function(res){ return res.json(); })
       .then(function(json){ userData = json; initLogin(); })
       .catch(function () {
@@ -484,8 +452,6 @@
       if (!email) return alert("請輸入 Email");
       if (!userData[email]) return alert("查無此帳號");
       localStorage.setItem("qoopio_email", email);
-      // 分帳號月曆快取隔離
-      monthCache[email] = {};
       showUserInfo(email);
       bootReady = true; clearTimeout(bootTimer);
       document.getElementById("loading-screen").classList.remove("hidden");
@@ -500,17 +466,9 @@
 
     /* --- 進入主畫面 --- */
     async function showMainPages() {
-      if (appBooting) return; appBooting = true;
-      if (tickId) { clearInterval(tickId); tickId = null; }
-
+      bootReady = true; clearTimeout(bootTimer);
       var loading = document.getElementById("loading-screen");
       loading.classList.remove("hidden");
-
-      // 重置 UI
-      selectedCell = null;
-      var cg = document.getElementById("calendar-grid"); if (cg) cg.innerHTML = "";
-      var ss = document.getElementById("selected-shift"); if (ss) ss.textContent = "📅 請選擇日期";
-      var st = document.getElementById("status"); if (st) st.textContent = "";
 
       document.getElementById("login-page").classList.add("hidden");
       document.getElementById("page-clock").classList.remove("hidden");
@@ -518,6 +476,7 @@
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("tab-bar").classList.remove("hidden");
 
+      // HUD 僅在打卡頁顯示
       var hud = document.getElementById("hud-right");
       if (hud) hud.style.display = "inline-flex";
 
@@ -528,7 +487,8 @@
       var email = localStorage.getItem("qoopio_email");
 
       try {
-        updateButtonLabel(); // 不阻塞 UI
+        // 先跑，但不阻塞載入收遮罩
+        updateButtonLabel();
 
         const tasks = [
           new Promise(function(r){ loadCalendar(currentYear, currentMonth); r(); }),
@@ -538,22 +498,25 @@
         ];
         await Promise.allSettled(tasks);
 
-        backfillTokensFrom("2025/11/10"); // 不阻塞
+        // 代幣回補（根據試算表），不阻塞 UI
+        backfillTokensFrom("2025-11-10");
       } catch (e) {
         console.warn("載入中發生錯誤", e);
       } finally {
         loading.classList.add("hidden");
-        if (tickId) clearInterval(tickId);
-        tickId = setInterval(function(){
+        setInterval(function(){
           updateButtonLabel();
+          enforceActionWindow(); // 每分鐘重新檢查可按時段
           var emailNow = localStorage.getItem("qoopio_email");
           updateLeavePendingBanner(emailNow);
         }, 60000);
-        appBooting = false;
       }
 
       var gbtn = document.getElementById("gachaBtn");
       if (gbtn) gbtn.onclick = openGacha;
+
+      // 進入主頁後先套一次「可按時段」
+      enforceActionWindow();
     }
 
     /* --- Tab 切換 --- */
@@ -561,8 +524,10 @@
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("page-leave").classList.add("hidden");
+
       document.getElementById("page-" + page).classList.remove("hidden");
 
+      // HUD 只在打卡頁
       var hud = document.getElementById("hud-right");
       if (hud) {
         if (page === "clock") { hud.classList.remove("hidden"); hud.style.display = "inline-flex"; }
@@ -573,44 +538,28 @@
       for (var i=0;i<tabs.length;i++){ tabs[i].classList.remove("active"); }
       document.querySelector('.tab-button[data-page="'+page+'"]').classList.add("active");
 
-      if (page === "schedule") updateMonthShiftMarkers();
-      else if (page === "leave") loadLeaveHistory(localStorage.getItem("qoopio_email"));
+      if (page === "schedule") {
+        updateMonthShiftMarkers();
+      } else if (page === "leave") {
+        var email = localStorage.getItem("qoopio_email");
+        loadLeaveHistory(email);
+      } else if (page === "clock") {
+        enforceActionWindow();
+      }
     }
 
-    /* --- 打卡按鈕狀態（單次鎖 + 逾時 + 禁快取 + 時段限制）--- */
+    /* --- 打卡按鈕狀態（狀態以試算表為準；依時段決定可按） --- */
     async function updateButtonLabel() {
-      if (window._labelBusy) return;
-      window._labelBusy = true;
-
-      if (window._labelCtl) { try { window._labelCtl.abort(); } catch(_){} }
-      var controller = new AbortController();
-      window._labelCtl = controller;
-
       var btn = document.getElementById("clockInBtn");
       var email = localStorage.getItem("qoopio_email");
-      if (!btn || !email) { window._labelBusy = false; return; }
+      if (!btn || !email) return;
 
       var statusEl = document.getElementById("status");
       var todayStr = getLocalDateStr();
-      var timer = setTimeout(function(){ controller.abort(); }, 3500);
 
-      // 先用本地快取快速渲染一次（避免剛進來看到「空白」）
-      try {
-        var cached = readClockState(email, todayStr);
-        if (cached) {
-          if (cached === "working") {
-            if (statusEl) { statusEl.textContent = "上班中"; statusEl.style.color = "#333"; }
-            setButton("下班", false, "#111", "下班");
-          } else if (cached === "offwork") {
-            if (statusEl) { statusEl.textContent = "今天已下班"; statusEl.style.color = "#27ae60"; }
-            setButton("下班掰掰", true, "#aaa", "上班");
-          } else {
-            if (statusEl) { statusEl.textContent = ""; statusEl.style.color = "#333"; }
-            setButton("上班", false, "#111", "上班");
-          }
-          enforceClockWindow();
-        }
-      } catch(_){}
+      // 加逾時：3.5s
+      var controller = new AbortController();
+      var timer = setTimeout(function(){ controller.abort(); }, 3500);
 
       try {
         var res = await fetch(
@@ -621,53 +570,46 @@
         var data = await res.json();
 
         if (data && data.ok !== false) {
-          var stateNow = "none";
           if (data.state === "working") {
-            if (statusEl) { statusEl.textContent = "上班中"; statusEl.style.color = "#333"; }
+            // 以後端為準：正在上班 → 顯示「下班」
             setButton("下班", false, "#111", "下班");
-            stateNow = "working";
+            if (statusEl) statusEl.textContent = "上班中";
           } else if (data.state === "offwork") {
-            if (statusEl) { statusEl.textContent = "今天已下班"; statusEl.style.color = "#27ae60"; }
-            setButton("下班掰掰", true, "#aaa", "上班");
-            stateNow = "offwork";
+            // 已下班 → 鎖住（保留下一次進場會重新判定）
+            setButton("今天已下班", true, "#aaa", "上班");
+            if (statusEl) statusEl.textContent = "今天已下班";
           } else {
-            if (statusEl) { statusEl.textContent = ""; statusEl.style.color = "#333"; }
+            // idle → 顯示「上班」
             setButton("上班", false, "#111", "上班");
-            stateNow = "none";
+            if (statusEl) statusEl.textContent = "";
           }
-          // 寫入本地快取
-          saveClockState(email, todayStr, stateNow);
         }
+        // data.ok === false 時不動 UI
       } catch (e) {
         clearTimeout(timer);
-        console.warn("clockState 失敗：採用本地狀態", e);
-        // 若本地也沒有，才用時間區段做最保守的預設
-        var cached2 = readClockState(email, todayStr);
-        if (!cached2) fallbackByTime();
+        console.warn("clockState 失敗：保持現況", e);
       } finally {
-        enforceClockWindow();
-        window._labelBusy = false;
+        enforceActionWindow();
       }
     }
 
-    function enforceClockWindow(){
+    // 依時段限制按鈕
+    function enforceActionWindow(){
       var btn = document.getElementById("clockInBtn");
+      var statusEl = document.getElementById("status");
       if (!btn) return;
-      var allowed = inClockWindow(new Date());
-      // 僅控制 enable/disable，不改變目前文案與顏色（維持你原本外觀）
-      btn.disabled = !allowed || btn.textContent === "下班掰掰"; // 已下班仍維持 disabled
-      btn.style.opacity = btn.disabled ? 0.6 : 1;
-    }
-
-    function fallbackByTime() {
-      var now = new Date();
-      var totalMinutes = now.getHours() * 60 + now.getMinutes();
-      if (totalMinutes >= 120 && totalMinutes < 1080) {
-        setButton("上班", false, "#111", "上班");
+      var type = btn.dataset.type || (btn.textContent.indexOf("下班")>-1 ? "下班" : "上班");
+      var allowed = inWindowFor(type);
+      if (allowed) {
+        // 僅在「今天已下班」狀態下維持 disabled
+        if (btn.textContent !== "今天已下班") btn.disabled = false;
+        if (statusEl && (statusEl.textContent === windowTextFor("上班") || statusEl.textContent === windowTextFor("下班"))) statusEl.textContent = "";
       } else {
-        setButton("下班", false, "#111", "下班");
+        btn.disabled = true;
+        if (statusEl && btn.textContent !== "今天已下班") statusEl.textContent = windowTextFor(type);
       }
     }
+
     function setButton(text, disabled, color, type) {
       var btn = document.getElementById("clockInBtn");
       if (!btn) return;
@@ -677,19 +619,26 @@
       btn.dataset.type = type || "";
     }
 
+    function fallbackByTime() {
+      var now = new Date();
+      var totalMinutes = now.getHours() * 60 + now.getMinutes();
+      if (totalMinutes >= 120 && totalMinutes < 1080) setButton("上班", false, "#111", "上班");
+      else setButton("下班", false, "#111", "下班");
+      enforceActionWindow();
+    }
+
     /* --- 打卡送出 + 12:00 前代幣 --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
       var btn = document.getElementById("clockInBtn");
+      var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
-      // 時段限制：再次檢查（防止外部 script 觸發）
-      if (!inClockWindow(new Date())) {
-        alert("目前非打卡時段：11:00–14:00、20:00–23:00");
+      // 時段限制
+      if (!inWindowFor(type)) {
+        alert(windowTextFor(type));
         return;
       }
-
-      var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
       navigator.geolocation.getCurrentPosition(
         function (pos) {
@@ -700,17 +649,10 @@
           status.textContent = "✅ " + name + " " + type + "（" + timeStr + "）";
           status.style.color = "green";
 
-          // 先更新 UI 與本地狀態（提升體感）
-          if (type === "上班") {
-            setButton("上班中", true, "#aaa");
-            saveClockState(email, getLocalDateStr(), "working");
-          } else if (type === "下班") {
-            setButton("下班掰掰", true, "#aaa");
-            saveClockState(email, getLocalDateStr(), "offwork");
-          }
-          enforceClockWindow();
+          if (type === "上班")      setButton("下班", false, "#111", "下班");
+          else if (type === "下班") setButton("今天已下班", true, "#aaa", "上班");
 
-          // 後送後端
+          // 寫後端
           fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
@@ -718,23 +660,26 @@
             body: JSON.stringify({ action: "clockIn", email: email, type: type, lat: pos.coords.latitude, lng: pos.coords.longitude })
           }).catch(function(err){ console.error("clockIn error", err); });
 
+          // 上班（<=12:00）給代幣（前端即時 + 後續回補也會核對）
           awardTokenIfEligible(type, new Date());
+          enforceActionWindow();
         },
         function () { alert("無法取得定位資訊"); }
       );
     }
 
-    // 🔄 登出：不再清掉代幣與扭蛋紀錄，僅移除目前登入的 email 與輪詢
     function resetEmail() {
       var email = localStorage.getItem("qoopio_email");
       if (email) {
-        // （保留）localStorage.removeItem(tokenLedgerKey(email));
-        // （保留）localStorage.removeItem(gachaKey(email));
-        // 清理僅與 UI 相關的暫存
-        if (monthCache[email]) monthCache[email] = {};
+        // 這些是純 UI 快取；不要清代幣與扭蛋紀錄，避免看起來像「消失」
+        localStorage.removeItem("qoopio_state_" + email);
+        localStorage.removeItem("qoopio_state_date_" + email);
+        localStorage.removeItem("qoopio_shift_" + email);
+        localStorage.removeItem("qoopio_shift_date_" + email);
+        // localStorage.removeItem(tokenLedgerKey(email)); // 保留
+        // localStorage.removeItem(gachaKey(email));       // 保留
       }
       localStorage.removeItem("qoopio_email");
-      if (tickId) { clearInterval(tickId); tickId = null; }
       location.reload();
     }
 
@@ -804,16 +749,12 @@
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
 
-      monthCache[email] = monthCache[email] || {};
-      if (monthCache[email][ym]) { applyMarkers(monthCache[email][ym]); return; }
+      if (monthCache[ym]) { applyMarkers(monthCache[ym]); return; }
 
       try {
-        var res = await fetch(
-          scriptUrl + "?month=" + ym + "&mode=summary&email=" + encodeURIComponent(email),
-          { cache: "no-store" }
-        );
+        var res = await fetch(scriptUrl + "?month=" + ym + "&mode=summary&email=" + encodeURIComponent(email));
         var data = await res.json();
-        monthCache[email][ym] = data;
+        monthCache[ym] = data;
         applyMarkers(data);
       } catch (e) {
         console.log("無法取得有班日", e);
@@ -841,7 +782,7 @@
       var target = dateStr || getLocalDateStr();
       var box = document.getElementById("selected-shift");
       try {
-        var res = await fetch(scriptUrl + "?date=" + target + "&mode=all", { cache: "no-store" });
+        var res = await fetch(scriptUrl + "?date=" + target + "&mode=all");
         var data = await res.json();
         var shifts = data.shifts || [];
         if (!shifts.length) {
@@ -953,7 +894,7 @@
       }
     }
 
-    /* --- 請假紀錄 --- */
+    /* --- 載入個人請假紀錄（最近 5 筆）--- */
     async function loadLeaveHistory(email) {
       var box = document.getElementById("leave-history");
       if (!box) return;
@@ -963,10 +904,7 @@
       box.textContent = "載入中...";
 
       try {
-        var res = await fetch(
-          scriptUrl + "?action=leaveHistory&email=" + encodeURIComponent(realEmail) + "&limit=5",
-          { cache: "no-store" }
-        );
+        var res = await fetch(scriptUrl + "?action=leaveHistory&email=" + encodeURIComponent(realEmail) + "&limit=5");
         var data = await res.json();
         var list = data.items || [];
 
@@ -1008,10 +946,7 @@
       if (LEAVE_PENDING_USERS.indexOf(email) === -1) { banner.textContent = ""; return; }
 
       try {
-        var res = await fetch(
-          scriptUrl + "?action=leaveStatus&email=" + encodeURIComponent(email),
-          { cache: "no-store" }
-        );
+        var res = await fetch(scriptUrl + "?action=leaveStatus&email=" + encodeURIComponent(email));
         var data = await res.json();
         banner.textContent = (data.ok && data.hasPending) ? "有請假待審核" : "";
       } catch (e) {
@@ -1020,6 +955,11 @@
     }
 
     /* === 代幣（12:00 前上班 +1）、扭蛋機（1%） === */
+    function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
+    function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
+    function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
+    function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
+
     function awardTokenIfEligible(type, now){
       now = now || new Date();
       if (type !== "上班") return;
@@ -1080,23 +1020,20 @@
       if (!email) return;
       var tokens = calcTokenCount(email);
       if (tokens < 1){ alert("代幣不足"); return; }
-
       var ledger = readTokenLedger(email);
       var days = Object.keys(ledger).sort();
       if (days.length){ delete ledger[days[0]]; writeTokenLedger(email, ledger); }
-
       var win = Math.random() < 0.01; // 1%
       var log = readGachaLog(email);
       log.push({ time: new Date().toISOString(), result: win ? 'win' : 'lose' });
       writeGachaLog(email, log);
-
       refreshCoinUi();
       switchGachaTab('gacha');
       setTimeout(function(){ alert(win ? "中獎 🎉 截圖去找Ray領獎" : "哈哈沒中啦"); }, 10);
     }
 
     /* === 代幣補發：從指定日期起，依每日第一筆「上班」是否 <= 12:00 補發 === */
-    function backfillFlagKey(email, start){ return `qoopio_backfill_${email}_${start}`; }
+    function backfillFlagKey(email, start){ return "qoopio_backfill_"+email+"_"+start; }
     async function backfillTokensFrom(startDateStr){
       const email = localStorage.getItem("qoopio_email");
       if (!email) return;
@@ -1109,13 +1046,12 @@
 
       for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
         const ymd = getLocalDateStr(d);
-        if (ledger[ymd]) continue;
-
+        if (ledger[ymd]) continue; // 已領過就跳過
         try {
           const firstInISO = await getFirstClockInTime(email, ymd);
           if (!firstInISO) continue;
           const first = new Date(firstInISO);
-          const noon = new Date(`${ymd}T12:00:00`);
+          const noon = new Date(ymd + "T12:00:00");
           if (first <= noon) { ledger[ymd] = true; }
         } catch(e){
           console.warn("backfill failed:", ymd, e);
@@ -1129,30 +1065,26 @@
     /* 嘗試多種後端回傳格式 / action 名稱，拿到「第一筆上班時間」 */
     async function getFirstClockInTime(email, dateStr){
       try{
-        const r = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
+        const r = await fetch(scriptUrl+"?action=clockState&email="+encodeURIComponent(email)+"&date="+dateStr);
         const j = await r.json();
         const t = j.firstIn || j.firstInTime || j.firstClockIn || j.inAt || j.firstInTs || j.first_in;
         if (t) return normalizeToISO(dateStr, String(t));
       }catch(e){}
       try{
-        const r2 = await fetch(`${scriptUrl}?action=clockLogs&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
+        const r2 = await fetch(scriptUrl+"?action=clockLogs&email="+encodeURIComponent(email)+"&date="+dateStr);
         const j2 = await r2.json();
         if (Array.isArray(j2.logs)){
-          const ins = j2.logs
-            .filter(x => /上班/.test(x.type||"") && x.time)
-            .map(x => normalizeToISO(dateStr, String(x.time)))
-            .sort();
+          const ins = j2.logs.filter(x => /上班/.test(x.type||"") && x.time)
+                             .map(x => normalizeToISO(dateStr, String(x.time))).sort();
           if (ins[0]) return ins[0];
         }
       }catch(e){}
       try{
-        const r3 = await fetch(`${scriptUrl}?action=clockHistory&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
+        const r3 = await fetch(scriptUrl+"?action=clockHistory&email="+encodeURIComponent(email)+"&date="+dateStr);
         const j3 = await r3.json();
         if (Array.isArray(j3.items)){
-          const ins = j3.items
-            .filter(x => /上班/.test(x.type||"") && x.time)
-            .map(x => normalizeToISO(dateStr, String(x.time)))
-            .sort();
+          const ins = j3.items.filter(x => /上班/.test(x.type||"") && x.time)
+                              .map(x => normalizeToISO(dateStr, String(x.time))).sort();
           if (ins[0]) return ins[0];
         }
       }catch(e){}
@@ -1163,11 +1095,11 @@
     function normalizeToISO(dateStr, timeStr){
       const clean = stripTaipeiTZ(timeStr).replace(/\//g,'-').trim();
       if (/^\d{2}:\d{2}(:\d{2})?$/.test(clean)){
-        return `${dateStr}T${clean.length===5 ? clean+":00" : clean}`;
+        return dateStr+"T"+(clean.length===5 ? clean+":00" : clean);
       }
       const d = new Date(clean);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
-      return `${dateStr}T12:00:01`;
+      return dateStr+"T12:00:01"; // 無法判讀 → 回傳中午後 1 秒（不發代幣）
     }
   </script>
 </body>
