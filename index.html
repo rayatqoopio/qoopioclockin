@@ -58,14 +58,14 @@
     .logo { width: 230px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; text-align: center; }
 
-    /* ====== 打卡頁 ====== */
+    /* ====== 打卡頁（維持上一版外觀） ====== */
     #page-clock { padding-top: 14vh; position: relative; z-index: 1; text-align: center; }
     #clockInBtn {
       width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff;
       border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto;
       transition: background-color 0.3s ease, opacity 0.3s ease;
     }
-    /* 反灰樣式（disabled） */
+    /* 反灰樣式（非打卡時段需確實無法按） */
     #clockInBtn:disabled,
     #clockInBtn[disabled]{
       background-color: #bbb !important;
@@ -77,11 +77,9 @@
     .logout-btn {
       background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto;
     }
-    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; min-height: 1.2em; }
-    /* 狀態顏色：灰綠 / 暗紅 */
-    #status.status-ok { color: #4f7f5f; }   /* 灰綠 */
-    #status.status-bad { color: #8b0000; } /* 暗紅 */
 
+    /* 狀態行：用 JS 設定深綠/暗紅顏色 */
+    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; min-height: 1.2em; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
     /* ====== 固定底部 tab-bar（穩定版） ====== */
@@ -133,7 +131,7 @@
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* ====== 全螢幕載入遮罩 ====== */
+    /* ====== 全螢幕載入遮罩（所有資料都載入完成才關閉） ====== */
     #loading-screen {
       position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 20000; transition: opacity 0.3s ease;
@@ -170,7 +168,8 @@
       width: auto; height: auto; border-radius: 0; -webkit-tap-highlight-color: transparent;
     }
     .gacha-img,.gacha-svg{ width: 96px; height: 96px; }
-    .gacha-img:not(.hidden) + .gacha-svg { display: none !重要; }
+    /* 若有顯示自製 icon，強制隱藏 SVG */
+    .gacha-img:not(.hidden) + .gacha-svg { display: none !important; }
     .gacha-badge{
       position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px;
       border-radius: 999px; background:#111; color:#fff; font-weight: 800; font-size: 12px;
@@ -381,7 +380,7 @@
     // 自訂扭蛋 icon（存在就啟用）
     var GACHA_ICON = "gacha-icon.png?v=20251117";
 
-    // ===== 工具：日期與時段判定 =====
+    // ===== 工具：時間與字串處理 =====
     function getLocalDateStr(d){
       d = d || new Date();
       var y = d.getFullYear();
@@ -444,14 +443,14 @@
         if (load) load.classList.add("hidden");
       }
 
-      // 嘗試載入自訂扭蛋圖示
+      // 嘗試載入自訂扭蛋圖示（載到就隱藏 SVG）
       try {
         var imgProbe = new Image();
         imgProbe.onload = function(){
           var img = document.getElementById("gacha-img");
           var svg = document.getElementById("gacha-svg");
           if (img) { img.src = GACHA_ICON; img.classList.remove("hidden"); }
-          if (svg) svg.classList.add("hidden");
+          if (svg) { svg.style.display = "none"; } // 雙保險
         };
         imgProbe.src = GACHA_ICON;
       } catch(_) {}
@@ -474,17 +473,7 @@
       document.getElementById("leave-name").textContent = name;
     }
 
-    /* 簡化狀態顯示：集中控制顏色 */
-    function setStatus(text, kind){
-      var el = document.getElementById("status");
-      if (!el) return;
-      el.textContent = text || "";
-      el.classList.remove("status-ok", "status-bad");
-      if (kind === "ok") el.classList.add("status-ok");
-      if (kind === "bad") el.classList.add("status-bad");
-    }
-
-    /* --- 進入主畫面 --- */
+    /* ====== 進入主畫面：三頁資料都載完才關遮罩 ====== */
     async function showMainPages() {
       bootReady = true; clearTimeout(bootTimer);
       var loading = document.getElementById("loading-screen");
@@ -506,32 +495,45 @@
 
       var email = localStorage.getItem("qoopio_email");
 
-      try {
-        updateButtonLabel(); // 先判斷今日狀態
+      // 三大資料：打卡頁（按鈕+今日狀態）、請假紀錄、班表（含月標記）
+      const loadClock = (async function(){
+        try {
+          await updateButtonLabel();          // 根據後端狀態決定「上班/下班/今天已下班」
+        } catch(e){ console.warn(e); }
+        try {
+          await updateTodayStatusFromSheet(); // 查「打卡紀錄」分頁 → 顯示今日已/未打卡
+        } catch(e){ console.warn(e); }
+        enforceActionWindow();                 // 非時段反灰不可按
+      })();
 
-        const tasks = [
-          new Promise(function(r){ loadCalendar(currentYear, currentMonth); r(); }),
-          updateLeavePendingBanner(email),
-          loadLeaveHistory(email),
-          refreshCoinUi()
-        ];
-        await Promise.allSettled(tasks);
-      } catch (e) {
-        console.warn("載入中發生錯誤", e);
-      } finally {
-        loading.classList.add("hidden");
-        setInterval(function(){
-          updateButtonLabel();
-          enforceActionWindow(); // 每分鐘重新檢查可按時段
-          var emailNow = localStorage.getItem("qoopio_email");
-          updateLeavePendingBanner(emailNow);
-        }, 60000);
-      }
+      const loadLeave = loadLeaveHistory(email).catch(function(e){ console.warn(e); });
+
+      const loadSchedule = (async function(){
+        try { loadCalendar(currentYear, currentMonth); } catch(e){ console.warn(e); }
+        try { await updateMonthShiftMarkers(); } catch(e){ console.warn(e); }
+      })();
+
+      // 等三個都完成才關遮罩
+      await Promise.all([loadClock, loadLeave, loadSchedule]);
+
+      // 其他非必等項（不影響遮罩）
+      updateLeavePendingBanner(email);
+      refreshCoinUi();
+
+      loading.classList.add("hidden");
+
+      // 之後每分鐘更新一次（不影響遮罩）
+      setInterval(async function(){
+        try { await updateButtonLabel(); } catch(e){}
+        try { await updateTodayStatusFromSheet(); } catch(e){}
+        enforceActionWindow();
+        var emailNow = localStorage.getItem("qoopio_email");
+        updateLeavePendingBanner(emailNow);
+      }, 60000);
 
       var gbtn = document.getElementById("gachaBtn");
       if (gbtn) gbtn.onclick = openGacha;
 
-      // 進入主頁後先套一次「可按時段」
       enforceActionWindow();
     }
 
@@ -561,11 +563,11 @@
         loadLeaveHistory(email);
       } else if (page === "clock") {
         enforceActionWindow();
-        updateButtonLabel();
+        updateButtonLabel().then(updateTodayStatusFromSheet);
       }
     }
 
-    /* --- 打卡按鈕狀態（狀態以試算表為準；依時段決定可按） --- */
+    /* --- 打卡按鈕狀態（以後端為準；不顯示打卡時段提示文字） --- */
     async function updateButtonLabel() {
       var btn = document.getElementById("clockInBtn");
       var email = localStorage.getItem("qoopio_email");
@@ -587,30 +589,22 @@
 
         if (data && data.ok !== false) {
           if (data.state === "working") {
-            // 正在上班 → 顯示「下班」+「今日已打卡」
             setButton("下班", false, "#111", "下班");
-            setStatus("今日已打卡", "ok");
           } else if (data.state === "offwork") {
-            // 已下班 → 鎖住 + 顯示「今天已下班」
             setButton("今天已下班", true, "#aaa", "上班");
-            setStatus("今天已下班");
           } else {
-            // idle → 顯示「上班」+「今日未打卡」
             setButton("上班", false, "#111", "上班");
-            setStatus("今日未打卡", "bad");
           }
         }
       } catch (e) {
         clearTimeout(timer);
         console.warn("clockState 失敗：保持現況", e);
-        // 如果無法查詢，至少顯示「今日未打卡」（不覆蓋已下班狀態）
-        if (btn.textContent !== "今天已下班") setStatus("今日未打卡", "bad");
       } finally {
         enforceActionWindow();
       }
     }
 
-    // 依時段限制按鈕（非時段直接反灰，不顯示任何提示文字）
+    // 依時段限制按鈕（非時段直接反灰）
     function enforceActionWindow(){
       var btn = document.getElementById("clockInBtn");
       if (!btn) return;
@@ -630,7 +624,37 @@
       btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
     }
 
-    /* --- 打卡送出 + 12:00 前代幣 --- */
+    /* --- 顯示「今日已打卡 / 今日未打卡」（查『打卡紀錄』分頁） --- */
+    async function updateTodayStatusFromSheet(){
+      var email = localStorage.getItem("qoopio_email");
+      var statusEl = document.getElementById("status");
+      if (!email || !statusEl) return;
+      var todayStr = getLocalDateStr();
+
+      try {
+        var res = await fetch(
+          scriptUrl + "?action=clockHistory&email=" + encodeURIComponent(email) + "&date=" + todayStr,
+          { cache: "no-store" }
+        );
+        var data = await res.json();
+        var items = Array.isArray(data && data.items) ? data.items : [];
+        var hasAnyRecord = items.length > 0; // 只要今天有任一筆打卡紀錄即視為「今日已打卡」
+
+        if (hasAnyRecord) {
+          statusEl.textContent = "今日已打卡";
+          statusEl.style.color = "#0B6B3A"; // 深綠
+        } else {
+          statusEl.textContent = "今日未打卡";
+          statusEl.style.color = "#8B0000"; // 暗紅
+        }
+      } catch (e) {
+        console.warn("clockHistory 失敗：以『未打卡』顯示", e);
+        statusEl.textContent = "今日未打卡";
+        statusEl.style.color = "#8B0000";
+      }
+    }
+
+    /* --- 打卡送出（非時段禁止；不顯示時段提示） --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
       var btn = document.getElementById("clockInBtn");
@@ -642,14 +666,11 @@
 
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          var name = (userData[email] && userData[email].name) || email;
-
+          // 按鈕狀態切換
           if (type === "上班") {
             setButton("下班", false, "#111", "下班");
-            setStatus("今日已打卡", "ok");
           } else if (type === "下班") {
             setButton("今天已下班", true, "#aaa", "上班");
-            setStatus("今天已下班");
           }
 
           // 寫後端
@@ -662,6 +683,9 @@
 
           // 上班（<=12:00）給代幣（前端即時）
           awardTokenIfEligible(type, new Date());
+
+          // 重新查『打卡紀錄』呈現今日狀態
+          updateTodayStatusFromSheet();
           enforceActionWindow();
         },
         function () { alert("無法取得定位資訊"); }
@@ -937,7 +961,7 @@
       }
     }
 
-    /* --- 請假待審核提示 --- */
+    /* --- 請假待審核提示（不影響遮罩） --- */
     async function updateLeavePendingBanner(email) {
       var banner = document.getElementById("leave-pending-banner");
       if (!banner || !email) return;
@@ -952,7 +976,7 @@
       }
     }
 
-    /* === 代幣（12:00 前上班 +1）、扭蛋機（保留 10 筆） === */
+    /* === 代幣（12:00 前上班 +1）、扭蛋機（保留最近 10 筆） === */
     function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
     function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
     function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
