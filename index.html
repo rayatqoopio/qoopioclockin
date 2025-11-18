@@ -73,20 +73,16 @@
     #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
-    /* ====== 固定底部 tab-bar（穩定版） ====== */
+    /* ====== 固定底部 tab-bar ====== */
     .tab-bar {
       position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      left: 0; right: 0; bottom: 0;
       padding-bottom: env(safe-area-inset-bottom, 0px);
       height: 70px;
       background-color: #000;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
+      display: flex; justify-content: space-around; align-items: center;
       border-top: 2px solid #222;
-      z-index: 20000; /* 低於 loading 遮罩 */
+      z-index: 20000;
       transform: none !important;
       -webkit-transform: none !important;
       backface-visibility: visible !important;
@@ -135,15 +131,15 @@
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* ====== 全螢幕載入遮罩（調高層級蓋住扭蛋機與底欄） ====== */
+    /* ====== 全螢幕載入遮罩 ====== */
     #loading-screen {
       position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 30000; transition: opacity 0.3s ease; /* 最高層 */
+      z-index: 30000; transition: opacity 0.3s ease;
     }
     #loading-screen.hidden { opacity: 0; pointer-events: none; }
     #loading-screen .spinner { width: 50px; height: 50px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
 
-    /* ====== 請假頁（按鈕固定 + 記錄卡片） ====== */
+    /* ====== 請假頁 ====== */
     #page-leave h3 { display: none; }
     #page-leave {
       text-align: left; padding-top: 10vh;
@@ -166,29 +162,16 @@
     .leave-card .row-2, .leave-card .row-3, .leave-card .row-4 { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     .leave-card .row-4 { color: #999; }
 
-    /* ====== HUD：右下扭蛋機 + 代幣徽章 ====== */
+    /* ====== HUD：扭蛋機 ====== */
     .hud-right{
       position: fixed; right: 12px; bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
       display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
     }
     .gacha-btn{
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      padding: 0;
-      width: auto;
-      height: auto;
-      border-radius: 0;
-      -webkit-tap-highlight-color: transparent;
-      cursor: pointer;
+      background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0;
+      width: auto; height: auto; border-radius: 0; -webkit-tap-highlight-color: transparent; cursor: pointer;
     }
-    .gacha-img,
-    .gacha-svg{
-      width: 96px;
-      height: 96px;
-      display: block;
-    }
-    /* 只要 IMG 顯示，就把後面的 SVG 關掉（避免任何小黑形狀） */
+    .gacha-img,.gacha-svg{ width: 96px; height: 96px; display:block; }
     .gacha-img:not(.hidden) + .gacha-svg { display: none !important; }
     .gacha-badge{
       position: absolute; right: -6px; top: -6px;
@@ -197,11 +180,9 @@
       display: inline-flex; align-items: center; justify-content:center;
       border: 1px solid #fff;
     }
-    .gacha-svg .body{ fill:#111; }
-    .gacha-svg .window{ fill:#fff; }
-    .gacha-svg .ball{ fill:#111; opacity:.9; }
+    .gacha-svg .body{ fill:#111; } .gacha-svg .window{ fill:#fff; } .gacha-svg .ball{ fill:#111; opacity:.9; }
 
-    /* ====== 共用 Modal（扭蛋 / 請假） ====== */
+    /* ====== 共用 Modal ====== */
     .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
     .modal.open{ display:flex; }
     .modal-card{ width: min(520px, 92%); background:#fff; border-radius:16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align:left; }
@@ -217,8 +198,8 @@
     .gacha-log{ margin-top:8px; }
     .gacha-item{ padding:8px 10px; border:1px solid #eee; border-radius:8px; margin:6px 0; font-size:0.92rem; color:#333; }
 
-    /* 請假表單（放在 Modal 內） */
-    #leave-form label { display:block; margin-top: 0.5rem; font-size:0.9rem; color:0#555; }
+    /* 請假表單 */
+    #leave-form label { display:block; margin-top: 0.5rem; font-size:0.9rem; color:#555; }
     #leave-form select, #leave-form textarea {
       width: 100%; box-sizing: border-box; margin-top: 0.2rem;
       padding: 0.4rem 0.5rem; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; font-family: inherit;
@@ -246,11 +227,10 @@
       <button type="button" onclick="login()">登入</button>
     </div>
 
-    <!-- 請假頁（表單改為 Modal，只保留底部主按鈕與紀錄） -->
+    <!-- 請假頁 -->
     <div id="page-leave" class="hidden">
       <h3>請假</h3>
       <button class="leave-btn-main" type="button" onclick="openLeaveForm()">申請請假</button>
-
       <h4>請假紀錄</h4>
       <div id="leave-history">載入中...</div>
     </div>
@@ -286,10 +266,9 @@
     <button class="tab-button" type="button" data-page="schedule" onclick="switchPage('schedule')">班表</button>
   </div>
 
-  <!-- HUD（右下單一：扭蛋機 + 代幣徽章） -->
+  <!-- HUD（右下：扭蛋機 + 代幣徽章） -->
   <div class="hud-right" id="hud-right">
     <button class="gacha-btn" id="gachaBtn" type="button" title="扭蛋機">
-      <!-- 若找到自訂圖檔就用 <img>，否則 fallback 成這個 SVG -->
       <img id="gacha-img" class="gacha-img hidden" alt="扭蛋機" width="96" height="96" />
       <svg id="gacha-svg" class="gacha-svg" viewBox="0 0 64 64" aria-hidden="true">
         <rect class="body" x="12" y="26" rx="8" ry="8" width="40" height="30"/>
@@ -323,7 +302,7 @@
     </div>
   </div>
 
-  <!-- 請假 Modal（表單浮在畫面上） -->
+  <!-- 請假 Modal -->
   <div class="modal" id="leave-modal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -410,6 +389,24 @@
     // 自訂扭蛋 icon（存在就啟用）
     var GACHA_ICON = "gacha-icon.png?v=20251117";
 
+    // ===== 打卡時段（上班/下班前後各 1 小時）=====
+    var CLOCK_WINDOWS = [
+      [11*60, 14*60],   // 11:00–14:00（含 12:00 上班）
+      [20*60, 23*60]    // 20:00–23:00（含 21:00 下班）
+    ];
+    function minutesNow(d){
+      d = d || new Date();
+      return d.getHours()*60 + d.getMinutes();
+    }
+    function inClockWindow(d){
+      var m = minutesNow(d);
+      for (var i=0;i<CLOCK_WINDOWS.length;i++){
+        var w = CLOCK_WINDOWS[i];
+        if (m >= w[0] && m <= w[1]) return true;
+      }
+      return false;
+    }
+
     /* --- 小工具：日期字串 --- */
     function getLocalDateStr(d){
       d = d || new Date();
@@ -435,7 +432,18 @@
       return String(s).replace(/GMT[^\(]*/g, '').replace(/\(台北標準時間\)/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    /* --- 啟動：載入使用者清單 --- */
+    // ===== 狀態永久保存（每個 email + 每日）=====
+    function stateKey(email, date){ return "qoopio_clock_state_" + email + "_" + date; } // value: working|offwork|none
+    function saveClockState(email, date, state){ try{ localStorage.setItem(stateKey(email,date), state||"none"); }catch(_){ } }
+    function readClockState(email, date){ try{ return localStorage.getItem(stateKey(email,date)) || null; }catch(_){ return null; } }
+
+    // ===== 代幣（每帳號永久保存）=====
+    function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
+    function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
+    function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
+    function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
+
+    /* --- 啟動：載入使用者清單（不快取） --- */
     fetch("user.json?v=20251117", { cache: "no-store" })
       .then(function(res){ return res.json(); })
       .then(function(json){ userData = json; initLogin(); })
@@ -476,10 +484,8 @@
       if (!email) return alert("請輸入 Email");
       if (!userData[email]) return alert("查無此帳號");
       localStorage.setItem("qoopio_email", email);
-
-      // 換帳號即重置該帳號的月曆快取
+      // 分帳號月曆快取隔離
       monthCache[email] = {};
-
       showUserInfo(email);
       bootReady = true; clearTimeout(bootTimer);
       document.getElementById("loading-screen").classList.remove("hidden");
@@ -494,10 +500,7 @@
 
     /* --- 進入主畫面 --- */
     async function showMainPages() {
-      if (appBooting) return;         // 🔒 防重入
-      appBooting = true;
-
-      // 清掉舊的輪詢（避免多個 setInterval）
+      if (appBooting) return; appBooting = true;
       if (tickId) { clearInterval(tickId); tickId = null; }
 
       var loading = document.getElementById("loading-screen");
@@ -515,7 +518,6 @@
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("tab-bar").classList.remove("hidden");
 
-      // HUD 僅在打卡頁顯示
       var hud = document.getElementById("hud-right");
       if (hud) hud.style.display = "inline-flex";
 
@@ -526,8 +528,7 @@
       var email = localStorage.getItem("qoopio_email");
 
       try {
-        // 不阻塞 UI
-        updateButtonLabel();
+        updateButtonLabel(); // 不阻塞 UI
 
         const tasks = [
           new Promise(function(r){ loadCalendar(currentYear, currentMonth); r(); }),
@@ -537,20 +538,17 @@
         ];
         await Promise.allSettled(tasks);
 
-        // 代幣回補不阻塞
-        backfillTokensFrom("2025/11/10");
+        backfillTokensFrom("2025/11/10"); // 不阻塞
       } catch (e) {
         console.warn("載入中發生錯誤", e);
       } finally {
         loading.classList.add("hidden");
-        // ✅ 僅啟動一個輪詢計時器
         if (tickId) clearInterval(tickId);
         tickId = setInterval(function(){
           updateButtonLabel();
           var emailNow = localStorage.getItem("qoopio_email");
           updateLeavePendingBanner(emailNow);
         }, 60000);
-
         appBooting = false;
       }
 
@@ -563,10 +561,8 @@
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
       document.getElementById("page-leave").classList.add("hidden");
-
       document.getElementById("page-" + page).classList.remove("hidden");
 
-      // HUD 只在打卡頁
       var hud = document.getElementById("hud-right");
       if (hud) {
         if (page === "clock") { hud.classList.remove("hidden"); hud.style.display = "inline-flex"; }
@@ -577,20 +573,15 @@
       for (var i=0;i<tabs.length;i++){ tabs[i].classList.remove("active"); }
       document.querySelector('.tab-button[data-page="'+page+'"]').classList.add("active");
 
-      if (page === "schedule") {
-        updateMonthShiftMarkers();
-      } else if (page === "leave") {
-        var email = localStorage.getItem("qoopio_email");
-        loadLeaveHistory(email);
-      }
+      if (page === "schedule") updateMonthShiftMarkers();
+      else if (page === "leave") loadLeaveHistory(localStorage.getItem("qoopio_email"));
     }
 
-    /* --- 打卡按鈕狀態（單次執行鎖 + 逾時 + 禁快取）--- */
+    /* --- 打卡按鈕狀態（單次鎖 + 逾時 + 禁快取 + 時段限制）--- */
     async function updateButtonLabel() {
-      if (window._labelBusy) return;           // 🔒 單次執行鎖
+      if (window._labelBusy) return;
       window._labelBusy = true;
 
-      // 中止上一個請求（若存在）
       if (window._labelCtl) { try { window._labelCtl.abort(); } catch(_){} }
       var controller = new AbortController();
       window._labelCtl = controller;
@@ -601,8 +592,25 @@
 
       var statusEl = document.getElementById("status");
       var todayStr = getLocalDateStr();
-
       var timer = setTimeout(function(){ controller.abort(); }, 3500);
+
+      // 先用本地快取快速渲染一次（避免剛進來看到「空白」）
+      try {
+        var cached = readClockState(email, todayStr);
+        if (cached) {
+          if (cached === "working") {
+            if (statusEl) { statusEl.textContent = "上班中"; statusEl.style.color = "#333"; }
+            setButton("下班", false, "#111", "下班");
+          } else if (cached === "offwork") {
+            if (statusEl) { statusEl.textContent = "今天已下班"; statusEl.style.color = "#27ae60"; }
+            setButton("下班掰掰", true, "#aaa", "上班");
+          } else {
+            if (statusEl) { statusEl.textContent = ""; statusEl.style.color = "#333"; }
+            setButton("上班", false, "#111", "上班");
+          }
+          enforceClockWindow();
+        }
+      } catch(_){}
 
       try {
         var res = await fetch(
@@ -613,25 +621,42 @@
         var data = await res.json();
 
         if (data && data.ok !== false) {
+          var stateNow = "none";
           if (data.state === "working") {
             if (statusEl) { statusEl.textContent = "上班中"; statusEl.style.color = "#333"; }
             setButton("下班", false, "#111", "下班");
+            stateNow = "working";
           } else if (data.state === "offwork") {
             if (statusEl) { statusEl.textContent = "今天已下班"; statusEl.style.color = "#27ae60"; }
             setButton("下班掰掰", true, "#aaa", "上班");
+            stateNow = "offwork";
           } else {
             if (statusEl) { statusEl.textContent = ""; statusEl.style.color = "#333"; }
             setButton("上班", false, "#111", "上班");
+            stateNow = "none";
           }
+          // 寫入本地快取
+          saveClockState(email, todayStr, stateNow);
         }
       } catch (e) {
         clearTimeout(timer);
-        console.warn("clockState 失敗：保持現況", e);
-        // 如要時間規則 fallback，可打開：
-        // fallbackByTime();
+        console.warn("clockState 失敗：採用本地狀態", e);
+        // 若本地也沒有，才用時間區段做最保守的預設
+        var cached2 = readClockState(email, todayStr);
+        if (!cached2) fallbackByTime();
       } finally {
+        enforceClockWindow();
         window._labelBusy = false;
       }
+    }
+
+    function enforceClockWindow(){
+      var btn = document.getElementById("clockInBtn");
+      if (!btn) return;
+      var allowed = inClockWindow(new Date());
+      // 僅控制 enable/disable，不改變目前文案與顏色（維持你原本外觀）
+      btn.disabled = !allowed || btn.textContent === "下班掰掰"; // 已下班仍維持 disabled
+      btn.style.opacity = btn.disabled ? 0.6 : 1;
     }
 
     function fallbackByTime() {
@@ -657,6 +682,13 @@
       var email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入！");
       var btn = document.getElementById("clockInBtn");
+
+      // 時段限制：再次檢查（防止外部 script 觸發）
+      if (!inClockWindow(new Date())) {
+        alert("目前非打卡時段：11:00–14:00、20:00–23:00");
+        return;
+      }
+
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
       navigator.geolocation.getCurrentPosition(
@@ -668,9 +700,17 @@
           status.textContent = "✅ " + name + " " + type + "（" + timeStr + "）";
           status.style.color = "green";
 
-          if (type === "上班")      setButton("上班中", true, "#aaa");
-          else if (type === "下班") setButton("下班掰掰", true, "#aaa");
+          // 先更新 UI 與本地狀態（提升體感）
+          if (type === "上班") {
+            setButton("上班中", true, "#aaa");
+            saveClockState(email, getLocalDateStr(), "working");
+          } else if (type === "下班") {
+            setButton("下班掰掰", true, "#aaa");
+            saveClockState(email, getLocalDateStr(), "offwork");
+          }
+          enforceClockWindow();
 
+          // 後送後端
           fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
@@ -684,16 +724,14 @@
       );
     }
 
+    // 🔄 登出：不再清掉代幣與扭蛋紀錄，僅移除目前登入的 email 與輪詢
     function resetEmail() {
       var email = localStorage.getItem("qoopio_email");
       if (email) {
-        localStorage.removeItem("qoopio_state_" + email);
-        localStorage.removeItem("qoopio_state_date_" + email);
-        localStorage.removeItem("qoopio_shift_" + email);
-        localStorage.removeItem("qoopio_shift_date_" + email);
-        localStorage.removeItem(tokenLedgerKey(email));
-        localStorage.removeItem(gachaKey(email));
-        if (monthCache[email]) monthCache[email] = {}; // 清該帳號月曆快取
+        // （保留）localStorage.removeItem(tokenLedgerKey(email));
+        // （保留）localStorage.removeItem(gachaKey(email));
+        // 清理僅與 UI 相關的暫存
+        if (monthCache[email]) monthCache[email] = {};
       }
       localStorage.removeItem("qoopio_email");
       if (tickId) { clearInterval(tickId); tickId = null; }
@@ -915,7 +953,7 @@
       }
     }
 
-    /* --- 載入個人請假紀錄（最近 5 筆）--- */
+    /* --- 請假紀錄 --- */
     async function loadLeaveHistory(email) {
       var box = document.getElementById("leave-history");
       if (!box) return;
@@ -982,11 +1020,6 @@
     }
 
     /* === 代幣（12:00 前上班 +1）、扭蛋機（1%） === */
-    function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
-    function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
-    function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
-    function calcTokenCount(email){ var ledger = readTokenLedger(email); return Object.keys(ledger).length; }
-
     function awardTokenIfEligible(type, now){
       now = now || new Date();
       if (type !== "上班") return;
@@ -1006,14 +1039,8 @@
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
       var count = calcTokenCount(email);
-
-      // HUD 徽章
-      var badge = document.getElementById("gacha-badge");
-      if (badge) badge.textContent = String(count);
-
-      // Modal 顯示
-      var mc = document.getElementById("modal-coin-count");
-      if (mc) mc.textContent = String(count);
+      var badge = document.getElementById("gacha-badge"); if (badge) badge.textContent = String(count);
+      var mc = document.getElementById("modal-coin-count"); if (mc) mc.textContent = String(count);
     }
 
     // 扭蛋機
@@ -1054,7 +1081,6 @@
       var tokens = calcTokenCount(email);
       if (tokens < 1){ alert("代幣不足"); return; }
 
-      // 消耗一枚代幣（移除最早一天）
       var ledger = readTokenLedger(email);
       var days = Object.keys(ledger).sort();
       if (days.length){ delete ledger[days[0]]; writeTokenLedger(email, ledger); }
@@ -1083,7 +1109,7 @@
 
       for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
         const ymd = getLocalDateStr(d);
-        if (ledger[ymd]) continue; // 已領過就跳過
+        if (ledger[ymd]) continue;
 
         try {
           const firstInISO = await getFirstClockInTime(email, ymd);
@@ -1102,15 +1128,12 @@
 
     /* 嘗試多種後端回傳格式 / action 名稱，拿到「第一筆上班時間」 */
     async function getFirstClockInTime(email, dateStr){
-      // 試 1：clockState 可能含 firstIn / firstInTime / inAt
       try{
         const r = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
         const j = await r.json();
         const t = j.firstIn || j.firstInTime || j.firstClockIn || j.inAt || j.firstInTs || j.first_in;
         if (t) return normalizeToISO(dateStr, String(t));
       }catch(e){}
-
-      // 試 2：clockLogs（單日紀錄陣列），取最早的「上班」
       try{
         const r2 = await fetch(`${scriptUrl}?action=clockLogs&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
         const j2 = await r2.json();
@@ -1122,8 +1145,6 @@
           if (ins[0]) return ins[0];
         }
       }catch(e){}
-
-      // 試 3：clockHistory（若你的後端用這個名字）
       try{
         const r3 = await fetch(`${scriptUrl}?action=clockHistory&email=${encodeURIComponent(email)}&date=${dateStr}`, { cache: "no-store" });
         const j3 = await r3.json();
@@ -1135,7 +1156,6 @@
           if (ins[0]) return ins[0];
         }
       }catch(e){}
-
       return null;
     }
 
@@ -1147,7 +1167,6 @@
       }
       const d = new Date(clean);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
-      // 無法判讀 → 回傳中午後 1 秒（不發代幣）
       return `${dateStr}T12:00:01`;
     }
   </script>
