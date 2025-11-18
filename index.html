@@ -65,6 +65,15 @@
       border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto;
       transition: background-color 0.3s ease, opacity 0.3s ease;
     }
+    /* ⬇️ 新增：disabled 視覺與行為（反灰 + 禁止點擊） */
+    #clockInBtn:disabled,
+    #clockInBtn[disabled]{
+      background-color: #bbb !important;
+      opacity: .6;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+    }
+
     .logout-btn {
       background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto;
     }
@@ -592,11 +601,9 @@
       if (!btn) return;
       var type = btn.dataset.type || (btn.textContent.indexOf("下班")>-1 ? "下班" : "上班");
       var allowed = inWindowFor(type);
-      if (allowed) {
-        if (btn.textContent !== "今天已下班") btn.disabled = false;
-      } else {
-        btn.disabled = true;
-      }
+      // 非時段：強制 disabled（含 aria）
+      btn.disabled = !allowed || btn.textContent === "今天已下班";
+      btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
     }
 
     function setButton(text, disabled, color, type) {
@@ -606,16 +613,20 @@
       btn.disabled = !!disabled;
       btn.style.backgroundColor = color;
       btn.dataset.type = type || "";
+      btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
     }
 
     /* --- 打卡送出 + 12:00 前代幣 --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
-      if (!email) return alert("請先登入！");
       var btn = document.getElementById("clockInBtn");
+      if (!email) return alert("請先登入！");
+      // ⬇️ 新增：若已 disabled，直接不處理（雙保險）
+      if (!btn || btn.disabled) return;
+
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
-      // 時段限制：非時段直接反灰且不允許
+      // 時段限制：非時段直接不允許（再保一次）
       if (!inWindowFor(type)) return;
 
       navigator.geolocation.getCurrentPosition(
