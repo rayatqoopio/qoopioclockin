@@ -357,6 +357,8 @@
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
     var selectedCell = null;
+
+    // 以「帳號」分割的月曆快取：{ [email]: { [ym]: data } }
     var monthCache = {};
 
     // 使用者表（由 user.json 載入）
@@ -382,24 +384,6 @@
       if (type === "上班") return (min >= 11*60 && min <= 14*60);
       if (type === "下班") return (min >= 20*60 && min <= 23*60);
       return false;
-    }
-    function windowTextFor(type){
-      return type === "上班" ? "上班打卡開放 11:00–14:00" : "下班打卡開放 20:00–23:00";
-    }
-    function formatLeaveDateDotWeek(dateStr) {
-      if (!dateStr) return '';
-      var norm = String(dateStr).trim().replace(/[.]/g, '-').replace(/\//g, '-');
-      var d = new Date(norm);
-      if (isNaN(d.getTime())) return dateStr;
-      var y = d.getFullYear();
-      var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
-      var day = String(d.getDate()); if (day.length < 2) day = "0" + day;
-      var wkList = ['日','一','二','三','四','五','六']; var wk = wkList[d.getDay()];
-      return y + "." + m + "." + day + "（" + wk + "）";
-    }
-    function stripTaipeiTZ(s) {
-      if (!s) return '';
-      return String(s).replace(/GMT[^\(]*/g, '').replace(/\(台北標準時間\)/g, '').replace(/\s+/g, ' ').trim();
     }
 
     // ===== 自動帶入 email（querystring ?email= 也支援）=====
@@ -497,9 +481,6 @@
           refreshCoinUi()
         ];
         await Promise.allSettled(tasks);
-
-        // 代幣回補（根據試算表），不阻塞 UI
-        backfillTokensFrom("2025-11-10");
       } catch (e) {
         console.warn("載入中發生錯誤", e);
       } finally {
@@ -584,7 +565,6 @@
             if (statusEl) statusEl.textContent = "";
           }
         }
-        // data.ok === false 時不動 UI
       } catch (e) {
         clearTimeout(timer);
         console.warn("clockState 失敗：保持現況", e);
@@ -593,20 +573,22 @@
       }
     }
 
-    // 依時段限制按鈕
+    // 依時段限制按鈕（非時段直接反灰，不顯示提示文字）
     function enforceActionWindow(){
       var btn = document.getElementById("clockInBtn");
-      var statusEl = document.getElementById("status");
       if (!btn) return;
       var type = btn.dataset.type || (btn.textContent.indexOf("下班")>-1 ? "下班" : "上班");
       var allowed = inWindowFor(type);
       if (allowed) {
-        // 僅在「今天已下班」狀態下維持 disabled
-        if (btn.textContent !== "今天已下班") btn.disabled = false;
-        if (statusEl && (statusEl.textContent === windowTextFor("上班") || statusEl.textContent === windowTextFor("下班"))) statusEl.textContent = "";
+        if (btn.textContent !== "今天已下班") {
+          btn.disabled = false;
+          btn.style.backgroundColor = "#111";
+        }
       } else {
-        btn.disabled = true;
-        if (statusEl && btn.textContent !== "今天已下班") statusEl.textContent = windowTextFor(type);
+        if (btn.textContent !== "今天已下班") {
+          btn.disabled = true;
+          btn.style.backgroundColor = "#aaa";
+        }
       }
     }
 
@@ -634,9 +616,8 @@
       var btn = document.getElementById("clockInBtn");
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
-      // 時段限制
+      // 非打卡時段：直接無動作（按鈕已反灰）
       if (!inWindowFor(type)) {
-        alert(windowTextFor(type));
         return;
       }
 
@@ -660,7 +641,7 @@
             body: JSON.stringify({ action: "clockIn", email: email, type: type, lat: pos.coords.latitude, lng: pos.coords.longitude })
           }).catch(function(err){ console.error("clockIn error", err); });
 
-          // 上班（<=12:00）給代幣（前端即時 + 後續回補也會核對）
+          // 上班（<=12:00）給代幣（前端即時）
           awardTokenIfEligible(type, new Date());
           enforceActionWindow();
         },
@@ -676,8 +657,6 @@
         localStorage.removeItem("qoopio_state_date_" + email);
         localStorage.removeItem("qoopio_shift_" + email);
         localStorage.removeItem("qoopio_shift_date_" + email);
-        // localStorage.removeItem(tokenLedgerKey(email)); // 保留
-        // localStorage.removeItem(gachaKey(email));       // 保留
       }
       localStorage.removeItem("qoopio_email");
       location.reload();
@@ -749,12 +728,13 @@
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
 
-      if (monthCache[ym]) { applyMarkers(monthCache[ym]); return; }
+      monthCache[email] = monthCache[email] || {};
+      if (monthCache[email][ym]) { applyMarkers(monthCache[email][ym]); return; }
 
       try {
         var res = await fetch(scriptUrl + "?month=" + ym + "&mode=summary&email=" + encodeURIComponent(email));
         var data = await res.json();
-        monthCache[ym] = data;
+        monthCache[email][ym] = data;
         applyMarkers(data);
       } catch (e) {
         console.log("無法取得有班日", e);
@@ -1030,76 +1010,6 @@
       refreshCoinUi();
       switchGachaTab('gacha');
       setTimeout(function(){ alert(win ? "中獎 🎉 截圖去找Ray領獎" : "哈哈沒中啦"); }, 10);
-    }
-
-    /* === 代幣補發：從指定日期起，依每日第一筆「上班」是否 <= 12:00 補發 === */
-    function backfillFlagKey(email, start){ return "qoopio_backfill_"+email+"_"+start; }
-    async function backfillTokensFrom(startDateStr){
-      const email = localStorage.getItem("qoopio_email");
-      if (!email) return;
-      const flagKey = backfillFlagKey(email, startDateStr);
-      if (localStorage.getItem(flagKey) === "done") return;
-
-      const start = new Date(startDateStr);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const ledger = readTokenLedger(email);
-
-      for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
-        const ymd = getLocalDateStr(d);
-        if (ledger[ymd]) continue; // 已領過就跳過
-        try {
-          const firstInISO = await getFirstClockInTime(email, ymd);
-          if (!firstInISO) continue;
-          const first = new Date(firstInISO);
-          const noon = new Date(ymd + "T12:00:00");
-          if (first <= noon) { ledger[ymd] = true; }
-        } catch(e){
-          console.warn("backfill failed:", ymd, e);
-        }
-      }
-      writeTokenLedger(email, ledger);
-      localStorage.setItem(flagKey, "done");
-      refreshCoinUi();
-    }
-
-    /* 嘗試多種後端回傳格式 / action 名稱，拿到「第一筆上班時間」 */
-    async function getFirstClockInTime(email, dateStr){
-      try{
-        const r = await fetch(scriptUrl+"?action=clockState&email="+encodeURIComponent(email)+"&date="+dateStr);
-        const j = await r.json();
-        const t = j.firstIn || j.firstInTime || j.firstClockIn || j.inAt || j.firstInTs || j.first_in;
-        if (t) return normalizeToISO(dateStr, String(t));
-      }catch(e){}
-      try{
-        const r2 = await fetch(scriptUrl+"?action=clockLogs&email="+encodeURIComponent(email)+"&date="+dateStr);
-        const j2 = await r2.json();
-        if (Array.isArray(j2.logs)){
-          const ins = j2.logs.filter(x => /上班/.test(x.type||"") && x.time)
-                             .map(x => normalizeToISO(dateStr, String(x.time))).sort();
-          if (ins[0]) return ins[0];
-        }
-      }catch(e){}
-      try{
-        const r3 = await fetch(scriptUrl+"?action=clockHistory&email="+encodeURIComponent(email)+"&date="+dateStr);
-        const j3 = await r3.json();
-        if (Array.isArray(j3.items)){
-          const ins = j3.items.filter(x => /上班/.test(x.type||"") && x.time)
-                              .map(x => normalizeToISO(dateStr, String(x.time))).sort();
-          if (ins[0]) return ins[0];
-        }
-      }catch(e){}
-      return null;
-    }
-
-    /* 把各種時間字串正規化成 ISO（不足則拼上 dateStr） */
-    function normalizeToISO(dateStr, timeStr){
-      const clean = stripTaipeiTZ(timeStr).replace(/\//g,'-').trim();
-      if (/^\d{2}:\d{2}(:\d{2})?$/.test(clean)){
-        return dateStr+"T"+(clean.length===5 ? clean+":00" : clean);
-      }
-      const d = new Date(clean);
-      if (!isNaN(d.getTime())) return d.toISOString().slice(0,19);
-      return dateStr+"T12:00:01"; // 無法判讀 → 回傳中午後 1 秒（不發代幣）
     }
   </script>
 </body>
