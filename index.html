@@ -357,8 +357,6 @@
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
     var selectedCell = null;
-
-    // 以「帳號」分割的月曆快取：{ [email]: { [ym]: data } }
     var monthCache = {};
 
     // 使用者表（由 user.json 載入）
@@ -370,7 +368,7 @@
     // 自訂扭蛋 icon（存在就啟用）
     var GACHA_ICON = "gacha-icon.png?v=20251117";
 
-    // ===== 工具：時間與視窗判定 =====
+    // ===== 工具：日期與時段判定 =====
     function getLocalDateStr(d){
       d = d || new Date();
       var y = d.getFullYear();
@@ -384,6 +382,21 @@
       if (type === "上班") return (min >= 11*60 && min <= 14*60);
       if (type === "下班") return (min >= 20*60 && min <= 23*60);
       return false;
+    }
+    function formatLeaveDateDotWeek(dateStr) {
+      if (!dateStr) return '';
+      var norm = String(dateStr).trim().replace(/[.]/g, '-').replace(/\//g, '-');
+      var d = new Date(norm);
+      if (isNaN(d.getTime())) return dateStr;
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
+      var day = String(d.getDate()); if (day.length < 2) day = "0" + day;
+      var wkList = ['日','一','二','三','四','五','六']; var wk = wkList[d.getDay()];
+      return y + "." + m + "." + day + "（" + wk + "）";
+    }
+    function stripTaipeiTZ(s) {
+      if (!s) return '';
+      return String(s).replace(/GMT[^\(]*/g, '').replace(/\(台北標準時間\)/g, '').replace(/\s+/g, ' ').trim();
     }
 
     // ===== 自動帶入 email（querystring ?email= 也支援）=====
@@ -552,9 +565,9 @@
 
         if (data && data.ok !== false) {
           if (data.state === "working") {
-            // 以後端為準：正在上班 → 顯示「下班」
+            // 正在上班 → 顯示「下班」並標示「今日已打卡」
             setButton("下班", false, "#111", "下班");
-            if (statusEl) statusEl.textContent = "上班中";
+            if (statusEl) statusEl.textContent = "今日已打卡";
           } else if (data.state === "offwork") {
             // 已下班 → 鎖住（保留下一次進場會重新判定）
             setButton("今天已下班", true, "#aaa", "上班");
@@ -573,22 +586,16 @@
       }
     }
 
-    // 依時段限制按鈕（非時段直接反灰，不顯示提示文字）
+    // 依時段限制按鈕（非時段直接反灰，不顯示任何提示文字）
     function enforceActionWindow(){
       var btn = document.getElementById("clockInBtn");
       if (!btn) return;
       var type = btn.dataset.type || (btn.textContent.indexOf("下班")>-1 ? "下班" : "上班");
       var allowed = inWindowFor(type);
       if (allowed) {
-        if (btn.textContent !== "今天已下班") {
-          btn.disabled = false;
-          btn.style.backgroundColor = "#111";
-        }
+        if (btn.textContent !== "今天已下班") btn.disabled = false;
       } else {
-        if (btn.textContent !== "今天已下班") {
-          btn.disabled = true;
-          btn.style.backgroundColor = "#aaa";
-        }
+        btn.disabled = true;
       }
     }
 
@@ -601,14 +608,6 @@
       btn.dataset.type = type || "";
     }
 
-    function fallbackByTime() {
-      var now = new Date();
-      var totalMinutes = now.getHours() * 60 + now.getMinutes();
-      if (totalMinutes >= 120 && totalMinutes < 1080) setButton("上班", false, "#111", "上班");
-      else setButton("下班", false, "#111", "下班");
-      enforceActionWindow();
-    }
-
     /* --- 打卡送出 + 12:00 前代幣 --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
@@ -616,22 +615,21 @@
       var btn = document.getElementById("clockInBtn");
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
 
-      // 非打卡時段：直接無動作（按鈕已反灰）
-      if (!inWindowFor(type)) {
-        return;
-      }
+      // 時段限制：非時段直接反灰且不允許
+      if (!inWindowFor(type)) return;
 
       navigator.geolocation.getCurrentPosition(
         function (pos) {
           var name = (userData[email] && userData[email].name) || email;
-          var timeStr = new Date().toLocaleTimeString();
           var status = document.getElementById("status");
 
-          status.textContent = "✅ " + name + " " + type + "（" + timeStr + "）";
-          status.style.color = "green";
-
-          if (type === "上班")      setButton("下班", false, "#111", "下班");
-          else if (type === "下班") setButton("今天已下班", true, "#aaa", "上班");
+          if (type === "上班") {
+            setButton("下班", false, "#111", "下班");
+            if (status) status.textContent = "今日已打卡";
+          } else if (type === "下班") {
+            setButton("今天已下班", true, "#aaa", "上班");
+            if (status) status.textContent = "今天已下班";
+          }
 
           // 寫後端
           fetch(scriptUrl, {
@@ -652,7 +650,7 @@
     function resetEmail() {
       var email = localStorage.getItem("qoopio_email");
       if (email) {
-        // 這些是純 UI 快取；不要清代幣與扭蛋紀錄，避免看起來像「消失」
+        // 只清 UI 快取；保留代幣與扭蛋紀錄
         localStorage.removeItem("qoopio_state_" + email);
         localStorage.removeItem("qoopio_state_date_" + email);
         localStorage.removeItem("qoopio_shift_" + email);
@@ -728,13 +726,12 @@
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
 
-      monthCache[email] = monthCache[email] || {};
-      if (monthCache[email][ym]) { applyMarkers(monthCache[email][ym]); return; }
+      if (monthCache[ym]) { applyMarkers(monthCache[ym]); return; }
 
       try {
         var res = await fetch(scriptUrl + "?month=" + ym + "&mode=summary&email=" + encodeURIComponent(email));
         var data = await res.json();
-        monthCache[email][ym] = data;
+        monthCache[ym] = data;
         applyMarkers(data);
       } catch (e) {
         console.log("無法取得有班日", e);
@@ -963,10 +960,20 @@
       var mc = document.getElementById("modal-coin-count"); if (mc) mc.textContent = String(count);
     }
 
-    // 扭蛋機
+    // 扭蛋機（保留最近 10 筆紀錄）
     function gachaKey(email){ return "qoopio_gacha_" + email; } // [{time, result:'win'|'lose'}]
-    function readGachaLog(email){ var raw = localStorage.getItem(gachaKey(email)); return raw ? JSON.parse(raw) : []; }
-    function writeGachaLog(email, list){ localStorage.setItem(gachaKey(email), JSON.stringify(list)); }
+    function readGachaLog(email){
+      var raw = localStorage.getItem(gachaKey(email));
+      var list = raw ? JSON.parse(raw) : [];
+      // 防呆：啟動時也裁到 10 筆
+      if (list.length > 10) list = list.slice(-10);
+      return list;
+    }
+    function writeGachaLog(email, list){
+      // 永遠只保留最後 10 筆
+      var sliced = Array.isArray(list) ? list.slice(-10) : [];
+      localStorage.setItem(gachaKey(email), JSON.stringify(sliced));
+    }
     function openGacha(){ document.getElementById("gacha-modal").classList.add("open"); switchGachaTab('gacha'); refreshCoinUi(); }
     function closeGacha(){ document.getElementById("gacha-modal").classList.remove("open"); }
     function switchGachaTab(which){
@@ -1000,13 +1007,17 @@
       if (!email) return;
       var tokens = calcTokenCount(email);
       if (tokens < 1){ alert("代幣不足"); return; }
+
+      // 消耗一枚代幣（移除最早一天）
       var ledger = readTokenLedger(email);
       var days = Object.keys(ledger).sort();
       if (days.length){ delete ledger[days[0]]; writeTokenLedger(email, ledger); }
+
       var win = Math.random() < 0.01; // 1%
       var log = readGachaLog(email);
       log.push({ time: new Date().toISOString(), result: win ? 'win' : 'lose' });
-      writeGachaLog(email, log);
+      writeGachaLog(email, log); // 自動裁到 10 筆
+
       refreshCoinUi();
       switchGachaTab('gacha');
       setTimeout(function(){ alert(win ? "中獎 🎉 截圖去找Ray領獎" : "哈哈沒中啦"); }, 10);
