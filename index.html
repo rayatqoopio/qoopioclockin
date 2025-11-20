@@ -58,14 +58,14 @@
     .logo { width: 230px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; text-align: center; }
 
-    /* ====== 打卡頁（維持上一版外觀） ====== */
+    /* ====== 打卡頁 ====== */
     #page-clock { padding-top: 14vh; position: relative; z-index: 1; text-align: center; }
     #clockInBtn {
       width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff;
       border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto;
       transition: background-color 0.3s ease, opacity 0.3s ease;
     }
-    /* 反灰樣式（非打卡時段需確實無法按） */
+    /* 反灰樣式（被 setButton 設為 disabled 時） */
     #clockInBtn:disabled,
     #clockInBtn[disabled]{
       background-color: #bbb !important;
@@ -388,13 +388,6 @@
       var day = String(d.getDate()); if (day.length < 2) day = "0" + day;
       return y + "-" + m + "-" + day;
     }
-    function inWindowFor(type, now){
-      now = now || new Date();
-      var min = now.getHours() * 60 + now.getMinutes();
-      if (type === "上班") return (min >= 11*60 && min <= 14*60);
-      if (type === "下班") return (min >= 20*60 && min <= 23*60);
-      return false;
-    }
     function formatLeaveDateDotWeek(dateStr) {
       if (!dateStr) return '';
       var norm = String(dateStr).trim().replace(/[.]/g, '-').replace(/\//g, '-');
@@ -435,7 +428,7 @@
       if (savedEmail && userData[savedEmail]) {
         bootReady = true; clearTimeout(bootTimer);
         showUserInfo(savedEmail);
-        showMainPages();
+        showMainPages()
       } else {
         var lp = document.getElementById("login-page");
         if (lp) lp.classList.remove("hidden");
@@ -473,7 +466,7 @@
       document.getElementById("leave-name").textContent = name;
     }
 
-    /* ====== 進入主畫面：三頁資料都載完才關遮罩 ====== */
+    /* ====== 進入主畫面 ====== */
     async function showMainPages() {
       bootReady = true; clearTimeout(bootTimer);
       var loading = document.getElementById("loading-screen");
@@ -497,13 +490,8 @@
 
       // 三大資料：打卡頁（按鈕+今日狀態）、請假紀錄、班表（含月標記）
       const loadClock = (async function(){
-        try {
-          await updateButtonLabel();          // 根據後端狀態決定「上班/下班/今天已下班」
-        } catch(e){ console.warn(e); }
-        try {
-          await updateTodayStatusFromSheet(); // 查「打卡紀錄」分頁 → 顯示今日已/未打卡
-        } catch(e){ console.warn(e); }
-        enforceActionWindow();                 // 非時段反灰不可按
+        try { await updateButtonLabel(); } catch(e){ console.warn(e); }
+        try { await updateTodayStatusFromSheet(); } catch(e){ console.warn(e); }
       })();
 
       const loadLeave = loadLeaveHistory(email).catch(function(e){ console.warn(e); });
@@ -522,19 +510,17 @@
 
       loading.classList.add("hidden");
 
-      // 之後每分鐘更新一次（不影響遮罩）
+      // 之後每分鐘更新一次：按鈕、今日狀態、跨日檢查、請假提示
       setInterval(async function(){
         try { await updateButtonLabel(); } catch(e){}
         try { await updateTodayStatusFromSheet(); } catch(e){}
-        enforceActionWindow();
+        try { await checkDateChange(); } catch(e){}
         var emailNow = localStorage.getItem("qoopio_email");
         updateLeavePendingBanner(emailNow);
       }, 60000);
 
       var gbtn = document.getElementById("gachaBtn");
       if (gbtn) gbtn.onclick = openGacha;
-
-      enforceActionWindow();
     }
 
     /* --- Tab 切換 --- */
@@ -562,56 +548,72 @@
         var email = localStorage.getItem("qoopio_email");
         loadLeaveHistory(email);
       } else if (page === "clock") {
-        enforceActionWindow();
         updateButtonLabel().then(updateTodayStatusFromSheet);
       }
     }
 
-    /* --- 打卡按鈕狀態（以後端為準；不顯示打卡時段提示文字） --- */
+    /* === 新邏輯：打卡按鈕狀態（以「是否有排班」＋「時段」判斷，不再強制時段反灰） === */
     async function updateButtonLabel() {
-      var btn = document.getElementById("clockInBtn");
-      var email = localStorage.getItem("qoopio_email");
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const btn = document.getElementById("clockInBtn");
+      const email = localStorage.getItem("qoopio_email");
       if (!btn || !email) return;
 
-      var todayStr = getLocalDateStr();
+      const stateKey = `qoopio_state_${email}`;
+      const dateKey  = `qoopio_date_${email}`;
+      const todayStr = now.toISOString().split("T")[0];
 
-      // 加逾時：3.5s
-      var controller = new AbortController();
-      var timer = setTimeout(function(){ controller.abort(); }, 3500);
-
-      try {
-        var res = await fetch(
-          scriptUrl + "?action=clockState&email=" + encodeURIComponent(email) + "&date=" + todayStr,
-          { cache: "no-store", signal: controller.signal }
-        );
-        clearTimeout(timer);
-        var data = await res.json();
-
-        if (data && data.ok !== false) {
-          if (data.state === "working") {
-            setButton("下班", false, "#111", "下班");
-          } else if (data.state === "offwork") {
-            setButton("今天已下班", true, "#aaa", "上班");
-          } else {
-            setButton("上班", false, "#111", "上班");
-          }
-        }
-      } catch (e) {
-        clearTimeout(timer);
-        console.warn("clockState 失敗：保持現況", e);
-      } finally {
-        enforceActionWindow();
+      const lastDate = localStorage.getItem(dateKey);
+      if (lastDate && lastDate !== todayStr) {
+        localStorage.removeItem(stateKey);
+        localStorage.setItem(dateKey, todayStr);
+      } else if (!lastDate) {
+        localStorage.setItem(dateKey, todayStr);
       }
-    }
 
-    // 依時段限制按鈕（非時段直接反灰）
-    function enforceActionWindow(){
-      var btn = document.getElementById("clockInBtn");
-      if (!btn) return;
-      var type = btn.dataset.type || (btn.textContent.indexOf("下班")>-1 ? "下班" : "上班");
-      var allowed = inWindowFor(type);
-      btn.disabled = !allowed || btn.textContent === "今天已下班";
-      btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
+      // 預設：讀取中
+      setButton("讀取中...", true, "#bbb");
+
+      let shift = "";
+      try {
+        // 先用「新端點」拿排班（shift）
+        const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`, { cache: "no-store" });
+        const data = await res.json();
+        shift = (data.shift || data.data?.shift || "").trim().replace(/\s+/g, "");
+      } catch (_) {}
+
+      // 若失敗，退回舊端點拿狀態（避免卡住 UI）
+      if (!shift) {
+        try {
+          const res2 = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${todayStr}`, { cache: "no-store" });
+          const d2 = await res2.json();
+          if (d2 && d2.ok !== false) {
+            if (d2.state === "offwork") localStorage.setItem(stateKey, "offwork");
+            else if (d2.state === "working") localStorage.setItem(stateKey, "working");
+          }
+        } catch(_) {}
+      }
+
+      if (!shift) return setButton("讀取失敗", true, "#bbb");
+
+      // 休假或非中山/景美：直接反灰
+      if (/假/.test(shift) || !/(中山|景美)/.test(shift)) {
+        return setButton("休假中", true, "#bbb");
+      }
+
+      const savedState = localStorage.getItem(stateKey);
+
+      // 02:00–17:59 顯示「上班」（可按）；其他時間顯示「下班」（可按）
+      if (totalMinutes >= 120 && totalMinutes < 1080) {
+        savedState === "working"
+          ? setButton("上班中", true, "#aaa")
+          : setButton("上班", false, "#111", "上班");
+      } else {
+        savedState === "offwork"
+          ? setButton("下班掰掰", true, "#aaa")
+          : setButton("下班", false, "#111", "下班");
+      }
     }
 
     function setButton(text, disabled, color, type) {
@@ -654,23 +656,32 @@
       }
     }
 
-    /* --- 打卡送出（非時段禁止；不顯示時段提示） --- */
+    /* --- 打卡送出（新邏輯：不再限制特定時段，是否可按由 updateButtonLabel 決定） --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
       var btn = document.getElementById("clockInBtn");
       if (!email) return alert("請先登入！");
-      if (!btn || btn.disabled) return; // 非時段或已下班 → 不處理
+      if (!btn) return;
 
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
-      if (!inWindowFor(type)) return;
+      var stateKey = `qoopio_state_${email}`;
+      var name = (userData[email] && userData[email].name) || email;
 
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          // 按鈕狀態切換
+          var timeStr = new Date().toLocaleTimeString();
+          var status = document.getElementById("status");
+          status.textContent = `✅ ${name} ${type}（${timeStr}）`;
+          status.style.color = "green";
+
           if (type === "上班") {
-            setButton("下班", false, "#111", "下班");
-          } else if (type === "下班") {
-            setButton("今天已下班", true, "#aaa", "上班");
+            setButton("上班中", true, "#aaa");
+            localStorage.setItem(stateKey, "working");
+            // 上班（<=12:00）給代幣（前端即時）
+            awardTokenIfEligible(type, new Date());
+          } else {
+            setButton("下班掰掰", true, "#aaa");
+            localStorage.setItem(stateKey, "offwork");
           }
 
           // 寫後端
@@ -681,15 +692,29 @@
             body: JSON.stringify({ action: "clockIn", email: email, type: type, lat: pos.coords.latitude, lng: pos.coords.longitude })
           }).catch(function(err){ console.error("clockIn error", err); });
 
-          // 上班（<=12:00）給代幣（前端即時）
-          awardTokenIfEligible(type, new Date());
-
-          // 重新查『打卡紀錄』呈現今日狀態
+          // 重新查『打卡紀錄』呈現今日狀態，並更新按鈕
           updateTodayStatusFromSheet();
-          enforceActionWindow();
+          setTimeout(updateButtonLabel, 200);
         },
         function () { alert("無法取得定位資訊"); }
       );
+    }
+
+    // ✅ 跨日檢查：跨日後清除本地工作狀態
+    async function checkDateChange() {
+      const email = localStorage.getItem("qoopio_email");
+      if (!email) return;
+      const todayStr = new Date().toISOString().split("T")[0];
+      const dateKey = `qoopio_date_${email}`;
+      const lastDate = localStorage.getItem(dateKey);
+
+      if (lastDate && lastDate !== todayStr) {
+        localStorage.removeItem(`qoopio_state_${email}`);
+        localStorage.setItem(dateKey, todayStr);
+        await updateButtonLabel();
+      } else if (!lastDate) {
+        localStorage.setItem(dateKey, todayStr);
+      }
     }
 
     function resetEmail() {
