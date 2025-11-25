@@ -82,18 +82,6 @@
     #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; min-height: 1.2em; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
-    /* ====== 固定底部 tab-bar（保留但隱藏） ====== */
-    .tab-bar {
-      position: fixed; left: 0; right: 0; bottom: 0;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      height: 70px; background-color: #000; display: flex; justify-content: space-around; align-items: center;
-      border-top: 2px solid #222; z-index: 20000;
-      transform: none !important; -webkit-transform: none !important;
-      backface-visibility: visible !important; -webkit-backface-visibility: visible !important;
-      pointer-events: auto;
-    }
-    .tab-button { flex: 1; color: #fff; font-size: 1.2rem; font-weight: bold; background: none; border: none; cursor: pointer; height: 100%; }
-    .tab-button.active { background-color: #222; }
 
     /* ====== 月曆（班表頁） ====== */
     #page-schedule { padding-top: 4vh; }
@@ -211,8 +199,8 @@
     /* 浮動主選單 FAB：改到左下角 */
     #menu-fab{
       position: fixed;
-      left: calc(12px + env(safe-area-inset-left, 0px));   /* ← 從右改左，含安全邊距 */
-      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      left: calc(30px + env(safe-area-inset-left, 0px));   /* ← 從右改左，含安全邊距 */
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
       width: 56px; height: 56px;
       border-radius: 50%;
       background:#111; color:#fff; border:0;
