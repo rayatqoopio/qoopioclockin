@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 打卡系統</title>
+  <title>Qoopio 打卡系統 (UI Update)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json?v=20251117" />
@@ -45,27 +45,51 @@
       overflow-x: hidden;
       overscroll-behavior-y: none;
     }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+
+    /* 1. Header 設計 */
+    #global-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background-color: #fdf5e6; /* 與背景同色，或可改 #fff */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10010;
+      box-shadow: 0 1px 0px rgba(0,0,0,0.05); /* 輕微底線 */
+      padding-top: env(safe-area-inset-top, 0px); /* 避開瀏海 */
+    }
+    .header-logo {
+      height: 28px;
+      width: auto;
+      display: block;
+    }
 
     .container {
       max-width: 500px;
       margin: 0 auto;
-      padding: 1.5rem 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
+      /* 增加上方 padding 以避開 Header */
+      padding: calc(60px + env(safe-area-inset-top, 0px) + 1rem) 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       min-height: calc(100vh - env(safe-area-inset-bottom, 0px));
     }
 
-    .logo { width: 230px; margin-bottom: 1.5rem; }
+    .logo-large { width: 200px; margin-bottom: 1.5rem; } /* 登入頁的大 Logo */
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; text-align: center; }
 
     /* ====== 打卡頁 ====== */
-    #page-clock { padding-top: 14vh; position: relative; z-index: 1; text-align: center; }
+    #page-clock {
+      /* 原本 padding-top 14vh，因為有了 Header，稍微調整 */
+      padding-top: 8vh; 
+      position: relative; z-index: 1; text-align: center; 
+    }
     #clockInBtn {
       width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff;
       border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto;
       transition: background-color 0.3s ease, opacity 0.3s ease;
     }
-    /* 反灰樣式（被 setButton 設為 disabled 時） */
+    /* 反灰樣式 */
     #clockInBtn:disabled,
     #clockInBtn[disabled]{
       background-color: #bbb !important;
@@ -78,13 +102,12 @@
       background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto;
     }
 
-    /* 狀態行：用 JS 設定深綠/暗紅顏色 */
     #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; text-align: center; min-height: 1.2em; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 4vh; }
-    .calendar-header { padding-top: 2vh; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
+    #page-schedule { padding-top: 1vh; }
+    .calendar-header { padding-top: 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
     .calendar-header button {
       background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer;
       padding: 0.3rem 0.6rem; transition: color 0.2s ease;
@@ -107,18 +130,18 @@
     }
     .group-title { font-weight: bold; color: #000; margin-top: 1rem; margin-bottom: 0.5rem; }
 
-    /* 讀取 spinner */
     .loading-spinner {
       display: inline-block; width: 20px; height: 20px; border: 3px solid #bbb; border-top-color: #111;
       border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px;
     }
     @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
-    /* ====== 登入頁 ====== */
+    /* ====== 登入頁（沒有 Header） ====== */
+    #login-page { padding-top: 10vh; }
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* ====== 全螢幕載入遮罩（所有資料都載入完成才關閉） ====== */
+    /* ====== 全螢幕載入遮罩 ====== */
     #loading-screen {
       position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 20000; transition: opacity 0.3s ease;
@@ -126,15 +149,33 @@
     #loading-screen.hidden { opacity: 0; pointer-events: none; }
     #loading-screen .spinner { width: 50px; height: 50px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
 
-    /* ====== 請假頁（按鈕固定 + 記錄卡片） ====== */
+    /* ====== 請假頁 ====== */
     #page-leave h3 { display: none; }
-    #page-leave { text-align: left; padding-top: 10vh; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    #page-leave { text-align: left; padding-top: 1vh; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    
+    /* 3. 請假按鈕縮短與調整位置 */
     .leave-btn-main {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 9998;
-      display: block; width: calc(100% - 24px); max-width: 500px; padding: 0.9rem; font-size: 1rem; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      position: fixed; 
+      left: 50%; 
+      transform: translateX(-50%);
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px)); 
+      z-index: 9998;
+      display: block; 
+      /* 縮短寬度，避免與左下選單重疊 */
+      width: 55%; 
+      min-width: 180px;
+      max-width: 300px;
+      padding: 0.9rem; 
+      font-size: 1rem; 
+      border-radius: 999px; /* 更圓潤一點 */
+      border: none; 
+      background: #111; 
+      color: #fff; 
+      cursor: pointer; 
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
     .leave-btn-main.hidden { display: none; }
+
     #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
     .leave-history-empty, .leave-history-error { font-size: 0.9rem; color: #999; }
     .leave-card { padding: 0.6rem 0.8rem; border-radius: 10px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.06); margin-bottom: 0.6rem; }
@@ -145,13 +186,13 @@
     .leave-card .row-2, .leave-card .row-3, .leave-card .row-4 { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     .leave-card .row-4 { color: #999; }
 
-    /* ====== 左下：功能選單 FAB（打卡 / 請假 / 班表） ====== */
+    /* ====== 左下：功能選單 FAB ====== */
     .menu-fab{
       position: fixed;
       left: 16px;
       bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       z-index: 10002;
-      display: none; /* 登入後才打開 */
+      display: none; 
       flex-direction: column;
       align-items: flex-start;
       pointer-events: auto;
@@ -170,14 +211,40 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       font-size: 1.6rem;
+      position: relative; /* For icon overlay */
+      overflow: hidden;
     }
-    .fab-main .icon{
-      display:inline-block;
-      transition: transform .2s ease;
+    
+    /* 2. O -> X 漸變動畫 */
+    .fab-icon-o, .fab-icon-x {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+      font-weight: 300;
+      font-family: sans-serif;
     }
-    .fab-main.open .icon{
-      transform: rotate(45deg); /* ☰ 轉成類似 X */
+    .fab-icon-o { 
+      opacity: 1; 
+      transform: translate(-50%, -50%) scale(1); 
+      font-size: 1.5rem;
     }
+    .fab-icon-x { 
+      opacity: 0; 
+      transform: translate(-50%, -50%) rotate(-90deg) scale(0.5); 
+      font-size: 1.4rem;
+    }
+
+    /* Open 狀態：O 消失，X 出現並旋轉歸位 */
+    .fab-main.open .fab-icon-o {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.5);
+    }
+    .fab-main.open .fab-icon-x {
+      opacity: 1;
+      transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    }
+
     .menu-sheet{
       margin-bottom: 10px;
       padding: 0;
@@ -205,9 +272,11 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.18);
       white-space: nowrap;
     }
+    
+    /* 4. 選單圖示縮小 10% */
     .menu-circle{
-      width: 44px;
-      height: 44px;
+      width: 40px;  /* 原 44px -> 40px */
+      height: 40px; /* 原 44px -> 40px */
       margin-left: 8px;
       border-radius: 50%;
       background: #ffffff;
@@ -215,7 +284,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.1rem; /* 稍微縮小字體 */
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
     .menu-item.active{
@@ -227,7 +296,7 @@
       border: 2px solid #111;
     }
 
-    /* ====== HUD：右下扭蛋機 + 代幣徽章 ====== */
+    /* ====== HUD ====== */
     .hud-right{
       position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
@@ -237,7 +306,6 @@
       width: auto; height: auto; border-radius: 0; -webkit-tap-highlight-color: transparent;
     }
     .gacha-img,.gacha-svg{ width: 96px; height: 96px; }
-    /* 若有顯示自製 icon，強制隱藏 SVG */
     .gacha-img:not(.hidden) + .gacha-svg { display: none !important; }
     .gacha-badge{
       position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px;
@@ -248,7 +316,7 @@
     .gacha-svg .body{ fill:#111; } .gacha-svg .window{ fill:#fff; } .gacha-svg .ball{ fill:#111; opacity:.9; }
     .gacha-img{ display:block; }
 
-    /* ====== 共用 Modal（扭蛋 / 請假） ====== */
+    /* ====== Modal ====== */
     .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
     .modal.open{ display:flex; }
     .modal-card{ width: min(520px, 92%); background:#fff; border-radius:16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align:left; }
@@ -264,7 +332,7 @@
     .gacha-log{ margin-top:8px; }
     .gacha-item{ padding:8px 10px; border:1px solid #eee; border-radius:8px; margin:6px 0; font-size:0.92rem; color:#333; }
 
-    /* 請假表單（Modal 內） */
+    /* 請假表單 */
     #leave-form label { display:block; margin-top: 0.5rem; font-size:0.9rem; color:#555; }
     #leave-form select, #leave-form textarea {
       width: 100%; box-sizing: border-box; margin-top: 0.2rem;
@@ -278,22 +346,23 @@
   </style>
 </head>
 <body>
-  <!-- 全螢幕載入畫面 -->
   <div id="loading-screen">
     <div class="spinner"></div>
     <p>資料載入中，請稍候...</p>
   </div>
 
+  <header id="global-header" class="hidden">
+    <img src="qoopio logo.png" class="header-logo" alt="Qoopio Logo" />
+  </header>
+
   <div class="container">
-    <!-- 登入頁 -->
     <div id="login-page" class="hidden">
-      <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
+      <img src="qoopio logo.png" class="logo-large" alt="Qoopio Logo" />
       <h3>請輸入您的 Email 登入</h3>
       <input type="email" id="login-email" placeholder="name@qoopio.com" />
       <button type="button" onclick="login()">登入</button>
     </div>
 
-    <!-- 請假頁 -->
     <div id="page-leave" class="hidden">
       <h3>請假</h3>
       <button class="leave-btn-main" type="button" onclick="openLeaveForm()">申請請假</button>
@@ -301,9 +370,7 @@
       <div id="leave-history">載入中...</div>
     </div>
 
-    <!-- 打卡頁 -->
     <div id="page-clock" class="hidden">
-      <img src="qoopio logo.png" class="logo" alt="Qoopio Logo" />
       <div id="user-label" class="user-label"></div>
       <div id="leave-pending-banner"></div>
       <button id="clockInBtn" type="button" onclick="submitClockIn()">打卡</button>
@@ -311,7 +378,6 @@
       <div id="status"></div>
     </div>
 
-    <!-- 班表頁 -->
     <div id="page-schedule" class="hidden">
       <div class="calendar-view">
         <div class="calendar-header">
@@ -325,7 +391,6 @@
     </div>
   </div>
 
-  <!-- 左下：功能選單 FAB -->
   <div class="menu-fab" id="menu-fab">
     <div class="menu-sheet hidden" id="menu-sheet">
       <div class="fab-option">
@@ -342,11 +407,11 @@
       </div>
     </div>
     <button class="fab-main" type="button" onclick="toggleMenu()">
-      <span class="icon">☰</span>
+      <span class="fab-icon-o">O</span>
+      <span class="fab-icon-x">✕</span>
     </button>
   </div>
 
-  <!-- HUD（右下：扭蛋機 + 代幣徽章） -->
   <div class="hud-right" id="hud-right">
     <button class="gacha-btn" id="gachaBtn" type="button" title="扭蛋機">
       <img id="gacha-img" class="gacha-img hidden" alt="扭蛋機" width="36" height="36" />
@@ -363,7 +428,6 @@
     </button>
   </div>
 
-  <!-- 扭蛋機 Modal -->
   <div class="modal" id="gacha-modal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -382,7 +446,6 @@
     </div>
   </div>
 
-  <!-- 請假 Modal -->
   <div class="modal" id="leave-modal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -422,9 +485,7 @@
     </div>
   </div>
 
-  <!-- JS -->
   <script>
-    // —— 全域錯誤攔截（避免卡在 Loading）——
     window.addEventListener('error', function (e) {
       try { var box = document.getElementById('loading-screen'); if (box) box.classList.add('hidden'); } catch(_) {}
       try { console.error(e.error || e.message || e); } catch(_) {}
@@ -434,7 +495,6 @@
       try { console.error('Promise 錯誤：', e.reason); } catch(_) {}
     });
 
-    // ✅「開機保險」：只有未登入才會強制回登入頁
     var bootReady = false;
     var bootTimer = setTimeout(function(){
       if (!bootReady && !localStorage.getItem('qoopio_email')) {
@@ -445,25 +505,15 @@
       }
     }, 3000);
 
-    // ✅ Apps Script Web App（/exec）
     var scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
-
-    // 月曆狀態
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth();
     var selectedCell = null;
     var monthCache = {};
-
-    // 使用者表（由 user.json 載入）
     var userData = {};
-
-    // 顯示「請假待審核提示」的帳號
     var LEAVE_PENDING_USERS = ["ray.at.qoopio@gmail.com","lilian6337@gmail.com"];
-
-    // 自訂扭蛋 icon（存在就啟用）
     var GACHA_ICON = "gacha-icon.png?v=20251117";
 
-    // ===== 工具：時間與字串處理 =====
     function getLocalDateStr(d){
       d = d || new Date();
       var y = d.getFullYear();
@@ -487,7 +537,6 @@
       return String(s).replace(/GMT[^\(]*/g, '').replace(/\(台北標準時間\)/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    // ===== 自動帶入 email（querystring ?email= 也支援）=====
     (function autoEmailFromQuery(){
       try {
         var q = new URLSearchParams(location.search);
@@ -496,7 +545,6 @@
       } catch(_) {}
     })();
 
-    // ===== 啟動：載入使用者清單 =====
     fetch("user.json?v=20251117")
       .then(function(res){ return res.json(); })
       .then(function(json){ userData = json; initLogin(); })
@@ -518,15 +566,13 @@
         var load = document.getElementById("loading-screen");
         if (load) load.classList.add("hidden");
       }
-
-      // 嘗試載入自訂扭蛋圖示（載到就隱藏 SVG）
       try {
         var imgProbe = new Image();
         imgProbe.onload = function(){
           var img = document.getElementById("gacha-img");
           var svg = document.getElementById("gacha-svg");
           if (img) { img.src = GACHA_ICON; img.classList.remove("hidden"); }
-          if (svg) { svg.style.display = "none"; } // 雙保險
+          if (svg) { svg.style.display = "none"; }
         };
         imgProbe.src = GACHA_ICON;
       } catch(_) {}
@@ -549,7 +595,6 @@
       document.getElementById("leave-name").textContent = name;
     }
 
-    /* ====== 進入主畫面 ====== */
     async function showMainPages() {
       bootReady = true; clearTimeout(bootTimer);
       var loading = document.getElementById("loading-screen");
@@ -560,18 +605,19 @@
       document.getElementById("page-leave").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
 
-      // HUD 僅在打卡頁顯示
+      // 顯示 Header
+      var header = document.getElementById("global-header");
+      if (header) header.classList.remove("hidden");
+
       var hud = document.getElementById("hud-right");
       if (hud) hud.style.display = "inline-flex";
 
-      // 左下 FAB 顯示，並預設高亮打卡
       var menu = document.getElementById("menu-fab");
       if (menu) menu.style.display = "flex";
       highlightMenu("clock");
 
       var email = localStorage.getItem("qoopio_email");
 
-      // 三大資料：打卡頁（按鈕+今日狀態）、請假紀錄、班表（含月標記）
       const loadClock = (async function(){
         try { await updateButtonLabel(); } catch(e){ console.warn(e); }
         try { await updateTodayStatusFromSheet(); } catch(e){ console.warn(e); }
@@ -584,16 +630,13 @@
         try { await updateMonthShiftMarkers(); } catch(e){ console.warn(e); }
       })();
 
-      // 等三個都完成才關遮罩
       await Promise.all([loadClock, loadLeave, loadSchedule]);
 
-      // 其他非必等項（不影響遮罩）
       updateLeavePendingBanner(email);
       refreshCoinUi();
 
       loading.classList.add("hidden");
 
-      // 之後每分鐘更新一次：按鈕、今日狀態、跨日檢查、請假提示
       setInterval(async function(){
         try { await updateButtonLabel(); } catch(e){}
         try { await updateTodayStatusFromSheet(); } catch(e){}
@@ -606,7 +649,6 @@
       if (gbtn) gbtn.onclick = openGacha;
     }
 
-    /* --- FAB 選單控制 --- */
     function toggleMenu(){
       var sheet = document.getElementById("menu-sheet");
       var fab   = document.querySelector(".fab-main");
@@ -630,10 +672,9 @@
     function navigateTo(page){
       switchPage(page);
       highlightMenu(page);
-      toggleMenu(); // 點完收起
+      toggleMenu();
     }
 
-    /* --- Tab 切換（實際切內容頁） --- */
     function switchPage(page) {
       document.getElementById("page-clock").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
@@ -641,7 +682,6 @@
 
       document.getElementById("page-" + page).classList.remove("hidden");
 
-      // HUD 只在打卡頁
       var hud = document.getElementById("hud-right");
       if (hud) {
         if (page === "clock") { hud.classList.remove("hidden"); hud.style.display = "inline-flex"; }
@@ -658,7 +698,6 @@
       }
     }
 
-    /* === 新邏輯：打卡按鈕狀態（以「是否有排班」＋「時段」判斷，不再強制時段反灰） === */
     async function updateButtonLabel() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
@@ -678,39 +717,31 @@
         localStorage.setItem(dateKey, todayStr);
       }
 
-      // 預設：讀取中
       setButton("讀取中...", true, "#bbb");
 
       let shift = "";
       try {
-        // 先用「新端點」拿排班（shift）
         const res = await fetch(`${scriptUrl}?email=${encodeURIComponent(email)}&date=${todayStr}`, { cache: "no-store" });
         const data = await res.json();
         shift = (data.shift || data.data?.shift || "").trim().replace(/\s+/g, "");
-      } catch (_) {}
-
-      // 若失敗，退回舊端點拿狀態（避免卡住 UI）
-      if (!shift) {
-        try {
-          const res2 = await fetch(`${scriptUrl}?action=clockState&email=${encodeURIComponent(email)}&date=${todayStr}`, { cache: "no-store" });
-          const d2 = await res2.json();
-          if (d2 && d2.ok !== false) {
-            if (d2.state === "offwork") localStorage.setItem(stateKey, "offwork");
-            else if (d2.state === "working") localStorage.setItem(stateKey, "working");
-          }
-        } catch(_) {}
+      } catch (_) {
+        console.warn("Shift fetch failed");
       }
 
-      if (!shift) return setButton("讀取失敗", true, "#bbb");
+      if (!shift) {
+        console.warn("⚠️ 無法取得排班資料，切換為離線/備援模式");
+      } else {
+        localStorage.setItem(`qoopio_shift_cache_${email}`, shift);
+      }
 
-      // 休假或非中山/景美：直接反灰
-      if (/假/.test(shift) || !/(中山|景美)/.test(shift)) {
+      if (shift && /假/.test(shift)) {
         return setButton("休假中", true, "#bbb");
+      }
+      if (shift && !/(中山|景美)/.test(shift)) {
+        return setButton("今日無排班", true, "#bbb");
       }
 
       const savedState = localStorage.getItem(stateKey);
-
-      // 02:00–17:59 顯示「上班」（可按）；其他時間顯示「下班」（可按）
       if (totalMinutes >= 120 && totalMinutes < 1080) {
         savedState === "working"
           ? setButton("上班中", true, "#aaa")
@@ -732,7 +763,6 @@
       btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
     }
 
-    /* --- 顯示「今日已打卡 / 今日未打卡」（查『打卡紀錄』分頁） --- */
     async function updateTodayStatusFromSheet(){
       var email = localStorage.getItem("qoopio_email");
       var statusEl = document.getElementById("status");
@@ -746,14 +776,14 @@
         );
         var data = await res.json();
         var items = Array.isArray(data && data.items) ? data.items : [];
-        var hasAnyRecord = items.length > 0; // 只要今天有任一筆打卡紀錄即視為「今日已打卡」
+        var hasAnyRecord = items.length > 0; 
 
         if (hasAnyRecord) {
           statusEl.textContent = "今日已打卡";
-          statusEl.style.color = "#0B6B3A"; // 深綠
+          statusEl.style.color = "#0B6B3A"; 
         } else {
           statusEl.textContent = "今日未打卡";
-          statusEl.style.color = "#8B0000"; // 暗紅
+          statusEl.style.color = "#8B0000"; 
         }
       } catch (e) {
         console.warn("clockHistory 失敗：以『未打卡』顯示", e);
@@ -762,12 +792,13 @@
       }
     }
 
-    /* --- 打卡送出（新邏輯：不再限制特定時段，是否可按由 updateButtonLabel 決定） --- */
     function submitClockIn() {
       var email = localStorage.getItem("qoopio_email");
       var btn = document.getElementById("clockInBtn");
       if (!email) return alert("請先登入！");
       if (!btn) return;
+
+      btn.disabled = true;
 
       var type = (btn && btn.dataset.type) ? btn.dataset.type : "上班";
       var stateKey = `qoopio_state_${email}`;
@@ -783,30 +814,37 @@
           if (type === "上班") {
             setButton("上班中", true, "#aaa");
             localStorage.setItem(stateKey, "working");
-            // 上班（<=12:00）給代幣（前端即時）
             awardTokenIfEligible(type, new Date());
           } else {
             setButton("下班掰掰", true, "#aaa");
             localStorage.setItem(stateKey, "offwork");
           }
 
-          // 寫後端
           fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: "clockIn", email: email, type: type, lat: pos.coords.latitude, lng: pos.coords.longitude })
-          }).catch(function(err){ console.error("clockIn error", err); });
-
-          // 重新查『打卡紀錄』呈現今日狀態，並更新按鈕
-          updateTodayStatusFromSheet();
-          setTimeout(updateButtonLabel, 200);
+          })
+          .then(() => {
+             updateTodayStatusFromSheet();
+          })
+          .catch(function(err){
+             console.error("clockIn error", err);
+             alert("⚠️ 打卡送出失敗，請檢查網路連線！");
+             btn.disabled = false;
+             updateButtonLabel();
+             status.textContent = "❌ 送出失敗";
+             status.style.color = "red";
+          });
         },
-        function () { alert("無法取得定位資訊"); }
+        function () {
+           alert("❌ 無法取得定位資訊，打卡取消。\n請確認已開啟 GPS 定位權限。");
+           btn.disabled = false;
+        }
       );
     }
 
-    // ✅ 跨日檢查：跨日後清除本地工作狀態
     async function checkDateChange() {
       const email = localStorage.getItem("qoopio_email");
       if (!email) return;
@@ -826,7 +864,6 @@
     function resetEmail() {
       var email = localStorage.getItem("qoopio_email");
       if (email) {
-        // 只清 UI 快取；保留代幣與扭蛋紀錄
         localStorage.removeItem("qoopio_state_" + email);
         localStorage.removeItem("qoopio_state_date_" + email);
         localStorage.removeItem("qoopio_shift_" + email);
@@ -836,7 +873,6 @@
       location.reload();
     }
 
-    /* --- 月曆 --- */
     function loadCalendar(year, month) {
       var title = document.getElementById("calendar-title");
       var grid = document.getElementById("calendar-grid");
@@ -885,7 +921,6 @@
 
         grid.appendChild(cell2);
       }
-
       updateMonthShiftMarkers();
     }
 
@@ -983,7 +1018,6 @@
       return out.join("<br>");
     }
 
-    /* --- 請假：表單 Modal 開關與送出 --- */
     function openLeaveForm() {
       var email = localStorage.getItem("qoopio_email");
       if (!email) return alert("請先登入");
@@ -993,7 +1027,6 @@
     }
     function closeLeaveForm() { document.getElementById("leave-modal").classList.remove("open"); }
 
-    // 未來 60 天日期
     function prepareLeaveDates() {
       var select = document.getElementById("leave-date-select");
       select.innerHTML = "";
@@ -1047,7 +1080,6 @@
       }
     }
 
-    /* --- 載入個人請假紀錄（最近 5 筆）--- */
     async function loadLeaveHistory(email) {
       var box = document.getElementById("leave-history");
       if (!box) return;
@@ -1092,7 +1124,6 @@
       }
     }
 
-    /* --- 請假待審核提示（不影響遮罩） --- */
     async function updateLeavePendingBanner(email) {
       var banner = document.getElementById("leave-pending-banner");
       if (!banner || !email) return;
@@ -1107,7 +1138,6 @@
       }
     }
 
-    /* === 代幣（12:00 前上班 +1）、扭蛋機（保留最近 10 筆） === */
     function tokenLedgerKey(email){ return "qoopio_tokens_" + email; }
     function readTokenLedger(email){ var raw = localStorage.getItem(tokenLedgerKey(email)); return raw ? JSON.parse(raw) : {}; }
     function writeTokenLedger(email, obj){ localStorage.setItem(tokenLedgerKey(email), JSON.stringify(obj)); }
@@ -1118,8 +1148,18 @@
       if (type !== "上班") return;
       var email = localStorage.getItem("qoopio_email");
       if (!email) return;
-      var beforeNoon = now.getHours() < 12; // 午前
+
+      var beforeNoon = now.getHours() < 12; 
+
+      var shiftCache = localStorage.getItem(`qoopio_shift_cache_${email}`) || "";
+      var isLateShift = /[1-2][3-9]\-/.test(shiftCache) || /午班|晚班/.test(shiftCache);
+
       if (!beforeNoon) return;
+      if (isLateShift) {
+        console.log("偵測到下午/晚班，不發放早班代幣");
+        return;
+      }
+
       var today = getLocalDateStr(now);
       var ledger = readTokenLedger(email);
       if (ledger[today]) return;
@@ -1136,8 +1176,7 @@
       var mc = document.getElementById("modal-coin-count"); if (mc) mc.textContent = String(count);
     }
 
-    // 扭蛋機（保留最近 10 筆紀錄）
-    function gachaKey(email){ return "qoopio_gacha_" + email; } // [{time, result:'win'|'lose'}]
+    function gachaKey(email){ return "qoopio_gacha_" + email; }
     function readGachaLog(email){
       var raw = localStorage.getItem(gachaKey(email));
       var list = raw ? JSON.parse(raw) : [];
@@ -1181,11 +1220,10 @@
       if (!email) return;
       var tokens = calcTokenCount(email);
       if (tokens < 1){ alert("代幣不足"); return; }
-      // 消耗一枚代幣（移除最早一天）
       var ledger = readTokenLedger(email);
       var days = Object.keys(ledger).sort();
       if (days.length){ delete ledger[days[0]]; writeTokenLedger(email, ledger); }
-      var win = Math.random() < 0.01; // 1%
+      var win = Math.random() < 0.01; 
       var log = readGachaLog(email);
       log.push({ time: new Date().toISOString(), result: win ? 'win' : 'lose' });
       writeGachaLog(email, log);
