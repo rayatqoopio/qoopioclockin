@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 打卡系統 (Final UI)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>Qoopio 打卡系統 (Color Fix)</title>
+  
   <meta name="theme-color" content="#fdf5e6" />
+  
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <link rel="manifest" href="manifest.json?v=20251117" />
   <link rel="icon" href="icon.png" />
   <script>
@@ -38,7 +43,7 @@
     /* ====== 全域 ====== */
     html, body { margin: 0; padding: 0; height: 100%; }
     
-    /* 4. 修正：html 背景色也設為米色，確保下拉或回彈時不會有白底 */
+    /* 再次確保背景色一致 */
     html { background-color: #fdf5e6; }
     
     body {
@@ -51,18 +56,17 @@
     }
     .hidden { display: none !important; }
 
-    /* 1. Header 設計 */
+    /* Header 設計 */
     #global-header {
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 60px;
-      background-color: #fdf5e6;
+      background-color: #fdf5e6; /* 確保 Header 背景也是米色 */
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10010;
-      /* 5. 修正：移除 box-shadow 分割線，讓畫面無縫接合 */
-      box-shadow: none;
+      box-shadow: none; /* 移除陰影分割線 */
       padding-top: env(safe-area-inset-top, 0px);
     }
     .header-logo {
@@ -74,16 +78,14 @@
     .container {
       max-width: 500px;
       margin: 0 auto;
-      /* 3. 修正：減少 padding-top，讓內容更靠近 Header，解決日曆間距問題 */
+      /* 上方 padding = Header 高度 + 安全區域，讓內容剛好接在 Header 下方 */
       padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       min-height: calc(100vh - env(safe-area-inset-bottom, 0px));
-      /* 讓 container 成為 flex container，方便 page-clock 使用 flex 撐開高度 */
       display: flex;
       flex-direction: column;
     }
     
-    /* 讓每個頁面區塊都能佔滿剩餘空間 */
     .page-section {
       width: 100%;
       flex: 1;
@@ -92,14 +94,13 @@
     .logo-large { width: 200px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; text-align: center; }
 
-    /* ====== 打卡頁 (1. 修正：內容下移) ====== */
+    /* ====== 打卡頁 ====== */
     #page-clock {
-      /* 使用 Flexbox 將內容置中偏下 */
       display: flex;
       flex-direction: column;
       justify-content: center; /* 垂直置中 */
-      padding-top: 10vh;       /* 上方推一點，讓整體視覺重心往下 */
-      padding-bottom: 15vh;    /* 下方留白，避免太貼底 */
+      padding-top: 10vh;       /* 微調重心 */
+      padding-bottom: 15vh;
     }
     
     #clockInBtn {
@@ -123,10 +124,9 @@
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
     /* ====== 月曆（班表頁） ====== */
-    /* 3. 修正：移除 padding-top，配合 container 的 padding 讓其緊貼 Header */
     #page-schedule { padding-top: 0; }
     .calendar-header { 
-      padding-top: 1rem; /* 給一點內部呼吸空間 */
+      padding-top: 1rem; 
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; 
     }
     .calendar-header button {
@@ -160,7 +160,7 @@
     /* ====== 登入頁 ====== */
     #login-page { 
       padding-top: 10vh; 
-      display: block; /* 登入頁不需要 flex 撐開 */
+      display: block; 
     }
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
@@ -177,12 +177,10 @@
     #page-leave h3 { display: none; }
     #page-leave { text-align: left; padding-top: 1vh; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
     
-    /* 2. 修正：請假按鈕上移，避免與選單重疊 */
     .leave-btn-main {
       position: fixed; 
       left: 50%; 
       transform: translateX(-50%);
-      /* 原本約 24px，現在改為約 90-100px，確保高於 FAB */
       bottom: calc(100px + env(safe-area-inset-bottom, 0px)); 
       z-index: 9998;
       display: block; 
@@ -239,15 +237,13 @@
       overflow: hidden;
     }
     
-    /* 6. 修正：加粗 FAB 字體 */
     .fab-icon-o, .fab-icon-x {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
       font-family: sans-serif;
-      /* 這裡加粗 */
-      font-weight: 700; 
+      font-weight: 700; /* 加粗 */
     }
     .fab-icon-o { 
       opacity: 1; 
