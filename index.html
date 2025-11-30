@@ -2,7 +2,7 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 員工系統 (Manager)</title>
+  <title>Qoopio 員工系統 (Final)</title>
   
   <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: dark)" />
@@ -15,7 +15,6 @@
   <link rel="manifest" href="manifest.json?v=20251117" />
   <link rel="icon" href="icon.png" />
   <script>
-    // SW 註冊
     (function () {
       if (!("serviceWorker" in navigator)) return;
       navigator.serviceWorker.register("service-worker.js?v=20251117");
@@ -34,13 +33,13 @@
     .container { max-width: 500px; margin: 0 auto; padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; min-height: calc(100vh - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
     .page-section { width: 100%; flex: 1; }
 
-    /* 登入頁 */
+    /* Login */
     #login-page { padding-top: 10vh; display: block; }
     .logo-large { width: 200px; margin-bottom: 1.5rem; }
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* 打卡頁 */
+    /* Clock In */
     #page-clock { display: flex; flex-direction: column; justify-content: center; padding-top: 10vh; padding-bottom: 15vh; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; }
     #clockInBtn { width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff; border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto; transition: opacity 0.3s; }
@@ -49,7 +48,7 @@
     #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; min-height: 1.2em; }
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
-    /* 月曆 */
+    /* Calendar */
     .calendar-header { padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
     .calendar-header button { background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer; padding: 0.3rem 0.6rem; }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 1rem; }
@@ -63,7 +62,7 @@
     #selected-shift { font-size: 1rem; line-height: 1.8; color: #444; text-align: left; padding: 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.1); min-height: 100px; }
     .group-title { font-weight: bold; color: #000; margin-top: 1rem; margin-bottom: 0.5rem; }
 
-    /* 請假頁 */
+    /* Leave Page */
     #page-leave { text-align: left; padding-top: 1vh; }
     .leave-btn-main { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 9998; width: 55%; min-width: 180px; max-width: 300px; padding: 0.9rem; font-size: 1rem; border-radius: 999px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
     #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
@@ -75,7 +74,7 @@
     .leave-card .info { font-size: 0.9rem; color: #555; line-height: 1.5; }
     .leave-card .reason { margin-top: 6px; font-size: 0.9rem; color: #333; font-style: italic; background: #f9f9f9; padding: 6px; border-radius: 6px; }
 
-    /* Manager Page Styles */
+    /* Manager Page */
     #page-manager { text-align: left; padding-top: 1vh; }
     .manager-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .manager-tabs button { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: transparent; font-weight: bold; color: #777; cursor: pointer; }
@@ -162,7 +161,7 @@
     <div id="page-manager" class="hidden page-section">
       <div class="manager-tabs">
         <button id="mgr-tab-pending" class="active" onclick="loadManagerLeaves()">待審核</button>
-        </div>
+      </div>
       <div id="manager-list">
         <div class="empty-state"><div class="loading-spinner"></div> 讀取中...</div>
       </div>
@@ -181,7 +180,7 @@
         <button class="menu-item" type="button" data-page="schedule" onclick="navigateTo('schedule')">班表</button><div class="menu-circle">📅</div>
       </div>
       <div class="fab-option hidden" id="btn-manager-fab">
-        <button class="menu-item" type="button" data-page="manager" onclick="navigateTo('manager')">請假審核</button><div class="menu-circle">🖋️</div>
+        <button class="menu-item" type="button" data-page="manager" onclick="navigateTo('manager')">請假審核</button><div class="menu-circle">✒️</div>
       </div>
     </div>
     <button class="fab-main" type="button" onclick="toggleMenu()">
@@ -222,7 +221,7 @@
   </div>
 
   <script>
-    // ⚠️ 請更新此處 URL (Web App 部署網址)
+    // ⚠️ [重要] 請將此網址替換為你部署 Web App 後的最新 URL
     var scriptUrl = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
     
     // User Data (Expanded)
@@ -414,7 +413,7 @@
       }
     }
 
-    /* --- Common Logic (Simplified from previous) --- */
+    /* --- Common Logic --- */
     function getLocalDateStr(d){ d=d||new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
     function pad(n){ return ("0"+n).slice(-2); }
     async function updateButtonLabel() {
@@ -563,12 +562,73 @@
       } catch(e){}
     }
     
-    // Calendar & Others (Simplified for length, assume logic same as previous)
-    async function updateTodayStatusFromSheet(){ /* Same as before */ }
+    // Calendar & Others
+    async function updateTodayStatusFromSheet(){
+      var email = localStorage.getItem("qoopio_email");
+      var statusEl = document.getElementById("status");
+      if(!email || !statusEl) return;
+      try {
+        var res = await fetch(scriptUrl + "?action=clockHistory&email=" + encodeURIComponent(email) + "&date=" + getLocalDateStr(), {cache:"no-store"});
+        var d = await res.json();
+        if(d.items.length > 0) { statusEl.textContent = "今日已打卡"; statusEl.style.color = "#0B6B3A"; }
+        else { statusEl.textContent = "今日未打卡"; statusEl.style.color = "#8B0000"; }
+      } catch(e){}
+    }
     function resetEmail(){ localStorage.removeItem("qoopio_email"); location.reload(); }
-    function loadCalendar(y,m){ /* Same as before */ }
-    async function updateMonthShiftMarkers(){ /* Same as before */ }
-    function changeMonth(o){ currentMonth+=o; loadCalendar(currentYear,currentMonth); }
+    
+    // Calendar Logic
+    function loadCalendar(year, month) {
+      var title = document.getElementById("calendar-title");
+      var grid = document.getElementById("calendar-grid");
+      grid.innerHTML = "";
+      title.textContent = year + " 年 " + (month + 1) + " 月";
+      var dayNames = ["一","二","三","四","五","六","日"];
+      var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+      dayNames.forEach(d => { var c = document.createElement("div"); c.textContent = d; c.className = "day-name"; grid.appendChild(c); });
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (var k = 0; k < firstDay; k++) grid.appendChild(document.createElement("div"));
+      for (var day = 1; day <= daysInMonth; day++) {
+        var cell = document.createElement("div"); cell.className = "day-cell";
+        cell.innerHTML = `<div>${day}</div><div class="day-indicator"></div>`;
+        var dStr = year + "-" + pad(month + 1) + "-" + pad(day);
+        cell.onclick = function(){
+          document.querySelectorAll(".day-cell").forEach(c=>c.classList.remove("selected"));
+          this.classList.add("selected");
+          document.getElementById("selected-shift").innerHTML = "<div class='loading-spinner'></div> 讀取中...";
+          loadAllShifts(dStr);
+        };
+        grid.appendChild(cell);
+      }
+    }
+    async function updateMonthShiftMarkers() {
+      var ym = currentYear + "-" + pad(currentMonth + 1);
+      var email = localStorage.getItem("qoopio_email");
+      try {
+        var res = await fetch(scriptUrl + "?month=" + ym + "&mode=summary&email=" + email);
+        var data = await res.json();
+        var cells = document.querySelectorAll(".day-cell");
+        cells.forEach(c => {
+          c.classList.remove("shift-zhongshan", "shift-jingmei");
+          var d = c.querySelector("div").textContent;
+          if(!d) return;
+          var full = ym + "-" + pad(d);
+          if(data.zhongshanDays.includes(full)) c.classList.add("shift-zhongshan");
+          if(data.jingmeiDays.includes(full)) c.classList.add("shift-jingmei");
+        });
+      } catch(e){}
+    }
+    function changeMonth(o){ currentMonth+=o; if(currentMonth<0){currentMonth=11;currentYear--;} if(currentMonth>11){currentMonth=0;currentYear++;} loadCalendar(currentYear,currentMonth); updateMonthShiftMarkers(); }
+    async function loadAllShifts(dateStr) {
+      var box = document.getElementById("selected-shift");
+      try {
+        var res = await fetch(scriptUrl + "?date=" + dateStr + "&mode=all");
+        var d = await res.json();
+        // Since API logic for 'all' is simplified, show personal shift for now or expand API
+        // For now, let's just show the date to confirm selection works
+        box.innerHTML = dateStr + "<br>詳細班表需連接完整後端";
+      } catch(e){ box.textContent = "讀取失敗"; }
+    }
+    
     async function updateLeavePendingBanner(email){ 
       if(!LEAVE_PENDING_USERS.includes(email)) return;
       var res = await fetch(scriptUrl + "?action=leaveStatus&email=" + email);
