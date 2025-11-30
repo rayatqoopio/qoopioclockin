@@ -2,7 +2,7 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 打卡系統 (Force Beige)</title>
+  <title>Qoopio 打卡系統 (Final UX)</title>
   
   <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: dark)" />
@@ -10,7 +10,6 @@
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   
   <link rel="manifest" href="manifest.json?v=20251117" />
@@ -45,8 +44,6 @@
     }
     /* ====== 全域 ====== */
     html, body { margin: 0; padding: 0; height: 100%; }
-    
-    /* 確保背景色死鎖為米色 */
     html { background-color: #fdf5e6; }
     
     body {
@@ -59,7 +56,7 @@
     }
     .hidden { display: none !important; }
 
-    /* Header 設計 */
+    /* Header: z-index 10010 */
     #global-header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -68,7 +65,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10010;
+      z-index: 10010; 
       box-shadow: none;
       padding-top: env(safe-area-inset-top, 0px);
     }
@@ -160,14 +157,11 @@
     @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
     /* ====== 登入頁 ====== */
-    #login-page { 
-      padding-top: 10vh; 
-      display: block; 
-    }
+    #login-page { padding-top: 10vh; display: block; }
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
-    /* ====== 全螢幕載入遮罩 ====== */
+    /* ====== 全螢幕載入遮罩: z-index 20000 ====== */
     #loading-screen {
       position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 20000; transition: opacity 0.3s ease;
@@ -211,17 +205,34 @@
     .leave-card .row-4 { color: #999; }
 
     /* ====== 左下：功能選單 FAB ====== */
-    .menu-fab{
+    /* 層級說明：
+       HUD: 10001
+       Header: 10010
+       FAB Overlay: 10015 (覆蓋 Header + HUD)
+       FAB Menu (.menu-fab): 10020 (浮在 Overlay 之上)
+       Modal: 10030 (最高，覆蓋一切)
+    */
+
+    /* [新增] FAB 展開時的灰底遮罩 */
+    #fab-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 10015; /* 比 Header 高，比 FAB 按鈕低 */
+      transition: opacity 0.3s ease;
+      /* 預設隱藏交給 .hidden 控制 */
+    }
+
+    .menu-fab {
       position: fixed;
       left: 16px;
       bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-      z-index: 10002;
+      z-index: 10020; /* 提升層級 */
       display: none; 
       flex-direction: column;
       align-items: flex-start;
       pointer-events: auto;
     }
-    .fab-main{
+    .fab-main {
       width: 60px;
       height: 60px;
       border-radius: 50%;
@@ -317,7 +328,7 @@
       border: 2px solid #111;
     }
 
-    /* ====== HUD ====== */
+    /* ====== HUD: z-index 10001 (被 FAB Overlay 覆蓋) ====== */
     .hud-right{
       position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       display: none; z-index: 10001; pointer-events: auto; transform: translateZ(0); -webkit-transform: translateZ(0);
@@ -337,8 +348,8 @@
     .gacha-svg .body{ fill:#111; } .gacha-svg .window{ fill:#fff; } .gacha-svg .ball{ fill:#111; opacity:.9; }
     .gacha-img{ display:block; }
 
-    /* ====== Modal ====== */
-    .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10002; }
+    /* ====== Modal: z-index 10030 (最高層) ====== */
+    .modal{ position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index: 10030; }
     .modal.open{ display:flex; }
     .modal-card{ width: min(520px, 92%); background:#fff; border-radius:16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align:left; }
     .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
@@ -371,6 +382,8 @@
     <div class="spinner"></div>
     <p>資料載入中，請稍候...</p>
   </div>
+  
+  <div id="fab-overlay" class="hidden" onclick="toggleMenu()"></div>
 
   <header id="global-header" class="hidden">
     <img src="qoopio logo.png" class="header-logo" alt="Qoopio Logo" />
@@ -669,19 +682,26 @@
       if (gbtn) gbtn.onclick = openGacha;
     }
 
+    /* [修改] 增加對 overlay 的控制 */
     function toggleMenu(){
       var sheet = document.getElementById("menu-sheet");
       var fab   = document.querySelector(".fab-main");
+      var overlay = document.getElementById("fab-overlay");
+      
       if (!sheet || !fab) return;
       var isHidden = sheet.classList.contains("hidden");
+      
       if (isHidden) {
         sheet.classList.remove("hidden");
         fab.classList.add("open");
+        if (overlay) overlay.classList.remove("hidden"); // 顯示灰底
       } else {
         sheet.classList.add("hidden");
         fab.classList.remove("open");
+        if (overlay) overlay.classList.add("hidden"); // 隱藏灰底
       }
     }
+    
     function highlightMenu(page){
       var items = document.querySelectorAll(".menu-item");
       items.forEach(function(btn){
