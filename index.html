@@ -2,14 +2,17 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 打卡系統 (Color Fix)</title>
+  <title>Qoopio 打卡系統 (Force Beige)</title>
   
+  <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#fdf5e6" />
-  
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  
   <link rel="manifest" href="manifest.json?v=20251117" />
   <link rel="icon" href="icon.png" />
   <script>
@@ -43,7 +46,7 @@
     /* ====== 全域 ====== */
     html, body { margin: 0; padding: 0; height: 100%; }
     
-    /* 再次確保背景色一致 */
+    /* 確保背景色死鎖為米色 */
     html { background-color: #fdf5e6; }
     
     body {
@@ -61,12 +64,12 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 60px;
-      background-color: #fdf5e6; /* 確保 Header 背景也是米色 */
+      background-color: #fdf5e6;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10010;
-      box-shadow: none; /* 移除陰影分割線 */
+      box-shadow: none;
       padding-top: env(safe-area-inset-top, 0px);
     }
     .header-logo {
@@ -78,7 +81,6 @@
     .container {
       max-width: 500px;
       margin: 0 auto;
-      /* 上方 padding = Header 高度 + 安全區域，讓內容剛好接在 Header 下方 */
       padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       min-height: calc(100vh - env(safe-area-inset-bottom, 0px));
@@ -98,8 +100,8 @@
     #page-clock {
       display: flex;
       flex-direction: column;
-      justify-content: center; /* 垂直置中 */
-      padding-top: 10vh;       /* 微調重心 */
+      justify-content: center;
+      padding-top: 10vh;
       padding-bottom: 15vh;
     }
     
@@ -243,7 +245,7 @@
       transform: translate(-50%, -50%);
       transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
       font-family: sans-serif;
-      font-weight: 700; /* 加粗 */
+      font-weight: 700;
     }
     .fab-icon-o { 
       opacity: 1; 
