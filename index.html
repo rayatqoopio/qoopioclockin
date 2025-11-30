@@ -2,9 +2,9 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 打卡系統 (UI Update)</title>
+  <title>Qoopio 打卡系統 (Final UI)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#111111" />
+  <meta name="theme-color" content="#fdf5e6" />
   <link rel="manifest" href="manifest.json?v=20251117" />
   <link rel="icon" href="icon.png" />
   <script>
@@ -37,6 +37,10 @@
     }
     /* ====== 全域 ====== */
     html, body { margin: 0; padding: 0; height: 100%; }
+    
+    /* 4. 修正：html 背景色也設為米色，確保下拉或回彈時不會有白底 */
+    html { background-color: #fdf5e6; }
+    
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       background-color: #fdf5e6;
@@ -52,13 +56,14 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 60px;
-      background-color: #fdf5e6; /* 與背景同色，或可改 #fff */
+      background-color: #fdf5e6;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10010;
-      box-shadow: 0 1px 0px rgba(0,0,0,0.05); /* 輕微底線 */
-      padding-top: env(safe-area-inset-top, 0px); /* 避開瀏海 */
+      /* 5. 修正：移除 box-shadow 分割線，讓畫面無縫接合 */
+      box-shadow: none;
+      padding-top: env(safe-area-inset-top, 0px);
     }
     .header-logo {
       height: 28px;
@@ -69,27 +74,39 @@
     .container {
       max-width: 500px;
       margin: 0 auto;
-      /* 增加上方 padding 以避開 Header */
-      padding: calc(60px + env(safe-area-inset-top, 0px) + 1rem) 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
+      /* 3. 修正：減少 padding-top，讓內容更靠近 Header，解決日曆間距問題 */
+      padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       min-height: calc(100vh - env(safe-area-inset-bottom, 0px));
+      /* 讓 container 成為 flex container，方便 page-clock 使用 flex 撐開高度 */
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 讓每個頁面區塊都能佔滿剩餘空間 */
+    .page-section {
+      width: 100%;
+      flex: 1;
     }
 
-    .logo-large { width: 200px; margin-bottom: 1.5rem; } /* 登入頁的大 Logo */
+    .logo-large { width: 200px; margin-bottom: 1.5rem; }
     .user-label { font-size: 1rem; font-weight: bold; margin-bottom: 0.4rem; text-align: center; }
 
-    /* ====== 打卡頁 ====== */
+    /* ====== 打卡頁 (1. 修正：內容下移) ====== */
     #page-clock {
-      /* 原本 padding-top 14vh，因為有了 Header，稍微調整 */
-      padding-top: 8vh; 
-      position: relative; z-index: 1; text-align: center; 
+      /* 使用 Flexbox 將內容置中偏下 */
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* 垂直置中 */
+      padding-top: 10vh;       /* 上方推一點，讓整體視覺重心往下 */
+      padding-bottom: 15vh;    /* 下方留白，避免太貼底 */
     }
+    
     #clockInBtn {
       width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff;
       border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto;
       transition: background-color 0.3s ease, opacity 0.3s ease;
     }
-    /* 反灰樣式 */
     #clockInBtn:disabled,
     #clockInBtn[disabled]{
       background-color: #bbb !important;
@@ -106,8 +123,12 @@
     #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
 
     /* ====== 月曆（班表頁） ====== */
-    #page-schedule { padding-top: 1vh; }
-    .calendar-header { padding-top: 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
+    /* 3. 修正：移除 padding-top，配合 container 的 padding 讓其緊貼 Header */
+    #page-schedule { padding-top: 0; }
+    .calendar-header { 
+      padding-top: 1rem; /* 給一點內部呼吸空間 */
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; 
+    }
     .calendar-header button {
       background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer;
       padding: 0.3rem 0.6rem; transition: color 0.2s ease;
@@ -136,8 +157,11 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
-    /* ====== 登入頁（沒有 Header） ====== */
-    #login-page { padding-top: 10vh; }
+    /* ====== 登入頁 ====== */
+    #login-page { 
+      padding-top: 10vh; 
+      display: block; /* 登入頁不需要 flex 撐開 */
+    }
     #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
     #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 
@@ -153,21 +177,21 @@
     #page-leave h3 { display: none; }
     #page-leave { text-align: left; padding-top: 1vh; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
     
-    /* 3. 請假按鈕縮短與調整位置 */
+    /* 2. 修正：請假按鈕上移，避免與選單重疊 */
     .leave-btn-main {
       position: fixed; 
       left: 50%; 
       transform: translateX(-50%);
-      bottom: calc(24px + env(safe-area-inset-bottom, 0px)); 
+      /* 原本約 24px，現在改為約 90-100px，確保高於 FAB */
+      bottom: calc(100px + env(safe-area-inset-bottom, 0px)); 
       z-index: 9998;
       display: block; 
-      /* 縮短寬度，避免與左下選單重疊 */
       width: 55%; 
       min-width: 180px;
       max-width: 300px;
       padding: 0.9rem; 
       font-size: 1rem; 
-      border-radius: 999px; /* 更圓潤一點 */
+      border-radius: 999px;
       border: none; 
       background: #111; 
       color: #fff; 
@@ -211,18 +235,19 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       font-size: 1.6rem;
-      position: relative; /* For icon overlay */
+      position: relative; 
       overflow: hidden;
     }
     
-    /* 2. O -> X 漸變動畫 */
+    /* 6. 修正：加粗 FAB 字體 */
     .fab-icon-o, .fab-icon-x {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-      font-weight: 300;
       font-family: sans-serif;
+      /* 這裡加粗 */
+      font-weight: 700; 
     }
     .fab-icon-o { 
       opacity: 1; 
@@ -235,7 +260,6 @@
       font-size: 1.4rem;
     }
 
-    /* Open 狀態：O 消失，X 出現並旋轉歸位 */
     .fab-main.open .fab-icon-o {
       opacity: 0;
       transform: translate(-50%, -50%) scale(0.5);
@@ -273,10 +297,9 @@
       white-space: nowrap;
     }
     
-    /* 4. 選單圖示縮小 10% */
     .menu-circle{
-      width: 40px;  /* 原 44px -> 40px */
-      height: 40px; /* 原 44px -> 40px */
+      width: 40px;
+      height: 40px;
       margin-left: 8px;
       border-radius: 50%;
       background: #ffffff;
@@ -284,7 +307,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem; /* 稍微縮小字體 */
+      font-size: 1.1rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
     .menu-item.active{
@@ -356,21 +379,21 @@
   </header>
 
   <div class="container">
-    <div id="login-page" class="hidden">
+    <div id="login-page" class="hidden page-section">
       <img src="qoopio logo.png" class="logo-large" alt="Qoopio Logo" />
       <h3>請輸入您的 Email 登入</h3>
       <input type="email" id="login-email" placeholder="name@qoopio.com" />
       <button type="button" onclick="login()">登入</button>
     </div>
 
-    <div id="page-leave" class="hidden">
+    <div id="page-leave" class="hidden page-section">
       <h3>請假</h3>
       <button class="leave-btn-main" type="button" onclick="openLeaveForm()">申請請假</button>
       <h4>請假紀錄</h4>
       <div id="leave-history">載入中...</div>
     </div>
 
-    <div id="page-clock" class="hidden">
+    <div id="page-clock" class="hidden page-section">
       <div id="user-label" class="user-label"></div>
       <div id="leave-pending-banner"></div>
       <button id="clockInBtn" type="button" onclick="submitClockIn()">打卡</button>
@@ -378,7 +401,7 @@
       <div id="status"></div>
     </div>
 
-    <div id="page-schedule" class="hidden">
+    <div id="page-schedule" class="hidden page-section">
       <div class="calendar-view">
         <div class="calendar-header">
           <button type="button" onclick="changeMonth(-1)">〈</button>
@@ -605,7 +628,6 @@
       document.getElementById("page-leave").classList.add("hidden");
       document.getElementById("page-schedule").classList.add("hidden");
 
-      // 顯示 Header
       var header = document.getElementById("global-header");
       if (header) header.classList.remove("hidden");
 
