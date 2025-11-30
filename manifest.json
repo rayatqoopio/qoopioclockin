@@ -3,8 +3,8 @@
   "short_name": "qoopio",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111111",
+  "background_color": "#fdf5e6",
+  "theme_color": "#fdf5e6",
   "icons": [
     {
       "src": "icon-192.png",
