@@ -2,162 +2,116 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 員工系統 (v4.5)</title>
+  <title>Qoopio 員工系統 (v4.6)</title>
   <meta name="theme-color" content="#fdf5e6" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <link rel="manifest" href="manifest.json?v=20251201" />
   <link rel="icon" href="icon.png" />
-  <script>
-    if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js?v=20251201");
-  </script>
+  <script>if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js?v=20251201");</script>
   <style>
-    /* === 1. 基礎設定 === */
-    @supports (height: 100dvh) { .container { min-height: calc(100dvh - env(safe-area-inset-bottom, 0px)); } }
-    html, body { margin: 0; padding: 0; height: 100%; background-color: #fdf5e6; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #333; text-align: center; overflow-x: hidden; overscroll-behavior-y: none; }
-    .hidden { display: none !important; }
-
-    /* === 2. Header & Logo === */
-    #global-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: #fdf5e6; display: flex; align-items: center; justify-content: center; z-index: 10010; padding-top: env(safe-area-inset-top, 0px); }
-    .header-logo { height: 56px; width: auto; display: block; }
-
-    /* === 3. Container === */
-    .container { max-width: 500px; margin: 0 auto; padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; min-height: calc(100vh - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
-    .page-section { width: 100%; flex: 1; }
-
-    /* === 4. 登入頁 === */
-    #login-page { padding-top: 10vh; display: block; }
-    .logo-large { width: 200px; margin-bottom: 1.5rem; }
-    #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
-    #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
-
-    /* === 5. 打卡頁 === */
-    #page-clock { display: flex; flex-direction: column; justify-content: center; padding-top: 10vh; padding-bottom: 15vh; }
-    .user-label { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.4rem; }
-    .user-email { font-size: 0.9rem; color: #666; margin-bottom: 1rem; font-family: monospace; }
-    #clockInBtn { width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff; border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto; transition: opacity 0.3s; }
-    #clockInBtn:disabled { background-color: #bbb !important; opacity: .6; pointer-events: none; }
-    .logout-btn { background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto; }
-    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; min-height: 1.2em; }
-    #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
-
-    /* === 6. 月曆 (班表) === */
-    .calendar-header { padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
-    .calendar-header button { background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer; padding: 0.3rem 0.6rem; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 1rem; }
-    .day-cell { position: relative; padding: 10px 0; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; }
-    .day-cell.today { border: 2px solid #111; font-weight: bold; }
-    .day-cell.selected { background-color: #ddd; }
-    .day-name { font-weight: bold; color: #666; }
-    .day-indicator { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
-    .shift-zhongshan .day-indicator { background-color: #e74c3c; }
-    .shift-jingmei .day-indicator { background-color: #27ae60; }
-    #selected-shift { font-size: 1rem; line-height: 1.8; color: #444; text-align: left; padding: 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.1); min-height: 100px; }
-
-    /* === 7. 請假頁 (復刻版) === */
-    #page-leave { text-align: left; padding-top: 1vh; }
-    /* 大大的黑色懸浮按鈕 */
-    .leave-btn-main { 
-      position: fixed; left: 50%; transform: translateX(-50%); 
-      bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 9998; 
-      width: 55%; min-width: 180px; max-width: 300px; 
-      padding: 0.9rem; font-size: 1rem; border-radius: 999px; border: none; 
-      background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12); 
-    }
-    #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
-    .leave-card { padding: 0.8rem; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 0.8rem; text-align: left; }
-    .leave-card .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-weight: bold; }
-    .leave-card .row-1 .title { font-size: 1rem; color: #111; }
-    .status-bar { display: inline-flex; height: 24px; padding: 0 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #fff; align-items: center; }
-    .status-審核中 { background: #e67e22; } .status-通過 { background: #27ae60; } .status-退回 { background: #c0392b; }
-    .leave-card .info { font-size: 0.9rem; color: #555; line-height: 1.5; }
-    .leave-card .reason { margin-top: 6px; font-size: 0.9rem; color: #333; font-style: italic; background: #f9f9f9; padding: 6px; border-radius: 6px; }
-
-    /* === 8. Manager & Admin Page === */
-    #page-manager, #page-admin { text-align: left; padding-top: 1vh; }
-    .manager-tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
-    .manager-tabs button { flex: 0 0 auto; width: auto; padding: 8px 16px; border-radius: 8px; border: 1px solid #ccc; background: transparent; font-weight: bold; color: #777; cursor: pointer; font-size: 1.1rem; }
-    .manager-tabs button.active { background: #111; color: #fff; border-color: #111; }
+    /* Base & Reset */
+    @supports(height:100dvh){.container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}}
+    html,body{margin:0;padding:0;height:100%;background-color:#fdf5e6;font-family:"Helvetica Neue",Arial,sans-serif;color:#333;text-align:center;overflow-x:hidden;}
+    .hidden{display:none!important;}
     
-    .review-actions { display: flex; gap: 10px; margin-top: 12px; }
-    .btn-approve { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #27ae60; color: #fff; font-weight: bold; cursor: pointer; }
-    .btn-reject { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #c0392b; color: #fff; font-weight: bold; cursor: pointer; }
-    .empty-state { text-align: center; color: #999; margin-top: 30px; font-size: 0.95rem; }
+    /* Header */
+    #global-header{position:fixed;top:0;left:0;right:0;height:60px;background:#fdf5e6;display:flex;align-items:center;justify-content:center;z-index:10010;padding-top:env(safe-area-inset-top,0px);}
+    .header-logo{height:56px;width:auto;display:block;}
 
-    /* Admin Cards */
-    .dash-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #111; padding-left: 10px; margin-top: 20px; }
-    .dashboard-card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 10px; }
-    .dash-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; }
-    .dash-item:last-child { border-bottom: none; }
-    .dash-time { font-family: monospace; font-weight: bold; }
-    
-    /* Admin Menu Buttons (Collapsible) */
-    .admin-menu-btn { width: 100%; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; font-size: 1rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .admin-menu-btn:active { background: #f0f0f0; }
-    
-    /* Form Styles inside Modals */
-    .admin-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-    .admin-action-btn { width: 100%; padding: 12px; background: #111; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-    .admin-action-btn.secondary { background: #fff; color: #111; border: 1px solid #111; }
+    /* Container */
+    .container{max-width:500px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 1rem calc(3rem + env(safe-area-inset-bottom,0px));box-sizing:border-box;min-height:calc(100vh - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;}
+    .page-section{width:100%;flex:1;}
 
-    /* === 9. FAB (Floating Action Button) - O/X Style === */
-    #fab-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10015; }
-    
-    /* 1. 位置調整：left 加大 */
-    .menu-fab { position: fixed; left: 24px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 10020; display: none; flex-direction: column; align-items: flex-start; }
-    
-    /* O/X Button */
-    .fab-main { width: 60px; height: 60px; border-radius: 50%; background: #111; color: #fff; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.35); font-size: 1.6rem; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .fab-icon-o, .fab-icon-x { position: absolute; font-family: sans-serif; font-weight: 700; transition: all 0.3s; }
-    .fab-icon-o { opacity: 1; transform: scale(1); font-size: 1.5rem; } 
-    .fab-icon-x { opacity: 0; transform: rotate(-90deg) scale(0.5); font-size: 1.4rem; }
-    .fab-main.open .fab-icon-o { opacity: 0; transform: scale(0.5); } 
-    .fab-main.open .fab-icon-x { opacity: 1; transform: rotate(0deg) scale(1); }
-    
-    .menu-sheet { margin-bottom: 10px; } .menu-sheet.hidden { display: none; }
-    .fab-option { display: flex; align-items: center; margin-bottom: 8px; }
-    
-    /* 2. 按鈕高度縮小 10% (padding 8px -> 7px) */
-    .menu-pill { padding: 7px 16px; background: #fff; border: none; color: #333; font-size: 0.95rem; font-weight: bold; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); cursor: pointer; white-space: nowrap; }
-    .menu-pill.active { background: #111; color: #fff; }
-    
-    /* Red Dot */
-    .menu-pill.has-notif { position: relative; }
-    .menu-pill.has-notif::after { content: ''; position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    /* Login */
+    #login-page{padding-top:10vh;}
+    .logo-large{width:200px;margin-bottom:1.5rem;}
+    #login-page input{width:80%;padding:0.8rem;margin:1rem 0;border-radius:8px;border:1px solid #ccc;}
+    #login-page button{padding:0.8rem 1.5rem;background:#111;color:#fff;border:none;border-radius:8px;cursor:pointer;}
 
-    /* === 10. HUD & Modals === */
-    .hud-right { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: none; z-index: 10001; }
-    .gacha-btn { background: transparent !important; border: 0 !important; width: auto; height: auto; }
-    .gacha-img { width: 96px; height: 96px; } 
-    .gacha-img:not(.hidden) + .gacha-svg { display: none; } .gacha-svg { width: 96px; height: 96px; }
-    .gacha-badge { position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fff; }
+    /* Clock */
+    #page-clock{display:flex;flex-direction:column;justify-content:center;padding-top:10vh;padding-bottom:15vh;}
+    .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
+    .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
+    #clockInBtn{width:80%;padding:1.7rem;font-size:1.3rem;background:#111;color:#fff;border:none;border-radius:10px;margin:0.8rem auto;transition:opacity 0.3s;}
+    #clockInBtn:disabled{background:#bbb;opacity:.6;}
+    .logout-btn{background:none;border:none;color:#777;margin:0 auto;}
+    #status{margin-top:1rem;font-weight:bold;}
 
-    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 10030; } .modal.open { display: flex; }
-    .modal-card { width: min(520px, 92%); background: #fff; border-radius: 16px; padding: 20px; text-align: left; position: relative; max-height: 85vh; overflow-y: auto; }
-    .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; line-height: 1; }
-    .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center; }
+    /* Schedule */
+    .calendar-header{padding-top:1rem;display:flex;justify-content:space-between;margin-bottom:1rem;font-size:1.2rem;font-weight:bold;}
+    .calendar-header button{background:none;border:none;font-size:1.4rem;font-weight:bold;cursor:pointer;padding:0.3rem 0.6rem;}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:1rem;}
+    .day-cell{padding:10px 0;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;}
+    .day-cell.today{border:2px solid #111;font-weight:bold;}
+    .day-cell.selected{background:#ddd;}
+    .day-indicator{width:8px;height:8px;border-radius:50%;margin-top:4px;}
+    .shift-zhongshan .day-indicator{background-color:#e74c3c;}
+    .shift-jingmei .day-indicator{background-color:#27ae60;}
+    #selected-shift{padding:1rem;background:#fff;border-radius:10px;box-shadow:0 0 6px rgba(0,0,0,0.1);min-height:60px;text-align:left;line-height:1.5;}
+
+    /* Admin/Manager */
+    .manager-tabs{display:flex;gap:10px;margin-bottom:15px;justify-content:center;}
+    .manager-tabs button{padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:transparent;font-weight:bold;color:#777;font-size:1.1rem;cursor:pointer;}
+    .manager-tabs button.active{background:#111;color:#fff;border-color:#111;}
     
+    .dash-title{font-size:1.1rem;font-weight:bold;margin:20px 0 10px 0;border-left:4px solid #111;padding-left:10px;}
+    .dashboard-card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px;text-align:left;}
+    .dash-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95rem;}
+    .dash-item:last-child{border-bottom:none;}
+    .btn-approve{padding:4px 8px;border-radius:6px;border:none;background:#27ae60;color:#fff;font-weight:bold;cursor:pointer;}
+    
+    .admin-menu-btn{width:100%;padding:16px;background:#fff;border:1px solid #ddd;border-radius:12px;margin-bottom:10px;font-size:1rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+    .admin-input{width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;}
+    .admin-action-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1rem;}
+
+    /* Leave Page */
+    .leave-btn-main{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:9998;width:55%;min-width:180px;max-width:300px;padding:0.9rem;font-size:1rem;border-radius:999px;border:none;background:#111;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.12);}
+    #leave-history{margin-top:0.5rem;font-size:0.9rem;color:#555;}
+    .leave-card{padding:0.8rem;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:0.8rem;text-align:left;}
+    .leave-card .row-1{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;font-weight:bold;}
+    .status-bar{padding:2px 8px;border-radius:4px;color:#fff;font-size:0.8rem;}
+    .status-審核中{background:#e67e22;} .status-通過{background:#27ae60;} .status-退回{background:#c0392b;}
+
+    /* FAB */
+    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10015;}
+    .menu-fab{position:fixed;left:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:10020;display:none;flex-direction:column;align-items:flex-start;}
+    .fab-main{width:60px;height:60px;border-radius:50%;background:#111;color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,0.35);font-size:1.6rem;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .fab-icon-o,.fab-icon-x{position:absolute;font-family:sans-serif;font-weight:700;transition:all 0.3s;}
+    .fab-icon-o{opacity:1;transform:scale(1);} .fab-icon-x{opacity:0;transform:rotate(-90deg)scale(0.5);}
+    .fab-main.open .fab-icon-o{opacity:0;transform:scale(0.5);} .fab-main.open .fab-icon-x{opacity:1;transform:rotate(0deg)scale(1);}
+    .menu-sheet{margin-bottom:10px;} .menu-sheet.hidden{display:none;}
+    .fab-option{display:flex;align-items:center;margin-bottom:8px;}
+    .menu-pill{padding:7px 16px;background:#fff;border:none;color:#333;font-size:0.95rem;font-weight:bold;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,0.18);cursor:pointer;white-space:nowrap;}
+    .menu-pill.active{background:#111;color:#fff;}
+    .menu-pill.has-notif{position:relative;}
+    .menu-pill.has-notif::after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;background:#ff3b30;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+
+    /* HUD & Modals */
+    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
+    .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
+    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
+    
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
+    .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;}
+    .modal-close-btn{position:absolute;top:15px;right:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;line-height:1;}
+    .modal-title{font-size:1.2rem;font-weight:bold;margin-bottom:15px;text-align:center;}
+
     /* Gacha UI */
-    .modal-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-    .modal-tabs button { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #222; background: #fff; cursor: pointer; font-weight: 700; color: #111; }
-    .modal-tabs button.active { background: #111; color: #fff; border-color: #111; }
-    .gacha-body-content { text-align: center; padding: 10px 0; }
-    .gacha-btn-main { width: 100%; padding: 16px; font-size: 1.2rem; font-weight: bold; color: #fff; background-color: #111; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 0 #444; transform: translateY(0); transition: all 0.1s; margin-bottom: 10px; }
-    .gacha-btn-main:active { box-shadow: 0 2px 0 #444; transform: translateY(4px); }
-    .gacha-btn-main:disabled { background-color: #aaa; box-shadow: none; transform: translateY(4px); cursor: not-allowed; }
-    .gacha-result { min-height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: #111; margin-top: 10px; opacity: 0; transition: opacity 0.3s; } .gacha-result.show { opacity: 1; }
-    .shake-hard { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) infinite; }
-    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-    .gacha-log-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #555; display: flex; justify-content: space-between; }
-    .gacha-win { color: #d35400; font-weight: bold; }
-    
-    /* Loading & Announce */
-    #loading-screen { position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20000; transition: opacity 0.3s ease; }
-    #loading-screen.hidden { opacity: 0; pointer-events: none; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    #announce-modal .modal-card { text-align: center; }
-    #announce-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
-    #announce-content { font-size: 1rem; color: #555; margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
+    .modal-tabs{display:flex;gap:8px;margin-bottom:10px;}
+    .modal-tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid #222;background:#fff;cursor:pointer;font-weight:700;color:#111;}
+    .modal-tabs button.active{background:#111;color:#fff;border-color:#111;}
+    .gacha-body-content{text-align:center;padding:10px 0;}
+    .gacha-btn-main{width:100%;padding:16px;font-size:1.2rem;font-weight:bold;color:#fff;background:#111;border:none;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #444;margin-bottom:10px;transform:translateY(0);transition:all 0.1s;}
+    .gacha-btn-main:active{box-shadow:0 2px 0 #444;transform:translateY(4px);}
+    .gacha-btn-main:disabled{background:#aaa;box-shadow:none;transform:translateY(4px);cursor:not-allowed;}
+    .gacha-result{min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;color:#111;margin-top:10px;opacity:0;transition:opacity 0.3s;} .gacha-result.show{opacity:1;}
+    .shake-hard{animation:shake 0.5s infinite;} @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+    /* Loading */
+    #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
+    #loading-screen.hidden{opacity:0;pointer-events:none;}
+    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
   </style>
 </head>
 <body>
@@ -303,11 +257,13 @@
   </div>
 
   <script>
+    // ⚠️ 請確認此 URL 是否為 C 表最新部署的 Web App 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
+    
     let currentUser = null;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
-    const GACHA_ICON = "gacha-icon.png?v=4.3";
+    const GACHA_ICON = "gacha-icon.png?v=4.5";
 
     window.onload = async () => {
       const img = new Image(); img.src=GACHA_ICON;
@@ -403,7 +359,6 @@
       if (page === 'manager') loadManagerData();
       if (page === 'leave') loadLeaveHistory(currentUser.email);
     }
-    
     function openModal(id) { document.getElementById("modal-" + id).classList.add("open"); if(id==='leave') prepareLeaveDates(); }
     function closeModal(id) { document.getElementById("modal-" + id).classList.remove("open"); if(id==='gacha') resetGachaUI(); }
 
@@ -423,8 +378,7 @@
           document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
           cell.classList.add("selected");
           document.getElementById("selected-shift").innerHTML="<div class='loading-spinner' style='width:20px;height:20px'></div>";
-          fetch(`${API_URL}?action=getShift&email=${currentUser.email}&date=${ds}`)
-            .then(r=>r.json()).then(d=>{document.getElementById("selected-shift").textContent=`${ds}：${d.shift}`});
+          loadAllShifts(ds);
         };
         grid.appendChild(cell);
       }
@@ -443,6 +397,38 @@
       }catch(e){}
     }
     function changeMonth(o){currentMonth+=o;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}loadCalendar(currentYear,currentMonth);updateMonthShiftMarkers();}
+    
+    // 班表詳細 (Restore Good Old Memory)
+    async function loadAllShifts(ds) {
+      const box = document.getElementById("selected-shift");
+      try {
+        const res = await fetch(`${API_URL}?date=${ds}&mode=all`);
+        const d = await res.json();
+        
+        if (!d.ok || !d.shifts) {
+          box.textContent = "尚無班表資料";
+          return;
+        }
+        
+        let html = `<div style="font-weight:bold;margin-bottom:8px">${ds} 排班</div>`;
+        
+        if (d.shifts.zhongshan.length > 0) {
+          html += `<div style="margin-bottom:6px; color:#c0392b;"><strong>[中山店]</strong><br>${d.shifts.zhongshan.join('、')}</div>`;
+        }
+        if (d.shifts.jingmei.length > 0) {
+          html += `<div style="margin-bottom:6px; color:#27ae60;"><strong>[景美店]</strong><br>${d.shifts.jingmei.join('、')}</div>`;
+        }
+        if (d.shifts.other.length > 0) {
+           html += `<div style="margin-bottom:6px"><strong>[其他]</strong><br>${d.shifts.other.join('、')}</div>`;
+        }
+        if (d.shifts.zhongshan.length === 0 && d.shifts.jingmei.length === 0 && d.shifts.other.length === 0) {
+          html += "本日無人排班";
+        }
+        box.innerHTML = html;
+      } catch (e) { 
+        box.textContent = "讀取失敗"; 
+      }
+    }
 
     // Clock
     function submitClockIn() {
@@ -474,9 +460,10 @@
       const dList=document.getElementById("mgr-dashboard-list");
       rList.innerHTML="載入中..."; dList.innerHTML="載入中...";
       
+      // Pending
       const rRes=await fetch(`${API_URL}?action=getAllPendingLeaves`);
       const rData=await rRes.json();
-      if(rData.items.length>0){
+      if(rData.items && rData.items.length>0){
         document.querySelector('button[data-page="manager"]').classList.add("has-notif");
         rList.innerHTML=rData.items.map(i=>`<div class="dash-item"><span>${i.name} - ${i.leaveType} (${i.date})</span><button class="btn-approve" onclick="review(${i.rowIndex},'${i.email}','${i.date}','通過')">✅</button></div>`).join("");
       } else {
@@ -484,9 +471,14 @@
         document.querySelector('button[data-page="manager"]').classList.remove("has-notif");
       }
       
+      // Dashboard
       const dRes=await fetch(`${API_URL}?action=getManagerDashboard`);
       const dData=await dRes.json();
-      dList.innerHTML=dData.items.map(i=>`<div class="dash-item"><span>${i.name}</span><span class="dash-time">${i.in}/${i.out}</span></div>`).join("")||"無人出勤";
+      if(dData.items) {
+        dList.innerHTML=dData.items.map(i=>`<div class="dash-item"><span>${i.name} <small style="color:#888">(${i.dept})</small></span><span class="dash-time">${i.in}/${i.out}</span></div>`).join("")||"今日無人上班";
+      } else {
+        dList.innerHTML="讀取錯誤";
+      }
     }
     async function checkManagerBadge(){
       try{const r=await fetch(`${API_URL}?action=getAllPendingLeaves`);const d=await r.json();
@@ -543,10 +535,7 @@
       if(tab==='play'){ document.getElementById("gacha-view-play").classList.remove("hidden"); document.getElementById("gacha-view-log").classList.add("hidden"); }
       else { document.getElementById("gacha-view-play").classList.add("hidden"); document.getElementById("gacha-view-log").classList.remove("hidden"); renderGachaLog(); }
     }
-    function renderGachaLog(){
-      // Note: This should ideally be fetched from API, currently just placeholder if not implemented in API
-      document.getElementById("gacha-history-list").innerHTML = "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>";
-    }
+    function renderGachaLog(){ document.getElementById("gacha-history-list").innerHTML = "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>"; }
 
     // Leave Helpers
     function prepareLeaveDates(){
