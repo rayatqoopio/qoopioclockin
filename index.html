@@ -549,14 +549,33 @@
     const monthCache = {};
 
     window.onload = async () => {
-      const img = new Image(); img.src=GACHA_ICON;
-      img.onload = () => { document.getElementById("gacha-img").src = GACHA_ICON; };
+      const img = new Image(); 
+      img.src = GACHA_ICON;
+      img.onload = () => { 
+        const gi = document.getElementById("gacha-img");
+        if (gi) gi.src = GACHA_ICON; 
+      };
+    
       const email = localStorage.getItem("q_email");
-      if(email) await appInit(email);
-      else {
-        document.getElementById("loading-screen").classList.add("hidden");
-        document.getElementById("login-page").classList.remove("hidden");
-        document.getElementById("page-clock").classList.add("visible");
+      if (email) {
+        await appInit(email);
+      } else {
+        const loading = document.getElementById("loading-screen");
+        const login   = document.getElementById("login-page");
+        const clock   = document.getElementById("page-clock");
+    
+        if (loading) loading.classList.add("hidden");
+    
+        if (clock) {
+          clock.classList.add("hidden");
+          clock.classList.remove("visible");
+        }
+    
+        if (login) {
+          login.classList.remove("hidden");
+          // 下一個 frame 再加 visible，動畫才吃得到
+          requestAnimationFrame(() => login.classList.add("visible"));
+        }
       }
     };
 
@@ -590,10 +609,14 @@
         document.getElementById("hud-right").style.display = "inline-flex";
       } catch (e) {
         alert("連線失敗，請重試");
-        document.getElementById("loading-screen").classList.add("hidden");
-        document.getElementById("login-page").classList.remove("hidden");
+        const loading = document.getElementById("loading-screen");
+        const login   = document.getElementById("login-page");
+        if (loading) loading.classList.add("hidden");
+        if (login) {
+          login.classList.remove("hidden");
+          requestAnimationFrame(() => login.classList.add("visible"));
+        }
       }
-    }
 
     function setupUI(data) {
       document.getElementById("user-label").textContent = currentUser.name;
