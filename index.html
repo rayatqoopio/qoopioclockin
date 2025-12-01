@@ -94,7 +94,7 @@
       font-size:1.6rem;font-weight:bold;
       cursor:pointer;padding:0.2rem 0.6rem;
       border-radius:999px;
-      color:#000000;
+      color:#000000;       /* 維持黑色箭頭 */
       transition:background 0.15s ease, transform 0.12s ease;
     }
     .calendar-header button:active{
@@ -164,11 +164,11 @@
       transition:opacity 0.18s, background 0.18s, border-color 0.18s;
     }
     .shift-zhongshan .day-indicator{
-      background-color:#e74c3c;
+      background-color:#e74c3c;   /* 紅點：中山 */
       opacity:1;
     }
     .shift-jingmei .day-indicator{
-      background-color:#27ae60;
+      background-color:#27ae60;   /* 綠點：景美 */
       opacity:1;
     }
 
@@ -195,13 +195,17 @@
       margin-bottom:10px;
       font-size:0.95rem;
     }
-    .shift-section-title{
-      font-weight:700;
-      margin-top:10px;
-      margin-bottom:6px;
-      font-size:1rem;
+
+    /* 日期卡片內的小 loading 圈圈 */
+    .shift-loading{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      border:2px solid #ddd;
+      border-top-color:#111;
+      animation:spin 0.7s linear infinite;
+      margin:4px auto;
     }
-    .shift-line{margin-bottom:4px;}
 
     /* Admin/Manager */
     .manager-tabs{display:flex;gap:10px;margin-bottom:15px;justify-content:center;}
@@ -718,6 +722,7 @@
       // 後端防呆：拿不到就當空陣列
       const zs = Array.isArray(d.zhongshanDays) ? d.zhongshanDays : [];
       const jm = Array.isArray(d.jingmeiDays)  ? d.jingmeiDays  : [];
+      const generic = Array.isArray(d.daysWithShift) ? d.daysWithShift : [];
   
       const cells = document.querySelectorAll(".day-cell");
   
@@ -735,6 +740,11 @@
   
         if (zs.includes(fullDate)) c.classList.add("shift-zhongshan");
         if (jm.includes(fullDate)) c.classList.add("shift-jingmei");
+
+        // 如果沒有分店別資訊，但 generic 有紀錄，就給一個綠點表示「有班」
+        if (!zs.length && !jm.length && generic.includes(fullDate)) {
+          c.classList.add("shift-jingmei");
+        }
       });
     } catch (e) {
       console.error("updateMonthShiftMarkers error:", e);
@@ -788,7 +798,7 @@
     return lines.join("<br>");
   }
 
-  // ===== 班表詳細（改成你截圖那種格式） =====
+  // ===== 班表詳細（卡片內容） =====
   async function loadAllShifts(ds) {
     const box = document.getElementById("selected-shift");
     box.classList.remove("show");
@@ -804,12 +814,6 @@
         return;
       }
 
-      // 後端目前的 d.shifts 是：
-      // { zhongshan: ["名字 (中山櫃檯)", ...],
-      //   jingmei:   ["名字 (景美攝影)", ...],
-      //   other:     ["名字 (其他)", ...],
-      //   off:       ["名字", ...]  // 若你之後在 API 補上
-      // }
       const raw = d.shifts;
       const zsList = (raw.zhongshan || []).map(parseShiftString);
       const jmList = (raw.jingmei || []).map(parseShiftString);
