@@ -2,88 +2,155 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 員工系統 (Cloud v4.0)</title>
+  <title>Qoopio 員工系統 (Final v4.2)</title>
+  
+  <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#fdf5e6" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#fdf5e6" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  
   <link rel="manifest" href="manifest.json?v=20251201" />
   <link rel="icon" href="icon.png" />
   <script>
     if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js?v=20251201");
   </script>
   <style>
-    /* CSS Reset & Base */
-    @supports(height:100dvh){.container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}}
-    html,body{margin:0;padding:0;height:100%;background-color:#fdf5e6;font-family:"Helvetica Neue",Arial,sans-serif;color:#333;text-align:center;overflow-x:hidden;overscroll-behavior-y:none;}
-    .hidden{display:none !important;}
+    /* === 1. 基礎設定 === */
+    @supports (height: 100dvh) { .container { min-height: calc(100dvh - env(safe-area-inset-bottom, 0px)); } }
+    html, body { margin: 0; padding: 0; height: 100%; background-color: #fdf5e6; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #333; text-align: center; overflow-x: hidden; overscroll-behavior-y: none; }
+    .hidden { display: none !important; }
+
+    /* === 2. Header & Logo === */
+    #global-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: #fdf5e6; display: flex; align-items: center; justify-content: center; z-index: 10010; padding-top: env(safe-area-inset-top, 0px); }
+    .header-logo { height: 56px; width: auto; display: block; }
+
+    /* === 3. Container === */
+    .container { max-width: 500px; margin: 0 auto; padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; min-height: calc(100vh - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
+    .page-section { width: 100%; flex: 1; }
+
+    /* === 4. 登入頁 === */
+    #login-page { padding-top: 10vh; display: block; }
+    .logo-large { width: 200px; margin-bottom: 1.5rem; }
+    #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
+    #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+    /* === 5. 打卡頁 === */
+    #page-clock { display: flex; flex-direction: column; justify-content: center; padding-top: 10vh; padding-bottom: 15vh; }
+    .user-label { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.4rem; }
+    .user-email { font-size: 0.9rem; color: #666; margin-bottom: 1rem; font-family: monospace; } /* 修改樣式名 */
+    #clockInBtn { width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff; border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto; transition: opacity 0.3s; }
+    #clockInBtn:disabled { background-color: #bbb !important; opacity: .6; pointer-events: none; }
+    .logout-btn { background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto; }
+    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; min-height: 1.2em; }
+    #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
+
+    /* === 6. 月曆 (班表) === */
+    .calendar-header { padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
+    .calendar-header button { background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer; padding: 0.3rem 0.6rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 1rem; }
+    .day-cell { position: relative; padding: 10px 0; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .day-cell.today { border: 2px solid #111; font-weight: bold; }
+    .day-cell.selected { background-color: #ddd; }
+    .day-name { font-weight: bold; color: #666; }
+    .day-indicator { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+    .shift-zhongshan .day-indicator { background-color: #e74c3c; }
+    .shift-jingmei .day-indicator { background-color: #27ae60; }
+    #selected-shift { font-size: 1rem; line-height: 1.8; color: #444; text-align: left; padding: 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.1); min-height: 100px; }
+    .group-title { font-weight: bold; color: #000; margin-top: 1rem; margin-bottom: 0.5rem; }
+
+    /* === 7. 請假頁 === */
+    #page-leave { text-align: left; padding-top: 1vh; }
+    .leave-btn-main { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 9998; width: 55%; min-width: 180px; max-width: 300px; padding: 0.9rem; font-size: 1rem; border-radius: 999px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+    #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
+    .leave-card { padding: 0.8rem; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 0.8rem; text-align: left; }
+    .leave-card .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-weight: bold; }
+    .leave-card .row-1 .title { font-size: 1rem; color: #111; }
+    .status-bar { display: inline-flex; height: 24px; padding: 0 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #fff; align-items: center; }
+    .status-審核中 { background: #e67e22; } .status-通過 { background: #27ae60; } .status-退回 { background: #c0392b; }
+    .leave-card .info { font-size: 0.9rem; color: #555; line-height: 1.5; }
+    .leave-card .reason { margin-top: 6px; font-size: 0.9rem; color: #333; font-style: italic; background: #f9f9f9; padding: 6px; border-radius: 6px; }
+
+    /* === 8. Manager & Admin Page === */
+    #page-manager, #page-admin { text-align: left; padding-top: 1vh; }
+    .manager-tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+    .manager-tabs button { flex: 0 0 auto; width: auto; padding: 10px 16px; border-radius: 8px; border: 1px solid #ccc; background: transparent; font-weight: bold; color: #777; cursor: pointer; font-size: 1.2rem; }
+    .manager-tabs button.active { background: #111; color: #fff; border-color: #111; }
     
-    /* Header */
-    #global-header{position:fixed;top:0;left:0;right:0;height:60px;background-color:#fdf5e6;display:flex;align-items:center;justify-content:center;z-index:10010;padding-top:env(safe-area-inset-top,0px);}
-    .header-logo{height:56px;width:auto;display:block;}
+    .review-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-approve { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #27ae60; color: #fff; font-weight: bold; cursor: pointer; }
+    .btn-reject { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #c0392b; color: #fff; font-weight: bold; cursor: pointer; }
+    .empty-state { text-align: center; color: #999; margin-top: 30px; font-size: 0.95rem; }
 
-    /* Container */
-    .container{max-width:500px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 1rem calc(3rem + env(safe-area-inset-bottom,0px));box-sizing:border-box;min-height:calc(100vh - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;}
-    .page-section{width:100%;flex:1;}
+    /* Admin Cards */
+    .dash-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #111; padding-left: 10px; margin-top: 20px; }
+    .dashboard-card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 10px; }
+    .dash-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+    .dash-item:last-child { border-bottom: none; }
+    .dash-time { font-family: monospace; font-weight: bold; }
+    .admin-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+    .admin-btn { width: 100%; padding: 12px; background: #111; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 5px; font-size: 1rem; }
+    .admin-btn.secondary { background: #fff; color: #111; border: 1px solid #111; }
 
-    /* Login */
-    #login-page{padding-top:10vh;display:block;}
-    .logo-large{width:200px;margin-bottom:1.5rem;}
-    #login-page input{width:80%;padding:0.8rem;margin:1rem 0;border-radius:8px;border:1px solid #ccc;}
-    #login-page button{padding:0.8rem 1.5rem;background:#111;color:#fff;border:none;border-radius:8px;cursor:pointer;}
-
-    /* Clock In */
-    #page-clock{display:flex;flex-direction:column;justify-content:center;padding-top:10vh;padding-bottom:15vh;}
-    .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
-    .user-pos{font-size:0.9rem;color:#666;margin-bottom:1rem;}
-    #clockInBtn{width:80%;padding:1.7rem;font-size:1.3rem;background:#111;color:#fff;border:none;border-radius:10px;margin:0.8rem auto;transition:opacity 0.3s;}
-    #clockInBtn:disabled{background:#bbb;opacity:.6;}
-    .logout-btn{background:none;border:none;color:#777;margin:0 auto;}
-    #status{margin-top:1rem;font-weight:bold;}
-
-    /* Manager/Admin Dashboard */
-    .dashboard-card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:15px;text-align:left;}
-    .dash-title{font-size:1rem;font-weight:bold;margin-bottom:10px;border-left:4px solid #111;padding-left:8px;}
-    .dash-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.9rem;}
-    .dash-item:last-child{border-bottom:none;}
-    .dash-time{font-family:monospace;font-weight:bold;}
+    /* === 9. FAB === */
+    #fab-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10015; }
+    .menu-fab { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 10020; display: none; flex-direction: column; align-items: flex-start; }
+    .fab-main { width: 60px; height: 60px; border-radius: 50%; border: none; background: #111; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,0.35); font-size: 1.6rem; position: relative; }
+    .fab-icon-o, .fab-icon-x { position: absolute; font-family: sans-serif; font-weight: 700; transition: all 0.3s; }
+    .fab-icon-o { opacity: 1; transform: scale(1); font-size: 1.5rem; } 
+    .fab-icon-x { opacity: 0; transform: rotate(-90deg) scale(0.5); font-size: 1.4rem; }
+    .fab-main.open .fab-icon-o { opacity: 0; transform: scale(0.5); } 
+    .fab-main.open .fab-icon-x { opacity: 1; transform: rotate(0deg) scale(1); }
     
-    .admin-input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;}
-    .admin-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:8px;font-weight:bold;margin-bottom:5px;}
-    .admin-btn.secondary{background:#fff;color:#111;border:1px solid #111;}
+    .menu-sheet { margin-bottom: 10px; } .menu-sheet.hidden { display: none; }
+    .fab-option { display: flex; align-items: center; margin-bottom: 10px; }
+    .menu-item { padding: 8px 14px; border: none; background: #fff; color: #333; font-size: 0.9rem; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); white-space: nowrap; cursor: pointer; }
+    .menu-circle { width: 35px; height: 35px; margin-left: 8px; border-radius: 50%; background: #fff; color: #555; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); position: relative; }
+    .notification-dot::after { content: ''; position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .menu-item.active { background: #111; color: #fff; font-weight: 700; } .menu-item.active + .menu-circle { border: 2px solid #111; }
 
-    /* FAB */
-    .menu-fab{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10020;display:none;flex-direction:column;align-items:flex-start;}
-    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10015;}
-    .fab-main{width:60px;height:60px;border-radius:50%;background:#111;color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,0.35);font-size:1.6rem;position:relative;}
-    .fab-icon-o,.fab-icon-x{position:absolute;font-weight:700;transition:all 0.3s;}
-    .fab-icon-o{opacity:1;transform:scale(1);} .fab-icon-x{opacity:0;transform:rotate(-90deg)scale(0.5);}
-    .fab-main.open .fab-icon-o{opacity:0;transform:scale(0.5);} .fab-main.open .fab-icon-x{opacity:1;transform:rotate(0deg)scale(1);}
-    .menu-sheet.hidden{display:none;} .fab-option{display:flex;align-items:center;margin-bottom:10px;}
-    .menu-item{padding:8px 14px;background:#fff;border:none;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,0.18);cursor:pointer;}
-    .menu-circle{width:35px;height:35px;margin-left:8px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.25);position:relative;}
-    .notification-dot::after{content:'';position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:#ff3b30;border-radius:50%;border:2px solid #fff;}
+    /* === 10. HUD & Modals === */
+    .hud-right { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: none; z-index: 10001; }
+    .gacha-btn { background: transparent !important; border: 0 !important; width: auto; height: auto; }
+    .gacha-img { width: 96px; height: 96px; } 
+    .gacha-img:not(.hidden) + .gacha-svg { display: none; } .gacha-svg { width: 96px; height: 96px; }
+    .gacha-badge { position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fff; }
 
-    /* HUD */
-    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
-    .gacha-btn{background:transparent;border:0;}
-    .gacha-img{width:96px;height:96px;}
-    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
-
-    /* Modal */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
-    .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:16px;text-align:left;}
-    .modal-header{display:flex;justify-content:space-between;margin-bottom:10px;} .modal-header h3{margin:0;}
-    .modal-close{background:none;border:none;font-size:1.2rem;}
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 10030; } .modal.open { display: flex; }
+    .modal-card { width: min(520px, 92%); background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align: left; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; } .modal-header h3 { margin: 0; font-size: 1.1rem; } .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
     
-    /* Loading */
-    #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
-    #loading-screen.hidden{opacity:0;pointer-events:none;}
-    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
-    @keyframes spin{to{transform:rotate(360deg);}}
+    /* Gacha Styles */
+    .modal-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+    .modal-tabs button { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #222; background: #fff; cursor: pointer; font-weight: 700; color: #111; }
+    .modal-tabs button.active { background: #111; color: #fff; border-color: #111; }
+    .gacha-body-content { text-align: center; padding: 10px 0; }
+    .gacha-btn-main { width: 100%; padding: 16px; font-size: 1.2rem; font-weight: bold; color: #fff; background-color: #111; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 0 #444; transform: translateY(0); transition: all 0.1s; margin-bottom: 10px; }
+    .gacha-btn-main:active { box-shadow: 0 2px 0 #444; transform: translateY(4px); }
+    .gacha-btn-main:disabled { background-color: #aaa; box-shadow: none; transform: translateY(4px); cursor: not-allowed; }
+    .gacha-result { min-height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: #111; margin-top: 10px; opacity: 0; transition: opacity 0.3s; } .gacha-result.show { opacity: 1; }
+    .shake-hard { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) infinite; }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    .gacha-log-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #555; display: flex; justify-content: space-between; }
+    .gacha-win { color: #d35400; font-weight: bold; }
 
-    /* Announcement */
-    #announce-modal .modal-card{text-align:center;}
-    #announce-title{font-size:1.2rem;font-weight:bold;margin-bottom:10px;}
-    #announce-content{font-size:1rem;color:#555;margin-bottom:20px;line-height:1.5;}
+    /* Leave Form Inputs */
+    #leave-form label { display: block; margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
+    #leave-form select, #leave-form textarea { width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.5rem; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; } #leave-form textarea { min-height: 60px; resize: vertical; }
+    .leave-form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem; }
+    .leave-submit-btn { padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 999px; border: none; background: #111; color: #fff; cursor: pointer; }
+    .leave-cancel-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid #aaa; background: #f5f5f5; color: #555; cursor: pointer; }
+    
+    /* Loading & Announce */
+    #loading-screen { position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20000; transition: opacity 0.3s ease; }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #announce-modal .modal-card { text-align: center; }
+    #announce-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+    #announce-content { font-size: 1rem; color: #555; margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -94,43 +161,47 @@
   <div class="container">
     <div id="login-page" class="hidden page-section">
       <img src="qoopio logo.png" class="logo-large" />
-      <h3>員工登入</h3>
-      <input type="email" id="login-email" placeholder="輸入 Email" />
+      <h3>請輸入您的 Email 登入</h3>
+      <input type="email" id="login-email" placeholder="name@qoopio.com" />
       <button onclick="login()">進入系統</button>
     </div>
 
     <div id="page-clock" class="hidden page-section">
       <div id="user-label" class="user-label"></div>
-      <div id="user-pos" class="user-pos"></div>
+      <div id="user-email" class="user-email"></div>
       <button id="clockInBtn" type="button" onclick="submitClockIn()">讀取中...</button>
       <button onclick="resetApp()" class="logout-btn">登出</button>
       <div id="status"></div>
     </div>
 
     <div id="page-leave" class="hidden page-section">
-      <h3>申請請假</h3>
-      <div style="text-align:left; padding:10px; background:#fff; border-radius:10px;">
-        <label>日期 <select id="leave-date" style="width:100%;padding:8px;margin:5px 0;"></select></label>
-        <label>假別 <select id="leave-type" style="width:100%;padding:8px;margin:5px 0;">
-          <option>事假</option><option>病假</option><option>休假</option><option>特休假</option>
-        </select></label>
-        <label>原因 <input id="leave-reason" style="width:100%;padding:8px;" /></label>
-        <button class="admin-btn" onclick="submitLeave()" style="margin-top:15px;">送出申請</button>
-      </div>
-      <h4>歷史紀錄</h4>
-      <div id="leave-history-list"></div>
+      <h3 style="display:none">請假</h3>
+      <button class="leave-btn-main" type="button" onclick="openLeaveForm()">申請請假</button>
+      <h4>個人請假紀錄</h4>
+      <div id="leave-history">載入中...</div>
     </div>
 
     <div id="page-schedule" class="hidden page-section">
-      <div style="padding:20px;">班表功能開發中 (已連結 A 表)</div>
+      <div class="calendar-view">
+        <div class="calendar-header">
+          <button onclick="changeMonth(-1)">〈</button><span id="calendar-title"></span><button onclick="changeMonth(1)">〉</button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+        <div id="selected-shift">📅 請選擇日期</div>
+      </div>
     </div>
 
     <div id="page-manager" class="hidden page-section">
-      <div class="dash-title">今日出勤戰情室</div>
-      <div class="dashboard-card" id="mgr-dashboard-list">載入中...</div>
-      
-      <div class="dash-title">待審核假單</div>
-      <div class="dashboard-card" id="mgr-review-list">無待審核項目</div>
+      <div class="manager-tabs">
+        <button id="mgr-tab-pending" class="active" onclick="showMgrTab('pending')">待審核</button>
+        <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
+      </div>
+      <div id="mgr-view-pending">
+        <div class="dashboard-card" id="mgr-review-list">載入中...</div>
+      </div>
+      <div id="mgr-view-today" class="hidden">
+        <div class="dashboard-card" id="mgr-dashboard-list">載入中...</div>
+      </div>
     </div>
 
     <div id="page-admin" class="hidden page-section">
@@ -141,14 +212,12 @@
         <input id="adm-token-reason" class="admin-input" placeholder="原因 (選填)" />
         <button class="admin-btn" onclick="adminGiveToken()">發送代幣</button>
       </div>
-
       <div class="dash-title">全域公告設定</div>
       <div class="dashboard-card">
         <input id="adm-ann-title" class="admin-input" placeholder="公告標題" />
         <textarea id="adm-ann-content" class="admin-input" placeholder="公告內容..." rows="3"></textarea>
         <button class="admin-btn" onclick="adminSetAnnounce()">發布公告</button>
       </div>
-
       <div class="dash-title">系統同步</div>
       <div class="dashboard-card">
         <button class="admin-btn secondary" onclick="adminSync('schedule')">同步 A 表班表</button>
@@ -162,14 +231,61 @@
       <div class="fab-option"><button class="menu-item" onclick="nav('clock')">打卡</button><div class="menu-circle">⏱</div></div>
       <div class="fab-option"><button class="menu-item" onclick="nav('leave')">請假</button><div class="menu-circle">📝</div></div>
       <div class="fab-option"><button class="menu-item" onclick="nav('schedule')">班表</button><div class="menu-circle">📅</div></div>
-      <div class="fab-option hidden" id="fab-mgr"><button class="menu-item" onclick="nav('manager')">請假審核</button><div class="menu-circle" id="dot-mgr">🖋️</div></div>
-      <div class="fab-option hidden" id="fab-adm"><button class="menu-item" onclick="nav('admin')">管理員</button><div class="menu-circle">🔧</div></div>
+      
+      <div class="fab-option hidden" id="fab-mgr">
+        <button class="menu-item" onclick="nav('manager')">請假審核</button>
+        <div class="menu-circle" id="dot-mgr">🖋️</div>
+      </div>
+      <div class="fab-option hidden" id="fab-adm">
+        <button class="menu-item" onclick="nav('admin')">管理員</button>
+        <div class="menu-circle">🔧</div>
+      </div>
     </div>
     <button class="fab-main" onclick="toggleMenu()"><span class="fab-icon-o">O</span><span class="fab-icon-x">✕</span></button>
   </div>
 
   <div class="hud-right" id="hud-right">
-    <button class="gacha-btn" onclick="openGacha()"><img src="icon.png" class="gacha-img" /><span class="gacha-badge" id="hud-coin">0</span></button>
+    <button class="gacha-btn" onclick="openGacha()"><img id="gacha-img" src="icon.png" class="gacha-img" /><span class="gacha-badge" id="hud-coin">0</span></button>
+  </div>
+
+  <div class="modal" id="gacha-modal">
+    <div class="modal-card">
+      <div class="modal-header"><h3>扭蛋機</h3><button class="modal-close" onclick="closeGacha()">✕</button></div>
+      <div class="modal-tabs">
+        <button id="tab-gacha-play" class="active" onclick="switchGachaTab('play')">扭蛋</button>
+        <button id="tab-gacha-log" onclick="switchGachaTab('log')">紀錄</button>
+      </div>
+      <div class="modal-body" id="gacha-view-play">
+        <div class="gacha-body-content">
+          <p><b>代幣：</b><span id="modal-coin-count">0</span></p>
+          <div style="height:10px"></div>
+          <button id="gacha-action-btn" class="gacha-btn-main" onclick="playGachaAnimation()">START</button>
+          <div id="gacha-result-display" class="gacha-result"></div>
+          <div style="font-size:0.85rem; color:#888; margin-top:10px;">祝您中獎 (´≖◞౪◟≖)</div>
+        </div>
+      </div>
+      <div class="modal-body hidden" id="gacha-view-log">
+        <div id="gacha-history-list" style="max-height:200px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="leave-modal">
+    <div class="modal-card">
+      <div class="modal-header"><h3>申請請假</h3><button class="modal-close" onclick="closeLeaveForm()">✕</button></div>
+      <div class="modal-body">
+        <div id="leave-form">
+          <div><strong>申請人：</strong><span id="leave-name">—</span></div>
+          <label>日期<select id="leave-date"></select></label>
+          <label>假別<select id="leave-type"><option>事假</option><option>病假</option><option>休假</option><option>特休假</option></select></label>
+          <label>原因<input id="leave-reason" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;" /></label>
+          <div class="leave-form-actions">
+            <button class="leave-cancel-btn" onclick="closeLeaveForm()">取消</button>
+            <button class="leave-submit-btn" onclick="submitLeave()">送出</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal" id="announce-modal">
@@ -182,12 +298,18 @@
 
   <script>
     // ⚠️ 替換成 C 表部署的 URL
-    const API_URL = "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzB12OEJhNMEMWQI3lNjm61pfAtl7boHkN8n7MpTsWTLVl7txO4vxFs593fn_YyljOm/exec";
     
     let currentUser = null;
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    const GACHA_ICON = "gacha-icon.png?v=4.1";
 
-    // Init
     window.onload = async () => {
+      // 嘗試載入 Gacha Icon
+      const img = new Image(); img.src=GACHA_ICON;
+      img.onload = () => { document.getElementById("gacha-img").src = GACHA_ICON; };
+
       const email = localStorage.getItem("q_email");
       if (email) {
         await appInit(email);
@@ -210,16 +332,18 @@
         currentUser = data.user;
         currentUser.email = email;
         
-        // UI Setup
         setupUI(data);
         
-        // Announcement Check
         if (data.announcement) {
           const lastRead = localStorage.getItem("q_ann_id");
           if (lastRead != data.announcement.id) {
             showAnnounce(data.announcement);
           }
         }
+
+        // Init Calendar
+        loadCalendar(currentYear, currentMonth);
+        updateMonthShiftMarkers();
 
         document.getElementById("loading-screen").classList.add("hidden");
         document.getElementById("global-header").classList.remove("hidden");
@@ -235,12 +359,13 @@
     }
 
     function setupUI(data) {
-      // Profile
+      // [UI 調整] 僅顯示姓名與 Email
       document.getElementById("user-label").textContent = currentUser.name;
-      document.getElementById("user-pos").textContent = `${currentUser.role} | ${currentUser.position}`;
+      document.getElementById("user-email").textContent = currentUser.email; 
       
-      // Tokens
+      document.getElementById("leave-name").textContent = currentUser.name;
       document.getElementById("hud-coin").textContent = data.tokens;
+      document.getElementById("modal-coin-count").textContent = data.tokens;
       
       // Clock Btn
       const btn = document.getElementById("clockInBtn");
@@ -294,18 +419,22 @@
       toggleMenu();
       
       if (page === 'manager') loadManagerData();
+      if (page === 'leave') loadLeaveHistory(currentUser.email);
     }
 
-    // Clock In
+    // Clock In [Updated with Confirm]
     function submitClockIn() {
       const btn = document.getElementById("clockInBtn");
       if (btn.disabled) return;
+      
+      // 安全確認
+      const type = btn.dataset.type;
+      if (!confirm(`您確定要打「${type}」卡嗎？\n(將記錄您的時間與位置)`)) return;
       
       btn.disabled = true;
       btn.textContent = "定位中...";
       
       navigator.geolocation.getCurrentPosition(async (pos) => {
-        const type = btn.dataset.type;
         btn.textContent = "打卡中...";
         
         const res = await fetch(API_URL, {
@@ -319,7 +448,6 @@
           })
         });
         
-        // Optimistic UI update
         alert("打卡成功！");
         if (type === "上班") {
           btn.textContent = "下班";
@@ -338,25 +466,18 @@
     }
 
     // Manager Dashboard
+    function showMgrTab(tab) {
+      document.getElementById("mgr-tab-pending").classList.toggle("active", tab==='pending');
+      document.getElementById("mgr-tab-today").classList.toggle("active", tab==='today');
+      
+      document.getElementById("mgr-view-pending").classList.toggle("hidden", tab!=='pending');
+      document.getElementById("mgr-view-today").classList.toggle("hidden", tab!=='today');
+    }
+
     async function loadManagerData() {
-      const list = document.getElementById("mgr-dashboard-list");
-      list.innerHTML = "載入中...";
-      
-      const res = await fetch(`${API_URL}?action=getManagerDashboard`);
-      const data = await res.json();
-      
-      let html = "";
-      data.items.forEach(i => {
-        html += `
-          <div class="dash-item">
-            <span>${i.name} <small>(${i.dept})</small></span>
-            <span class="dash-time">${i.in} / ${i.out}</span>
-          </div>`;
-      });
-      list.innerHTML = html || "今日無人上班";
-      
-      // Load Reviews
+      // 1. Pending Leaves
       const rList = document.getElementById("mgr-review-list");
+      rList.innerHTML = "載入中...";
       const rRes = await fetch(`${API_URL}?action=getAllPendingLeaves`);
       const rData = await rRes.json();
       
@@ -365,13 +486,29 @@
         rList.innerHTML = rData.items.map(i => `
           <div class="dash-item">
             <span>${i.name} - ${i.leaveType} (${i.date})</span>
-            <button onclick="reviewLeave(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
+            <button class="btn-approve" style="padding:4px 8px; width:auto;" onclick="reviewLeave(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
           </div>
         `).join("");
       } else {
         rList.innerHTML = "無待審核項目";
         document.getElementById("dot-mgr").classList.remove("notification-dot");
       }
+
+      // 2. Today Dashboard
+      const dList = document.getElementById("mgr-dashboard-list");
+      dList.innerHTML = "載入中...";
+      const dRes = await fetch(`${API_URL}?action=getManagerDashboard`);
+      const dData = await dRes.json();
+      
+      let html = "";
+      dData.items.forEach(i => {
+        html += `
+          <div class="dash-item">
+            <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
+            <span class="dash-time">${i.in} / ${i.out}</span>
+          </div>`;
+      });
+      dList.innerHTML = html || "今日無人上班";
     }
 
     async function reviewLeave(idx, em, dt, st) {
@@ -389,47 +526,87 @@
       const em = document.getElementById("adm-token-email").value;
       const amt = document.getElementById("adm-token-amt").value;
       if(!em || !amt) return;
-      await fetch(API_URL, {
-        method: "POST", mode: "no-cors",
-        body: JSON.stringify({ action: "adminGiveToken", targetEmail: em, amount: amt })
-      });
+      await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "adminGiveToken", targetEmail: em, amount: amt }) });
       alert("發送完成");
     }
-
     async function adminSetAnnounce() {
       const t = document.getElementById("adm-ann-title").value;
       const c = document.getElementById("adm-ann-content").value;
-      if(!t) return;
-      await fetch(API_URL, {
-        method: "POST", mode: "no-cors",
-        body: JSON.stringify({ action: "adminSetAnnounce", title: t, content: c })
-      });
+      await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "adminSetAnnounce", title: t, content: c }) });
       alert("公告已發布");
     }
-
     async function adminSync(type) {
       if(!confirm("確定執行?")) return;
-      await fetch(API_URL, {
-        method: "POST", mode: "no-cors",
-        body: JSON.stringify({ action: "adminSync", type: type })
-      });
+      await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "adminSync", type: type }) });
       alert("同步指令已發送");
     }
 
-    // Announcement
-    function showAnnounce(ann) {
-      document.getElementById("announce-title").textContent = ann.title;
-      document.getElementById("announce-content").textContent = ann.content;
-      document.getElementById("announce-modal").style.display = "flex";
-      localStorage.setItem("q_ann_id", ann.id);
+    // Gacha
+    function openGacha(){ document.getElementById("gacha-modal").classList.add("open"); switchGachaTab('play'); }
+    function closeGacha(){ document.getElementById("gacha-modal").classList.remove("open"); resetGachaUI(); }
+    function resetGachaUI(){
+      document.getElementById("gacha-result-display").classList.remove("show");
+      document.getElementById("gacha-result-display").innerHTML = "";
+      document.getElementById("gacha-action-btn").disabled = false;
+      document.getElementById("gacha-action-btn").classList.remove("shake-hard");
     }
-    function closeAnnounce() {
-      document.getElementById("announce-modal").style.display = "none";
+    function switchGachaTab(tab){
+      document.getElementById("tab-gacha-play").classList.toggle("active", tab==='play');
+      document.getElementById("tab-gacha-log").classList.toggle("active", tab==='log');
+      if(tab==='play'){
+        document.getElementById("gacha-view-play").classList.remove("hidden");
+        document.getElementById("gacha-view-log").classList.add("hidden");
+      } else {
+        document.getElementById("gacha-view-play").classList.add("hidden");
+        document.getElementById("gacha-view-log").classList.remove("hidden");
+        // Load Gacha Log (Simplified for now, can be API call)
+        document.getElementById("gacha-history-list").innerHTML = "<div style='text-align:center;padding:10px;color:#999'>紀錄載入中...</div>";
+      }
     }
-    
-    // Leave Apply (Simplified)
+    function playGachaAnimation() {
+      var currentCoins = parseInt(document.getElementById("modal-coin-count").textContent);
+      if(currentCoins < 1) { alert("代幣不足！"); return; }
+
+      // Deduct UI
+      document.getElementById("modal-coin-count").textContent = currentCoins - 1;
+      document.getElementById("hud-coin").textContent = currentCoins - 1;
+
+      var btn = document.getElementById("gacha-action-btn");
+      var resBox = document.getElementById("gacha-result-display");
+      btn.disabled = true;
+      resBox.classList.remove("show");
+      resBox.innerHTML = "";
+      btn.classList.add("shake-hard");
+      
+      setTimeout(async function(){
+        btn.classList.remove("shake-hard");
+        
+        // Call API
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST", 
+            body: JSON.stringify({ action: "drawGacha", email: currentUser.email })
+          });
+          const data = await res.json();
+          
+          if(data.win) {
+            resBox.innerHTML = "<span style='color:#d35400; font-size:1.4rem;'>🎉 中獎啦！截圖領獎</span>";
+          } else {
+            resBox.innerHTML = "<span style='color:#555;'>沒中...明天再來 😂</span>";
+          }
+          resBox.classList.add("show");
+          btn.disabled = false;
+          
+        } catch(e) {
+          alert("連線錯誤");
+          btn.disabled = false;
+        }
+      }, 1500);
+    }
+
+    // Leave & Calendar Helpers
     function openLeaveForm() {
-      document.getElementById("leave-modal").style.display = "flex";
+      document.getElementById("leave-modal").classList.add("open");
       const sel = document.getElementById("leave-date");
       sel.innerHTML = "";
       for(let i=0;i<30;i++){
@@ -439,20 +616,74 @@
       }
     }
     async function submitLeave() {
-      await fetch(API_URL, {
-        method: "POST", mode: "no-cors",
-        body: JSON.stringify({
-          action: "applyLeave",
-          email: currentUser.email,
-          date: document.getElementById("leave-date").value,
-          leaveType: document.getElementById("leave-type").value,
-          reason: document.getElementById("leave-reason").value
-        })
-      });
-      alert("已送出");
-      document.getElementById("leave-modal").style.display = "none";
+      await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "applyLeave", email: currentUser.email, date: document.getElementById("leave-date").value, leaveType: document.getElementById("leave-type").value, reason: document.getElementById("leave-reason").value }) });
+      alert("已送出"); closeLeaveForm(); loadLeaveHistory(currentUser.email);
     }
-    function closeLeaveForm(){ document.getElementById("leave-modal").style.display = "none"; }
+    function closeLeaveForm(){ document.getElementById("leave-modal").classList.remove("open"); }
+    
+    async function loadLeaveHistory(e){
+      try{
+        var r=await fetch(API_URL+"?action=leaveHistory&email="+e);
+        var d=await r.json();
+        document.getElementById("leave-history").innerHTML=d.items.map(i=>`<div class="leave-card"><div class="row-1"><span class="title">${i.leaveType}</span><span class="status-bar status-${i.status}">${i.status}</span></div><div class="info">${i.date}</div></div>`).join("");
+      }catch(_){}
+    }
+
+    function showAnnounce(ann) {
+      document.getElementById("announce-title").textContent = ann.title;
+      document.getElementById("announce-content").textContent = ann.content;
+      document.getElementById("announce-modal").style.display = "flex";
+      localStorage.setItem("q_ann_id", ann.id);
+    }
+    function closeAnnounce() { document.getElementById("announce-modal").style.display = "none"; }
+
+    function pad(n){ return ("0"+n).slice(-2); }
+    function changeMonth(o){ currentMonth+=o; if(currentMonth<0){currentMonth=11;currentYear--;} if(currentMonth>11){currentMonth=0;currentYear++;} loadCalendar(currentYear,currentMonth); updateMonthShiftMarkers(); }
+    
+    function loadCalendar(year, month) {
+      var grid = document.getElementById("calendar-grid");
+      grid.innerHTML = "";
+      document.getElementById("calendar-title").textContent = year + " 年 " + (month + 1) + " 月";
+      var d = new Date(year, month, 1).getDay(); d = (d + 6) % 7;
+      var dim = new Date(year, month + 1, 0).getDate();
+      ["一","二","三","四","五","六","日"].forEach(n => { var c = document.createElement("div"); c.textContent = n; c.className = "day-name"; grid.appendChild(c); });
+      for (var i = 0; i < d; i++) grid.appendChild(document.createElement("div"));
+      for (var i = 1; i <= dim; i++) {
+        let cell = document.createElement("div"); cell.className = "day-cell";
+        cell.innerHTML = `<div>${i}</div><div class="day-indicator"></div>`;
+        let ds = year + "-" + pad(month + 1) + "-" + pad(i);
+        cell.onclick = function() {
+          document.querySelectorAll(".day-cell").forEach(x => x.classList.remove("selected"));
+          this.classList.add("selected");
+          document.getElementById("selected-shift").innerHTML = "...";
+          loadAllShifts(ds);
+        };
+        grid.appendChild(cell);
+      }
+    }
+    
+    async function updateMonthShiftMarkers() {
+      try {
+        var ym = currentYear + "-" + pad(currentMonth + 1);
+        var res = await fetch(`${API_URL}?month=${ym}&mode=summary&email=${currentUser.email}`);
+        var d = await res.json();
+        document.querySelectorAll(".day-cell").forEach(c => {
+          var dv = c.querySelector("div").textContent;
+          if (!dv) return;
+          var f = ym + "-" + pad(dv);
+          if (d.zhongshanDays.includes(f)) c.classList.add("shift-zhongshan");
+          if (d.jingmeiDays.includes(f)) c.classList.add("shift-jingmei");
+        });
+      } catch (e) {}
+    }
+    
+    async function loadAllShifts(ds) {
+      try {
+        var r = await fetch(`${API_URL}?date=${ds}&mode=all`);
+        var d = await res.json(); // Note: getAllShiftsForDate_ is stub in backend for now
+        document.getElementById("selected-shift").innerHTML = ds + "<br>詳細班表";
+      } catch (e) {}
+    }
   </script>
 </body>
 </html>
