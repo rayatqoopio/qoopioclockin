@@ -2,7 +2,7 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 員工系統 (v4.6)</title>
+  <title>Qoopio 員工系統 (v4.7)</title>
   <meta name="theme-color" content="#fdf5e6" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <link rel="manifest" href="manifest.json?v=20251201" />
@@ -14,7 +14,9 @@
   </script>
   <style>
     /* Base & Reset */
-    @supports(height:100dvh){.container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}}
+    @supports(height:100dvh){
+      .container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}
+    }
     html,body{
       margin:0;padding:0;height:100%;
       background-color:#fdf5e6;
@@ -94,7 +96,7 @@
       font-size:1.6rem;font-weight:bold;
       cursor:pointer;padding:0.2rem 0.6rem;
       border-radius:999px;
-      color:#000000;       /* 維持黑色箭頭 */
+      color:#000; /* 箭頭維持黑色 */
       transition:background 0.15s ease, transform 0.12s ease;
     }
     .calendar-header button:active{
@@ -163,12 +165,19 @@
       opacity:0;
       transition:opacity 0.18s, background 0.18s, border-color 0.18s;
     }
+    /* 中山 = 紅點 */
     .shift-zhongshan .day-indicator{
-      background-color:#e74c3c;   /* 紅點：中山 */
+      background-color:#e74c3c;
       opacity:1;
     }
+    /* 景美 = 綠點 */
     .shift-jingmei .day-indicator{
-      background-color:#27ae60;   /* 綠點：景美 */
+      background-color:#27ae60;
+      opacity:1;
+    }
+    /* 後備：有排班但無門市資訊，用綠點 */
+    .shift-any .day-indicator{
+      background-color:#27ae60;
       opacity:1;
     }
 
@@ -196,10 +205,9 @@
       font-size:0.95rem;
     }
 
-    /* 日期卡片內的小 loading 圈圈 */
+    /* 日期切換時的小 loading 圈圈 */
     .shift-loading{
-      width:18px;
-      height:18px;
+      width:18px;height:18px;
       border-radius:50%;
       border:2px solid #ddd;
       border-top-color:#111;
@@ -260,7 +268,8 @@
     .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
     .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
     
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;}
+    .modal.open{display:flex;}
     .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;}
     .modal-close-btn{position:absolute;top:15px;right:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;line-height:1;}
     .modal-title{font-size:1.2rem;font-weight:bold;margin-bottom:15px;text-align:center;}
@@ -273,20 +282,40 @@
     .gacha-btn-main{width:100%;padding:16px;font-size:1.2rem;font-weight:bold;color:#fff;background:#111;border:none;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #444;margin-bottom:10px;transform:translateY(0);transition:all 0.1s;}
     .gacha-btn-main:active{box-shadow:0 2px 0 #444;transform:translateY(4px);}
     .gacha-btn-main:disabled{background:#aaa;box-shadow:none;transform:translateY(4px);cursor:not-allowed;}
-    .gacha-result{min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;color:#111;margin-top:10px;opacity:0;transition:opacity 0.3s;} .gacha-result.show{opacity:1;}
-    .shake-hard{animation:shake 0.5s infinite;} @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .gacha-result{min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;color:#111;margin-top:10px;opacity:0;transition:opacity 0.3s;}
+    .gacha-result.show{opacity:1;}
+    .shake-hard{animation:shake 0.5s infinite;}
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-5px)}
+      75%{transform:translateX(5px)}
+    }
 
-    /* Loading */
-    #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
+    /* Loading (全畫面) */
+    #loading-screen{
+      position:fixed;inset:0;background:#fdf5e6;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      z-index:20000;transition:opacity 0.3s;
+    }
     #loading-screen.hidden{opacity:0;pointer-events:none;}
-    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
+    .spinner{
+      width:40px;height:40px;border:4px solid #ccc;
+      border-top-color:#111;border-radius:50%;
+      animation:spin 0.8s linear infinite;margin-bottom:10px;
+    }
     @keyframes spin{to{transform:rotate(360deg);}}
   </style>
 </head>
 <body>
-  <div id="loading-screen"><div class="spinner"></div><p>系統連線中...</p></div>
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>系統連線中...</p>
+  </div>
   <div id="fab-overlay" class="hidden" onclick="toggleMenu()"></div>
-  <header id="global-header" class="hidden"><img src="qoopio logo.png" class="header-logo" /></header>
+  <header id="global-header" class="hidden">
+    <img src="qoopio logo.png" class="header-logo" />
+  </header>
 
   <div class="container">
     <div id="login-page" class="hidden page-section">
@@ -326,15 +355,25 @@
         <button id="mgr-tab-pending" class="active" onclick="showMgrTab('pending')">待審核</button>
         <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
       </div>
-      <div id="mgr-view-pending"><div class="dashboard-card" id="mgr-review-list">載入中...</div></div>
-      <div id="mgr-view-today" class="hidden"><div class="dashboard-card" id="mgr-dashboard-list">載入中...</div></div>
+      <div id="mgr-view-pending">
+        <div class="dashboard-card" id="mgr-review-list">載入中...</div>
+      </div>
+      <div id="mgr-view-today" class="hidden">
+        <div class="dashboard-card" id="mgr-dashboard-list">載入中...</div>
+      </div>
     </div>
 
     <div id="page-admin" class="hidden page-section">
       <div class="dash-title">管理員功能</div>
-      <button class="admin-menu-btn" onclick="openModal('admin-token')">🎁 發送扭蛋代幣 <span>›</span></button>
-      <button class="admin-menu-btn" onclick="openModal('admin-announce')">📢 發布全域公告 <span>›</span></button>
-      <button class="admin-menu-btn" onclick="openModal('admin-sync')">⚙️ 系統資料同步 <span>›</span></button>
+      <button class="admin-menu-btn" onclick="openModal('admin-token')">
+        🎁 發送扭蛋代幣 <span>›</span>
+      </button>
+      <button class="admin-menu-btn" onclick="openModal('admin-announce')">
+        📢 發布全域公告 <span>›</span>
+      </button>
+      <button class="admin-menu-btn" onclick="openModal('admin-sync')">
+        ⚙️ 系統資料同步 <span>›</span>
+      </button>
     </div>
   </div>
 
@@ -346,13 +385,20 @@
       <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">請假審核</button></div>
       <div class="fab-option hidden" id="fab-adm"><button class="menu-pill" data-page="admin" onclick="nav('admin')">管理員</button></div>
     </div>
-    <button class="fab-main" onclick="toggleMenu()"><span class="fab-icon-o">O</span><span class="fab-icon-x">✕</span></button>
+    <button class="fab-main" onclick="toggleMenu()">
+      <span class="fab-icon-o">O</span>
+      <span class="fab-icon-x">✕</span>
+    </button>
   </div>
 
   <div class="hud-right" id="hud-right">
-    <button class="gacha-btn" onclick="openModal('gacha')"><img id="gacha-img" src="icon.png" class="gacha-img" /><span class="gacha-badge" id="hud-coin">0</span></button>
+    <button class="gacha-btn" onclick="openModal('gacha')">
+      <img id="gacha-img" src="icon.png" class="gacha-img" />
+      <span class="gacha-badge" id="hud-coin">0</span>
+    </button>
   </div>
 
+  <!-- Gacha Modal -->
   <div class="modal" id="modal-gacha">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('gacha')">✕</button>
@@ -374,6 +420,7 @@
     </div>
   </div>
 
+  <!-- Leave Modal -->
   <div class="modal" id="modal-leave">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('leave')">✕</button>
@@ -382,7 +429,10 @@
       <select id="leave-date" class="admin-input"></select>
       <label style="display:block;margin-top:10px">假別</label>
       <select id="leave-type" class="admin-input">
-        <option>事假</option><option>病假</option><option>休假</option><option>特休假</option>
+        <option>事假</option>
+        <option>病假</option>
+        <option>休假</option>
+        <option>特休假</option>
       </select>
       <label style="display:block;margin-top:10px">原因</label>
       <input id="leave-reason" class="admin-input" placeholder="選填..." />
@@ -390,6 +440,7 @@
     </div>
   </div>
 
+  <!-- Admin: Token -->
   <div class="modal" id="modal-admin-token">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('admin-token')">✕</button>
@@ -400,6 +451,7 @@
     </div>
   </div>
 
+  <!-- Admin: Announcement -->
   <div class="modal" id="modal-admin-announce">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('admin-announce')">✕</button>
@@ -410,6 +462,7 @@
     </div>
   </div>
 
+  <!-- Admin: Sync -->
   <div class="modal" id="modal-admin-sync">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('admin-sync')">✕</button>
@@ -419,6 +472,7 @@
     </div>
   </div>
 
+  <!-- Announcement Modal -->
   <div class="modal" id="modal-show-announce">
     <div class="modal-card" style="text-align:center">
       <div id="ann-display-title" style="font-size:1.2rem;font-weight:bold;margin-bottom:10px"></div>
@@ -428,7 +482,7 @@
   </div>
 
 <script>
-  // ⚠️ 請確認此 URL 是否為 C 表最新部署的 Web App 網址
+  // ⚠️ C 表 Web App URL
   const API_URL =
     "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
 
@@ -442,15 +496,13 @@
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.add("hidden");
 
-    // 隱藏所有主頁
-    ["clock", "leave", "schedule", "manager", "admin"].forEach((p) => {
+    ["clock","leave","schedule","manager","admin"].forEach((p)=>{
       const el = document.getElementById("page-" + p);
       if (!el) return;
       el.classList.add("hidden");
       el.classList.remove("visible");
     });
 
-    // header / FAB / HUD 關掉
     const header = document.getElementById("global-header");
     if (header) header.classList.add("hidden");
     const fab = document.getElementById("menu-fab");
@@ -458,20 +510,16 @@
     const hud = document.getElementById("hud-right");
     if (hud) hud.style.display = "none";
 
-    // 顯示 login
     const loginPage = document.getElementById("login-page");
     if (loginPage) {
       loginPage.classList.remove("hidden");
-      // 給一點淡入動畫
-      requestAnimationFrame(() => {
-        loginPage.classList.add("visible");
-      });
+      requestAnimationFrame(()=>loginPage.classList.add("visible"));
     }
   }
 
-  // 開啟後先判斷有沒有登入
+  // 進站：判斷是否已登入
   window.addEventListener("load", async () => {
-    // 順手預載扭蛋 icon
+    // 預載扭蛋 icon
     try {
       const img = new Image();
       img.onload = () => {
@@ -492,7 +540,6 @@
   async function appInit(email) {
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.remove("hidden");
-
     document.getElementById("login-page").classList.add("hidden");
 
     try {
@@ -513,10 +560,8 @@
       if (data.announcement) {
         const lastRead = localStorage.getItem("q_ann_id");
         if (String(lastRead) !== String(data.announcement.id)) {
-          document.getElementById("ann-display-title").textContent =
-            data.announcement.title || "";
-          document.getElementById("ann-display-content").textContent =
-            data.announcement.content || "";
+          document.getElementById("ann-display-title").textContent = data.announcement.title || "";
+          document.getElementById("ann-display-content").textContent = data.announcement.content || "";
           openModal("show-announce");
           localStorage.setItem("q_ann_id", data.announcement.id);
         }
@@ -531,22 +576,19 @@
       document.getElementById("global-header").classList.remove("hidden");
       const clockPage = document.getElementById("page-clock");
       clockPage.classList.remove("hidden");
-      requestAnimationFrame(() => clockPage.classList.add("visible"));
+      requestAnimationFrame(()=>clockPage.classList.add("visible"));
 
       const fab = document.getElementById("menu-fab");
       if (fab) fab.style.display = "flex";
       const hud = document.getElementById("hud-right");
       if (hud) hud.style.display = "inline-flex";
 
-      // 預設把「打卡」pill 設為 active
-      document
-        .querySelectorAll(".menu-pill")
-        .forEach((btn) => btn.classList.remove("active"));
+      document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
       const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
       if (clockPill) clockPill.classList.add("active");
     } catch (e) {
-      alert("連線失敗，請重試");
       console.error(e);
+      alert("連線失敗，請重試");
       showLoginOnly();
     }
   }
@@ -578,7 +620,6 @@
       btn.style.background = "#111";
     }
 
-    // 權限：manager / admin
     if (currentUser.role === "manager" || currentUser.role === "admin") {
       document.getElementById("fab-mgr").classList.remove("hidden");
       checkManagerBadge();
@@ -617,24 +658,26 @@
   function nav(page) {
     const target = document.getElementById("page-" + page);
 
-    document.querySelectorAll(".page-section").forEach((p) => {
+    document.querySelectorAll(".page-section").forEach((p)=>{
       p.classList.add("hidden");
       p.classList.remove("visible");
     });
 
     target.classList.remove("hidden");
-    requestAnimationFrame(() => target.classList.add("visible"));
+    requestAnimationFrame(()=>target.classList.add("visible"));
 
     toggleMenu();
 
-    document
-      .querySelectorAll(".menu-pill")
-      .forEach((btn) => btn.classList.remove("active"));
+    document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
     const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
     if (pill) pill.classList.add("active");
 
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
+    if (page === "schedule") {
+      // 再更新一次標記，避免跨月後沒刷新
+      updateMonthShiftMarkers();
+    }
   }
 
   function openModal(id) {
@@ -660,22 +703,19 @@
     const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7; // 週一開頭
     const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-    // 星期列
-    ["一", "二", "三", "四", "五", "六", "日"].forEach((n) => {
+    ["一","二","三","四","五","六","日"].forEach((n)=>{
       const c = document.createElement("div");
       c.className = "day-name";
       c.textContent = n;
       grid.appendChild(c);
     });
 
-    // 前面空格
     for (let i = 0; i < firstWeekday; i++) {
       grid.appendChild(document.createElement("div"));
     }
 
     const today = new Date();
-    const isSameMonth =
-      today.getFullYear() === y && today.getMonth() === m;
+    const isSameMonth = today.getFullYear() === y && today.getMonth() === m;
 
     for (let d = 1; d <= daysInMonth; d++) {
       const cell = document.createElement("div");
@@ -686,14 +726,9 @@
         cell.classList.add("today");
       }
 
-      const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(
-        2,
-        "0"
-      )}`;
+      const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       cell.onclick = () => {
-        document
-          .querySelectorAll(".day-cell")
-          .forEach((x) => x.classList.remove("selected"));
+        document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
         cell.classList.add("selected");
         const box = document.getElementById("selected-shift");
         box.classList.remove("show");
@@ -701,49 +736,46 @@
         loadAllShifts(ds);
       };
 
-      // 進場動畫延遲
       cell.style.animationDelay = d * 0.01 + "s";
-
       grid.appendChild(cell);
     }
   }
 
   async function updateMonthShiftMarkers(){
-    // 尚未登入就不更新
     if (!currentUser || !currentUser.email) return;
-  
+
     try {
       const ym = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
       const res = await fetch(
         `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(currentUser.email)}`
       );
       const d = await res.json();
-  
-      // 後端防呆：拿不到就當空陣列
+
       const zs = Array.isArray(d.zhongshanDays) ? d.zhongshanDays : [];
       const jm = Array.isArray(d.jingmeiDays)  ? d.jingmeiDays  : [];
-      const generic = Array.isArray(d.daysWithShift) ? d.daysWithShift : [];
-  
+      const dw = Array.isArray(d.daysWithShift) ? d.daysWithShift : [];
+
       const cells = document.querySelectorAll(".day-cell");
-  
-      cells.forEach(c => {
-        // 先清掉舊的標記
-        c.classList.remove("shift-zhongshan", "shift-jingmei");
-  
+      cells.forEach(c=>{
+        c.classList.remove("shift-zhongshan","shift-jingmei","shift-any");
         const first = c.firstElementChild;
         if (!first) return;
-  
-        const dayNum = parseInt(first.textContent, 10);
+        const dayNum = parseInt(first.textContent,10);
         if (!dayNum) return;
-  
         const fullDate = `${ym}-${String(dayNum).padStart(2,'0')}`;
-  
-        if (zs.includes(fullDate)) c.classList.add("shift-zhongshan");
-        if (jm.includes(fullDate)) c.classList.add("shift-jingmei");
 
-        // 如果沒有分店別資訊，但 generic 有紀錄，就給一個綠點表示「有班」
-        if (!zs.length && !jm.length && generic.includes(fullDate)) {
+        let marked = false;
+        if (zs.includes(fullDate)) {
+          c.classList.add("shift-zhongshan");
+          marked = true;
+        }
+        if (jm.includes(fullDate)) {
           c.classList.add("shift-jingmei");
+          marked = true;
+        }
+        if (!marked && dw.includes(fullDate)) {
+          // 有班但沒分門市，用 shift-any 顯示綠點
+          c.classList.add("shift-any");
         }
       });
     } catch (e) {
@@ -776,9 +808,9 @@
   function buildStoreBlock(list, storeLabel) {
     if (!list.length) return "";
     const groups = {};
-    const order = ["櫃檯", "彩妝", "攝影", "修圖"];
+    const order = ["櫃檯","彩妝","攝影","修圖"];
 
-    list.forEach((item) => {
+    list.forEach((item)=>{
       const m = item.shift.match(/(櫃檯|彩妝|攝影|修圖)/);
       const role = m ? m[1] : "其他";
       if (!groups[role]) groups[role] = [];
@@ -786,7 +818,7 @@
     });
 
     let lines = [];
-    order.forEach((role) => {
+    order.forEach(role=>{
       if (groups[role]) {
         lines.push(`${storeLabel}${role}：${groups[role].join("、")}`);
       }
@@ -794,11 +826,10 @@
     if (groups["其他"]) {
       lines.push(`${storeLabel}其他：${groups["其他"].join("、")}`);
     }
-    if (!lines.length) return "";
     return lines.join("<br>");
   }
 
-  // ===== 班表詳細（卡片內容） =====
+  // ===== 班表詳細 =====
   async function loadAllShifts(ds) {
     const box = document.getElementById("selected-shift");
     box.classList.remove("show");
@@ -816,19 +847,17 @@
 
       const raw = d.shifts;
       const zsList = (raw.zhongshan || []).map(parseShiftString);
-      const jmList = (raw.jingmei || []).map(parseShiftString);
+      const jmList = (raw.jingmei   || []).map(parseShiftString);
+      const offList = raw.off || [];
 
       let html = `<div class="shift-date-title">${ds}</div><br>`;
 
       if (zsList.length) {
-        html += "<b>[中山]</b><br>" + buildStoreBlock(zsList, "中山") + "<br><br>";
+        html += "<b>[中山]</b><br>" + buildStoreBlock(zsList,"中山") + "<br><br>";
       }
       if (jmList.length) {
-        html += "<b>[景美]</b><br>" + buildStoreBlock(jmList, "景美") + "<br><br>";
+        html += "<b>[景美]</b><br>" + buildStoreBlock(jmList,"景美") + "<br><br>";
       }
-
-      // 若後端有提供 off，就顯示「[放假]」
-      const offList = raw.off || [];
       if (offList.length) {
         html += "<b>[放假]</b><br>・" + offList.join("<br>・");
       }
@@ -838,7 +867,7 @@
       }
 
       box.innerHTML = html;
-      requestAnimationFrame(() => box.classList.add("show"));
+      requestAnimationFrame(()=>box.classList.add("show"));
     } catch (e) {
       console.error(e);
       box.innerHTML = "讀取失敗，請稍後再試";
@@ -864,7 +893,7 @@
     btn.textContent = "定位中...";
 
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      async (pos)=>{
         btn.textContent = "打卡中...";
         try {
           await fetch(API_URL, {
@@ -895,7 +924,7 @@
           btn.textContent = type;
         }
       },
-      () => {
+      ()=>{
         alert("定位失敗，請確認定位權限");
         btn.disabled = false;
         btn.textContent = type;
@@ -905,18 +934,10 @@
 
   // ===== Manager 區 =====
   function showMgrTab(t) {
-    document
-      .getElementById("mgr-tab-pending")
-      .classList.toggle("active", t === "pending");
-    document
-      .getElementById("mgr-tab-today")
-      .classList.toggle("active", t === "today");
-    document
-      .getElementById("mgr-view-pending")
-      .classList.toggle("hidden", t !== "pending");
-    document
-      .getElementById("mgr-view-today")
-      .classList.toggle("hidden", t !== "today");
+    document.getElementById("mgr-tab-pending").classList.toggle("active", t === "pending");
+    document.getElementById("mgr-tab-today").classList.toggle("active", t === "today");
+    document.getElementById("mgr-view-pending").classList.toggle("hidden", t !== "pending");
+    document.getElementById("mgr-view-today").classList.toggle("hidden", t !== "today");
   }
 
   async function loadManagerData() {
@@ -926,7 +947,6 @@
     dList.innerHTML = "載入中...";
 
     try {
-      // 待審核請假
       const rRes = await fetch(`${API_URL}?action=getAllPendingLeaves`);
       const rData = await rRes.json();
       const items = (rData && rData.items) || [];
@@ -935,15 +955,12 @@
       if (mgrBtn) mgrBtn.classList.toggle("has-notif", items.length > 0);
 
       if (items.length) {
-        rList.innerHTML = items
-          .map(
-            (i) =>
-              `<div class="dash-item">
-                 <span>${i.name} - ${i.leaveType} (${i.date})</span>
-                 <button class="btn-approve" onclick="review(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
-               </div>`
-          )
-          .join("");
+        rList.innerHTML = items.map(i=>
+          `<div class="dash-item">
+             <span>${i.name} - ${i.leaveType} (${i.date})</span>
+             <button class="btn-approve" onclick="review(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
+           </div>`
+        ).join("");
       } else {
         rList.innerHTML = "無待審核項目";
       }
@@ -953,20 +970,16 @@
     }
 
     try {
-      // 今日出勤
       const dRes = await fetch(`${API_URL}?action=getManagerDashboard`);
       const dData = await dRes.json();
       const list = (dData && dData.items) || [];
       if (list.length) {
-        dList.innerHTML = list
-          .map(
-            (i) =>
-              `<div class="dash-item">
-                 <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
-                 <span class="dash-time">${i.in}/${i.out}</span>
-               </div>`
-          )
-          .join("");
+        dList.innerHTML = list.map(i=>
+          `<div class="dash-item">
+             <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
+             <span class="dash-time">${i.in}/${i.out}</span>
+           </div>`
+        ).join("");
       } else {
         dList.innerHTML = "今日無人上班";
       }
@@ -1070,7 +1083,7 @@
     btn.disabled = true;
     btn.classList.add("shake-hard");
     res.innerHTML = "";
-    setTimeout(async () => {
+    setTimeout(async ()=>{
       btn.classList.remove("shake-hard");
       try {
         const r = await fetch(API_URL, {
@@ -1106,12 +1119,8 @@
   }
 
   function switchGachaTab(tab) {
-    document
-      .getElementById("tab-gacha-play")
-      .classList.toggle("active", tab === "play");
-    document
-      .getElementById("tab-gacha-log")
-      .classList.toggle("active", tab === "log");
+    document.getElementById("tab-gacha-play").classList.toggle("active", tab === "play");
+    document.getElementById("tab-gacha-log").classList.toggle("active", tab === "log");
     if (tab === "play") {
       document.getElementById("gacha-view-play").classList.remove("hidden");
       document.getElementById("gacha-view-log").classList.add("hidden");
@@ -1175,20 +1184,17 @@
         box.innerHTML = "<p>目前沒有請假紀錄</p>";
         return;
       }
-      box.innerHTML = list
-        .map(
-          (i) =>
-            `<div class="leave-card">
-               <div class="row-1">
-                 <span class="title">${i.leaveType}</span>
-                 <span class="status-bar status-${i.status || "審核中"}">${
+      box.innerHTML = list.map(i=>
+        `<div class="leave-card">
+           <div class="row-1">
+             <span class="title">${i.leaveType}</span>
+             <span class="status-bar status-${i.status || "審核中"}">${
               i.status || "審核中"
             }</span>
-               </div>
-               <div class="info">${i.date}</div>
-             </div>`
-        )
-        .join("");
+           </div>
+           <div class="info">${i.date}</div>
+         </div>`
+      ).join("");
     } catch (e) {
       console.error(e);
       document.getElementById("leave-history").innerHTML = "載入失敗";
