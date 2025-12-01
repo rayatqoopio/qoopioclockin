@@ -1,7 +1,7 @@
 /* Qoopio PWA Service Worker — 2025-12-01 (v4.2) */
 /* 更新重點：移除 user.json，新增 gacha-icon，強制更新 HTML */
 
-const VERSION = 'v20251201_4.2'; // 修改此字串會強制客戶端更新
+const VERSION = 'v20251201_4.3'; // 修改此字串會強制客戶端更新
 const CACHE_NAME = `qoopio-cache-${VERSION}`;
 
 // 以 SW 檔案所在目錄為基準，處理 GitHub Pages 子路徑
