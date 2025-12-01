@@ -22,6 +22,15 @@
     .container{max-width:500px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 1rem calc(3rem + env(safe-area-inset-bottom,0px));box-sizing:border-box;min-height:calc(100vh - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;}
     .page-section{width:100%;flex:1;}
 
+    .page-section{
+      opacity:0;
+      transform:translateY(6px);
+      transition:opacity 0.2s ease, transform 0.2s ease;
+    }
+    .page-section.visible{
+      opacity:1;
+      transform:translateY(0);
+    }
     /* Login */
     #login-page{padding-top:10vh;}
     .logo-large{width:200px;margin-bottom:1.5rem;}
@@ -37,17 +46,194 @@
     .logout-btn{background:none;border:none;color:#777;margin:0 auto;}
     #status{margin-top:1rem;font-weight:bold;}
 
-    /* Schedule */
-    .calendar-header{padding-top:1rem;display:flex;justify-content:space-between;margin-bottom:1rem;font-size:1.2rem;font-weight:bold;}
-    .calendar-header button{background:none;border:none;font-size:1.4rem;font-weight:bold;cursor:pointer;padding:0.3rem 0.6rem;}
-    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:1rem;}
-    .day-cell{padding:10px 0;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;}
-    .day-cell.today{border:2px solid #111;font-weight:bold;}
-    .day-cell.selected{background:#ddd;}
-    .day-indicator{width:8px;height:8px;border-radius:50%;margin-top:4px;}
-    .shift-zhongshan .day-indicator{background-color:#e74c3c;}
-    .shift-jingmei .day-indicator{background-color:#27ae60;}
-    #selected-shift{padding:1rem;background:#fff;border-radius:10px;box-shadow:0 0 6px rgba(0,0,0,0.1);min-height:60px;text-align:left;line-height:1.5;}
+    /* Schedule – 卡片 + 動畫 */
+    #page-schedule{
+      margin-top:0.5rem;
+      animation:fadeUp .25s ease-out;
+    }
+
+    .calendar-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:1.05rem;
+      font-weight:bold;
+      margin-bottom:0.6rem;
+      padding:0.2rem 0.2rem 0.6rem;
+    }
+    .calendar-header button{
+      background:none;
+      border:none;
+      font-size:1.4rem;
+      font-weight:bold;
+      cursor:pointer;
+      padding:0.15rem 0.5rem;
+      border-radius:999px;
+      transition:background 0.15s, transform 0.15s;
+    }
+    .calendar-header button:active{
+      transform:scale(0.9);
+      background:rgba(0,0,0,0.06);
+    }
+
+    /* 外框卡片 */
+    #page-schedule{
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.06);
+      padding:0.8rem 0.75rem 1rem;
+    }
+
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:4px;
+      margin-bottom:0.8rem;
+      font-size:0.8rem;
+    }
+
+    /* 星期列 */
+    .day-name{
+      font-size:0.75rem;
+      color:#999;
+      text-align:center;
+      padding:0.1rem 0 0.3rem;
+    }
+
+    /* 日期 cell */
+    .day-cell{
+      position:relative;
+      padding:6px 0 10px;
+      border-radius:12px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+      font-size:0.9rem;
+      opacity:0;
+      transform:translateY(6px) scale(0.96);
+      animation:dayIn 0.26s ease-out forwards;
+    }
+
+    .day-cell.today{
+      box-shadow:0 0 0 1px #111 inset;
+      font-weight:600;
+    }
+
+    .day-cell.selected{
+      background:#111;
+      color:#fff;
+      box-shadow:0 4px 10px rgba(0,0,0,0.18);
+      transform:translateY(-2px) scale(1.02);
+    }
+
+    .day-cell.selected .day-indicator{
+      opacity:1;
+      border-color:rgba(255,255,255,0.6);
+    }
+
+    .day-cell:active{
+      transform:translateY(1px) scale(0.98);
+    }
+
+    .day-indicator{
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      margin-top:4px;
+      border:1px solid transparent;
+      opacity:0;
+      transition:opacity 0.18s, background 0.18s, border-color 0.18s;
+    }
+
+    .shift-zhongshan .day-indicator{
+      background-color:#e74c3c;
+      opacity:1;
+    }
+    .shift-jingmei .day-indicator{
+      background-color:#27ae60;
+      opacity:1;
+    }
+
+    /* 選取當日班表 – 底部小抽屜 */
+    #selected-shift{
+      padding:0.9rem 0.9rem 0.8rem;
+      background:#fff7ec;
+      border-radius:14px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      min-height:60px;
+      text-align:left;
+      line-height:1.5;
+      font-size:0.9rem;
+      transform:translateY(10px);
+      opacity:0;
+      transition:opacity 0.22s ease, transform 0.22s ease;
+    }
+    #selected-shift.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    .shift-date-title{
+      font-weight:700;
+      margin-bottom:6px;
+      font-size:0.95rem;
+    }
+
+    .shift-block{
+      margin-bottom:4px;
+    }
+
+    .shift-tag{
+      display:inline-block;
+      font-size:0.78rem;
+      border-radius:999px;
+      padding:2px 8px;
+      margin-right:4px;
+      font-weight:600;
+    }
+    .shift-tag-zhongshan{
+      background:#fde0dd;
+      color:#b71c1c;
+    }
+    .shift-tag-jingmei{
+      background:#e1f5e1;
+      color:#1b5e20;
+    }
+    .shift-tag-other{
+      background:#e0e0e0;
+      color:#424242;
+    }
+
+    .shift-names{
+      margin-top:2px;
+    }
+
+    /* 班表載入中小圓圈 */
+    .shift-loading{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      border:2px solid #ddd;
+      border-top-color:#111;
+      animation:spin 0.7s linear infinite;
+      margin:4px auto;
+    }
+
+    @keyframes dayIn{
+      from{opacity:0;transform:translateY(10px) scale(0.95);}
+      to{opacity:1;transform:translateY(0) scale(1);}
+    }
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(5px);}
+      to{opacity:1;transform:translateY(0);}
+    }
 
     /* Admin/Manager */
     .manager-tabs{display:flex;gap:10px;margin-bottom:15px;justify-content:center;}
@@ -273,6 +459,7 @@
       else {
         document.getElementById("loading-screen").classList.add("hidden");
         document.getElementById("login-page").classList.remove("hidden");
+        document.getElementById("page-clock").classList.add("visible");
       }
     };
 
@@ -351,11 +538,23 @@
       fab.classList.toggle("open");
     }
     function nav(page) {
-      document.querySelectorAll(".page-section").forEach(p => p.classList.add("hidden"));
-      document.getElementById("page-" + page).classList.remove("hidden");
+      const target = document.getElementById("page-" + page);
+
+      document.querySelectorAll(".page-section").forEach(p => {
+        p.classList.add("hidden");
+        p.classList.remove("visible");
+      });
+
+      target.classList.remove("hidden");
+      // 下一個 frame 再加 visible，避免 transition 吃不到
+      requestAnimationFrame(() => {
+        target.classList.add("visible");
+      });
+
       toggleMenu();
       document.querySelectorAll(".menu-pill").forEach(btn => btn.classList.remove("active"));
       document.querySelector(`.menu-pill[data-page="${page}"]`).classList.add("active");
+
       if (page === 'manager') loadManagerData();
       if (page === 'leave') loadLeaveHistory(currentUser.email);
     }
@@ -364,22 +563,53 @@
 
     // Schedule
     function loadCalendar(y,m){
-      const grid=document.getElementById("calendar-grid"); grid.innerHTML="";
-      document.getElementById("calendar-title").textContent=y+" 年 "+(m+1)+" 月";
-      const d=(new Date(y,m,1).getDay()+6)%7;
-      const dim=new Date(y,m+1,0).getDate();
-      ["一","二","三","四","五","六","日"].forEach(n=>{const c=document.createElement("div");c.className="day-name";c.textContent=n;grid.appendChild(c)});
-      for(let i=0;i<d;i++)grid.appendChild(document.createElement("div"));
-      for(let i=1;i<=dim;i++){
-        let cell=document.createElement("div");cell.className="day-cell";
-        cell.innerHTML=`<div>${i}</div><div class="day-indicator"></div>`;
-        let ds=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-        cell.onclick=()=>{
+      const grid=document.getElementById("calendar-grid");
+      grid.innerHTML="";
+      document.getElementById("calendar-title").textContent = y + " 年 " + (m+1) + " 月";
+
+      const firstWeekday = (new Date(y,m,1).getDay()+6)%7; // 將週一當第一天
+      const daysInMonth = new Date(y,m+1,0).getDate();
+
+      // 星期列
+      ["一","二","三","四","五","六","日"].forEach(n=>{
+        const c=document.createElement("div");
+        c.className="day-name";
+        c.textContent=n;
+        grid.appendChild(c);
+      });
+
+      // 前面空格
+      for(let i=0;i<firstWeekday;i++){
+        grid.appendChild(document.createElement("div"));
+      }
+
+      const today = new Date();
+      const isSameMonth = (today.getFullYear()===y && today.getMonth()===m);
+
+      // 日期
+      for(let d=1; d<=daysInMonth; d++){
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+        cell.innerHTML = `<div>${d}</div><div class="day-indicator"></div>`;
+
+        if(isSameMonth && d === today.getDate()){
+          cell.classList.add("today");
+        }
+
+        const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        cell.onclick = () => {
           document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
           cell.classList.add("selected");
-          document.getElementById("selected-shift").innerHTML="<div class='loading-spinner' style='width:20px;height:20px'></div>";
+          const box = document.getElementById("selected-shift");
+          box.classList.remove("show");
+          box.innerHTML = `<div class="shift-loading"></div>`;
           loadAllShifts(ds);
         };
+
+        // 進場動畫延遲（波浪感）
+        const indexForAnim = d; // 簡單用日期當 index
+        cell.style.animationDelay = (indexForAnim * 0.01) + "s";
+
         grid.appendChild(cell);
       }
     }
@@ -401,32 +631,57 @@
     // 班表詳細 (Restore Good Old Memory)
     async function loadAllShifts(ds) {
       const box = document.getElementById("selected-shift");
+      box.classList.remove("show");
+      box.innerHTML = `<div class="shift-loading"></div>`;
+
       try {
         const res = await fetch(`${API_URL}?date=${ds}&mode=all`);
         const d = await res.json();
-        
+
         if (!d.ok || !d.shifts) {
-          box.textContent = "尚無班表資料";
+          box.innerHTML = "尚無班表資料";
+          box.classList.add("show");
           return;
         }
-        
-        let html = `<div style="font-weight:bold;margin-bottom:8px">${ds} 排班</div>`;
-        
-        if (d.shifts.zhongshan.length > 0) {
-          html += `<div style="margin-bottom:6px; color:#c0392b;"><strong>[中山店]</strong><br>${d.shifts.zhongshan.join('、')}</div>`;
+
+        let html = `<div class="shift-date-title">${ds} 排班</div>`;
+
+        if (d.shifts.zhongshan && d.shifts.zhongshan.length > 0) {
+          html += `
+            <div class="shift-block">
+              <span class="shift-tag shift-tag-zhongshan">中山店</span>
+              <div class="shift-names">${d.shifts.zhongshan.join('、')}</div>
+            </div>`;
         }
-        if (d.shifts.jingmei.length > 0) {
-          html += `<div style="margin-bottom:6px; color:#27ae60;"><strong>[景美店]</strong><br>${d.shifts.jingmei.join('、')}</div>`;
+        if (d.shifts.jingmei && d.shifts.jingmei.length > 0) {
+          html += `
+            <div class="shift-block">
+              <span class="shift-tag shift-tag-jingmei">景美店</span>
+              <div class="shift-names">${d.shifts.jingmei.join('、')}</div>
+            </div>`;
         }
-        if (d.shifts.other.length > 0) {
-           html += `<div style="margin-bottom:6px"><strong>[其他]</strong><br>${d.shifts.other.join('、')}</div>`;
+        if (d.shifts.other && d.shifts.other.length > 0) {
+          html += `
+            <div class="shift-block">
+              <span class="shift-tag shift-tag-other">其他</span>
+              <div class="shift-names">${d.shifts.other.join('、')}</div>
+            </div>`;
         }
-        if (d.shifts.zhongshan.length === 0 && d.shifts.jingmei.length === 0 && d.shifts.other.length === 0) {
-          html += "本日無人排班";
+
+        if (
+          (!d.shifts.zhongshan || d.shifts.zhongshan.length === 0) &&
+          (!d.shifts.jingmei || d.shifts.jingmei.length === 0) &&
+          (!d.shifts.other || d.shifts.other.length === 0)
+        ) {
+          html += `<div class="shift-block">本日無人排班</div>`;
         }
+
         box.innerHTML = html;
-      } catch (e) { 
-        box.textContent = "讀取失敗"; 
+        // 小抽屜滑入
+        requestAnimationFrame(() => box.classList.add("show"));
+      } catch (e) {
+        box.innerHTML = "讀取失敗，請稍後再試";
+        box.classList.add("show");
       }
     }
 
