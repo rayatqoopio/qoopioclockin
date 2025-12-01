@@ -2,7 +2,7 @@
 <html lang="zh-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
-  <title>Qoopio 員工系統 (v4.4)</title>
+  <title>Qoopio 員工系統 (v4.5)</title>
   <meta name="theme-color" content="#fdf5e6" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <link rel="manifest" href="manifest.json?v=20251201" />
@@ -11,100 +11,153 @@
     if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js?v=20251201");
   </script>
   <style>
-    /* CSS Reset */
-    @supports(height:100dvh){.container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}}
-    html,body{margin:0;padding:0;height:100%;background-color:#fdf5e6;font-family:"Helvetica Neue",Arial,sans-serif;color:#333;text-align:center;overflow-x:hidden;overscroll-behavior-y:none;}
-    .hidden{display:none !important;}
+    /* === 1. 基礎設定 === */
+    @supports (height: 100dvh) { .container { min-height: calc(100dvh - env(safe-area-inset-bottom, 0px)); } }
+    html, body { margin: 0; padding: 0; height: 100%; background-color: #fdf5e6; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #333; text-align: center; overflow-x: hidden; overscroll-behavior-y: none; }
+    .hidden { display: none !important; }
+
+    /* === 2. Header & Logo === */
+    #global-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: #fdf5e6; display: flex; align-items: center; justify-content: center; z-index: 10010; padding-top: env(safe-area-inset-top, 0px); }
+    .header-logo { height: 56px; width: auto; display: block; }
+
+    /* === 3. Container === */
+    .container { max-width: 500px; margin: 0 auto; padding: calc(60px + env(safe-area-inset-top, 0px)) 1rem calc(3rem + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; min-height: calc(100vh - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
+    .page-section { width: 100%; flex: 1; }
+
+    /* === 4. 登入頁 === */
+    #login-page { padding-top: 10vh; display: block; }
+    .logo-large { width: 200px; margin-bottom: 1.5rem; }
+    #login-page input { width: 80%; padding: 0.8rem; margin: 1rem 0; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; }
+    #login-page button { padding: 0.8rem 1.5rem; font-size: 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+    /* === 5. 打卡頁 === */
+    #page-clock { display: flex; flex-direction: column; justify-content: center; padding-top: 10vh; padding-bottom: 15vh; }
+    .user-label { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.4rem; }
+    .user-email { font-size: 0.9rem; color: #666; margin-bottom: 1rem; font-family: monospace; }
+    #clockInBtn { width: 80%; padding: 1.7rem; font-size: 1.3rem; background-color: #111; color: #fff; border: none; border-radius: 10px; cursor: pointer; display: block; margin: 0.8rem auto; transition: opacity 0.3s; }
+    #clockInBtn:disabled { background-color: #bbb !important; opacity: .6; pointer-events: none; }
+    .logout-btn { background: none; border: none; color: #777; font-size: 0.8rem; cursor: pointer; display: block; margin: 0 auto; }
+    #status { margin-top: 1rem; font-size: 0.95rem; font-weight: bold; min-height: 1.2em; }
+    #leave-pending-banner { margin-top: 0.3rem; font-size: 0.9rem; color: #c0392b; font-weight: bold; min-height: 1.2em; }
+
+    /* === 6. 月曆 (班表) === */
+    .calendar-header { padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; }
+    .calendar-header button { background: none; border: none; font-size: 1.4rem; font-weight: bold; color: #333; cursor: pointer; padding: 0.3rem 0.6rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 1rem; }
+    .day-cell { position: relative; padding: 10px 0; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .day-cell.today { border: 2px solid #111; font-weight: bold; }
+    .day-cell.selected { background-color: #ddd; }
+    .day-name { font-weight: bold; color: #666; }
+    .day-indicator { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+    .shift-zhongshan .day-indicator { background-color: #e74c3c; }
+    .shift-jingmei .day-indicator { background-color: #27ae60; }
+    #selected-shift { font-size: 1rem; line-height: 1.8; color: #444; text-align: left; padding: 1rem; border-radius: 10px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.1); min-height: 100px; }
+
+    /* === 7. 請假頁 (復刻版) === */
+    #page-leave { text-align: left; padding-top: 1vh; }
+    /* 大大的黑色懸浮按鈕 */
+    .leave-btn-main { 
+      position: fixed; left: 50%; transform: translateX(-50%); 
+      bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 9998; 
+      width: 55%; min-width: 180px; max-width: 300px; 
+      padding: 0.9rem; font-size: 1rem; border-radius: 999px; border: none; 
+      background: #111; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12); 
+    }
+    #leave-history { margin-top: 0.5rem; font-size: 0.9rem; color: #555; }
+    .leave-card { padding: 0.8rem; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 0.8rem; text-align: left; }
+    .leave-card .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-weight: bold; }
+    .leave-card .row-1 .title { font-size: 1rem; color: #111; }
+    .status-bar { display: inline-flex; height: 24px; padding: 0 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #fff; align-items: center; }
+    .status-審核中 { background: #e67e22; } .status-通過 { background: #27ae60; } .status-退回 { background: #c0392b; }
+    .leave-card .info { font-size: 0.9rem; color: #555; line-height: 1.5; }
+    .leave-card .reason { margin-top: 6px; font-size: 0.9rem; color: #333; font-style: italic; background: #f9f9f9; padding: 6px; border-radius: 6px; }
+
+    /* === 8. Manager & Admin Page === */
+    #page-manager, #page-admin { text-align: left; padding-top: 1vh; }
+    .manager-tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+    .manager-tabs button { flex: 0 0 auto; width: auto; padding: 8px 16px; border-radius: 8px; border: 1px solid #ccc; background: transparent; font-weight: bold; color: #777; cursor: pointer; font-size: 1.1rem; }
+    .manager-tabs button.active { background: #111; color: #fff; border-color: #111; }
     
-    /* Header */
-    #global-header{position:fixed;top:0;left:0;right:0;height:60px;background-color:#fdf5e6;display:flex;align-items:center;justify-content:center;z-index:10010;padding-top:env(safe-area-inset-top,0px);}
-    .header-logo{height:56px;width:auto;display:block;}
+    .review-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-approve { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #27ae60; color: #fff; font-weight: bold; cursor: pointer; }
+    .btn-reject { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #c0392b; color: #fff; font-weight: bold; cursor: pointer; }
+    .empty-state { text-align: center; color: #999; margin-top: 30px; font-size: 0.95rem; }
 
-    /* Container */
-    .container{max-width:500px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 1rem calc(3rem + env(safe-area-inset-bottom,0px));box-sizing:border-box;min-height:calc(100vh - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;}
-    .page-section{width:100%;flex:1;}
-
-    /* Login */
-    #login-page{padding-top:10vh;display:block;}
-    .logo-large{width:200px;margin-bottom:1.5rem;}
-    #login-page input{width:80%;padding:0.8rem;margin:1rem 0;border-radius:8px;border:1px solid #ccc;}
-    #login-page button{padding:0.8rem 1.5rem;background:#111;color:#fff;border:none;border-radius:8px;cursor:pointer;}
-
-    /* Clock In */
-    #page-clock{display:flex;flex-direction:column;justify-content:center;padding-top:10vh;padding-bottom:15vh;}
-    .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
-    .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
-    #clockInBtn{width:80%;padding:1.7rem;font-size:1.3rem;background:#111;color:#fff;border:none;border-radius:10px;margin:0.8rem auto;transition:opacity 0.3s;}
-    #clockInBtn:disabled{background:#bbb;opacity:.6;}
-    .logout-btn{background:none;border:none;color:#777;margin:0 auto;}
-    #status{margin-top:1rem;font-weight:bold;}
-
-    /* Manager & Admin */
-    .manager-tabs{display:flex;gap:10px;margin-bottom:15px;justify-content:center;}
-    .manager-tabs button{width:auto;padding:10px 16px;border-radius:8px;border:1px solid #ccc;background:transparent;font-weight:bold;color:#777;font-size:1.2rem;cursor:pointer;}
-    .manager-tabs button.active{background:#111;color:#fff;border-color:#111;}
+    /* Admin Cards */
+    .dash-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #111; padding-left: 10px; margin-top: 20px; }
+    .dashboard-card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 10px; }
+    .dash-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+    .dash-item:last-child { border-bottom: none; }
+    .dash-time { font-family: monospace; font-weight: bold; }
     
-    /* Admin Menu Buttons */
-    .admin-menu-btn{width:100%;padding:16px;background:#fff;border:1px solid #ddd;border-radius:12px;margin-bottom:10px;font-size:1rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
-    .admin-menu-btn:active{background:#f0f0f0;}
+    /* Admin Menu Buttons (Collapsible) */
+    .admin-menu-btn { width: 100%; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; font-size: 1rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .admin-menu-btn:active { background: #f0f0f0; }
     
-    .admin-input{width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;}
-    .admin-action-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1rem;}
+    /* Form Styles inside Modals */
+    .admin-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+    .admin-action-btn { width: 100%; padding: 12px; background: #111; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+    .admin-action-btn.secondary { background: #fff; color: #111; border: 1px solid #111; }
 
-    /* Cards */
-    .dashboard-card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px;text-align:left;}
-    .dash-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95rem;}
-    .dash-item:last-child{border-bottom:none;}
-    .dash-time{font-family:monospace;font-weight:bold;}
-    .btn-approve{padding:6px 12px;border-radius:6px;border:none;background:#27ae60;color:#fff;font-weight:bold;cursor:pointer;}
-    .empty-state{text-align:center;color:#999;margin-top:30px;}
-
-    /* FAB (No Emojis) */
-    .menu-fab{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10020;display:none;flex-direction:column;align-items:flex-start;}
-    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10015;}
-    .fab-main{width:60px;height:60px;border-radius:50%;background:#111;color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,0.35);font-size:1.6rem;position:relative;}
-    .fab-icon-o,.fab-icon-x{position:absolute;font-weight:700;transition:all 0.3s;}
-    .fab-icon-o{opacity:1;transform:scale(1);} .fab-icon-x{opacity:0;transform:rotate(-90deg)scale(0.5);}
-    .fab-main.open .fab-icon-o{opacity:0;transform:scale(0.5);} .fab-main.open .fab-icon-x{opacity:1;transform:rotate(0deg)scale(1);}
+    /* === 9. FAB (Floating Action Button) - O/X Style === */
+    #fab-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10015; }
     
-    .menu-sheet{margin-bottom:10px;} .menu-sheet.hidden{display:none;}
-    .fab-option{display:flex;align-items:center;margin-bottom:10px;}
-    /* Clean Buttons */
-    .menu-pill{padding:10px 20px;background:#fff;border:none;color:#333;font-size:1rem;font-weight:bold;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,0.18);cursor:pointer;white-space:nowrap;}
-    .menu-pill.active{background:#111;color:#fff;}
-    /* Red Dot on Button */
-    .menu-pill.has-notif::after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;background:#ff3b30;border-radius:50%;border:2px solid #fff;}
-    .fab-option { position: relative; } /* context for absolute dot if needed, but pill is easier */
-
-    /* Calendar */
-    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:1rem;}
-    .day-cell{padding:10px 0;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;}
-    .day-cell.today{border:2px solid #111;font-weight:bold;}
-    .day-cell.selected{background:#ddd;}
-    .day-indicator{width:8px;height:8px;border-radius:50%;margin-top:4px;}
-    .shift-zhongshan .day-indicator{background-color:#e74c3c;} .shift-jingmei .day-indicator{background-color:#27ae60;}
-    #selected-shift{padding:1rem;background:#fff;border-radius:10px;box-shadow:0 0 6px rgba(0,0,0,0.1);min-height:60px;text-align:left;}
-
-    /* Modals & HUD */
-    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
-    .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
-    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
+    /* 1. 位置調整：left 加大 */
+    .menu-fab { position: fixed; left: 24px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 10020; display: none; flex-direction: column; align-items: flex-start; }
     
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
-    .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;}
-    .modal-close-btn{position:absolute;top:15px;right:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;line-height:1;}
-    .modal-title{font-size:1.2rem;font-weight:bold;margin-bottom:15px;text-align:center;}
+    /* O/X Button */
+    .fab-main { width: 60px; height: 60px; border-radius: 50%; background: #111; color: #fff; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.35); font-size: 1.6rem; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .fab-icon-o, .fab-icon-x { position: absolute; font-family: sans-serif; font-weight: 700; transition: all 0.3s; }
+    .fab-icon-o { opacity: 1; transform: scale(1); font-size: 1.5rem; } 
+    .fab-icon-x { opacity: 0; transform: rotate(-90deg) scale(0.5); font-size: 1.4rem; }
+    .fab-main.open .fab-icon-o { opacity: 0; transform: scale(0.5); } 
+    .fab-main.open .fab-icon-x { opacity: 1; transform: rotate(0deg) scale(1); }
+    
+    .menu-sheet { margin-bottom: 10px; } .menu-sheet.hidden { display: none; }
+    .fab-option { display: flex; align-items: center; margin-bottom: 8px; }
+    
+    /* 2. 按鈕高度縮小 10% (padding 8px -> 7px) */
+    .menu-pill { padding: 7px 16px; background: #fff; border: none; color: #333; font-size: 0.95rem; font-weight: bold; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); cursor: pointer; white-space: nowrap; }
+    .menu-pill.active { background: #111; color: #fff; }
+    
+    /* Red Dot */
+    .menu-pill.has-notif { position: relative; }
+    .menu-pill.has-notif::after { content: ''; position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 
+    /* === 10. HUD & Modals === */
+    .hud-right { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: none; z-index: 10001; }
+    .gacha-btn { background: transparent !important; border: 0 !important; width: auto; height: auto; }
+    .gacha-img { width: 96px; height: 96px; } 
+    .gacha-img:not(.hidden) + .gacha-svg { display: none; } .gacha-svg { width: 96px; height: 96px; }
+    .gacha-badge { position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fff; }
+
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 10030; } .modal.open { display: flex; }
+    .modal-card { width: min(520px, 92%); background: #fff; border-radius: 16px; padding: 20px; text-align: left; position: relative; max-height: 85vh; overflow-y: auto; }
+    .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; line-height: 1; }
+    .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center; }
+    
     /* Gacha UI */
-    .gacha-btn-main{width:100%;padding:16px;font-size:1.2rem;font-weight:bold;color:#fff;background:#111;border:none;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #444;margin-bottom:10px;}
-    .gacha-btn-main:active{box-shadow:0 2px 0 #444;transform:translateY(4px);}
-    .shake-hard{animation:shake 0.5s infinite;} @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .modal-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+    .modal-tabs button { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #222; background: #fff; cursor: pointer; font-weight: 700; color: #111; }
+    .modal-tabs button.active { background: #111; color: #fff; border-color: #111; }
+    .gacha-body-content { text-align: center; padding: 10px 0; }
+    .gacha-btn-main { width: 100%; padding: 16px; font-size: 1.2rem; font-weight: bold; color: #fff; background-color: #111; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 0 #444; transform: translateY(0); transition: all 0.1s; margin-bottom: 10px; }
+    .gacha-btn-main:active { box-shadow: 0 2px 0 #444; transform: translateY(4px); }
+    .gacha-btn-main:disabled { background-color: #aaa; box-shadow: none; transform: translateY(4px); cursor: not-allowed; }
+    .gacha-result { min-height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: #111; margin-top: 10px; opacity: 0; transition: opacity 0.3s; } .gacha-result.show { opacity: 1; }
+    .shake-hard { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) infinite; }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    .gacha-log-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #555; display: flex; justify-content: space-between; }
+    .gacha-win { color: #d35400; font-weight: bold; }
     
-    /* Loading */
-    #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
-    #loading-screen.hidden{opacity:0;pointer-events:none;}
-    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
-    @keyframes spin{to{transform:rotate(360deg);}}
+    /* Loading & Announce */
+    #loading-screen { position: fixed; inset: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20000; transition: opacity 0.3s ease; }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ccc; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #announce-modal .modal-card { text-align: center; }
+    #announce-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+    #announce-content { font-size: 1rem; color: #555; margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -179,10 +232,19 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('gacha')">✕</button>
       <div class="modal-title">扭蛋機</div>
-      <div class="gacha-body-content">
+      <div class="modal-tabs">
+        <button id="tab-gacha-play" class="active" onclick="switchGachaTab('play')">扭蛋</button>
+        <button id="tab-gacha-log" onclick="switchGachaTab('log')">紀錄</button>
+      </div>
+      <div class="gacha-body-content" id="gacha-view-play">
         <p>代幣：<span id="modal-coin-count">0</span></p>
-        <button id="gacha-btn" class="gacha-btn-main" onclick="playGacha()">START</button>
-        <div id="gacha-result" class="gacha-result"></div>
+        <div style="height:10px"></div>
+        <button id="gacha-action-btn" class="gacha-btn-main" onclick="playGachaAnimation()">START</button>
+        <div id="gacha-result-display" class="gacha-result"></div>
+        <div style="font-size:0.85rem; color:#888; margin-top:10px;">祝您中獎 (´≖◞౪◟≖)</div>
+      </div>
+      <div class="hidden" id="gacha-view-log">
+        <div id="gacha-history-list" style="max-height:200px; overflow-y:auto;"></div>
       </div>
     </div>
   </div>
@@ -241,9 +303,7 @@
   </div>
 
   <script>
-    // ⚠️ 記得換網址
     const API_URL = "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
-    
     let currentUser = null;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
@@ -252,7 +312,6 @@
     window.onload = async () => {
       const img = new Image(); img.src=GACHA_ICON;
       img.onload = () => { document.getElementById("gacha-img").src = GACHA_ICON; };
-      
       const email = localStorage.getItem("q_email");
       if(email) await appInit(email);
       else {
@@ -264,18 +323,13 @@
     async function appInit(email) {
       document.getElementById("login-page").classList.add("hidden");
       document.getElementById("loading-screen").classList.remove("hidden");
-      
       try {
         const res = await fetch(`${API_URL}?action=initApp&email=${email}`);
         const data = await res.json();
-        
         if (!data.ok) { alert(data.msg); resetApp(); return; }
-        
         currentUser = data.user;
         currentUser.email = email;
-        
         setupUI(data);
-        
         if (data.announcement) {
           const lastRead = localStorage.getItem("q_ann_id");
           if (lastRead != data.announcement.id) {
@@ -285,17 +339,13 @@
             localStorage.setItem("q_ann_id", data.announcement.id);
           }
         }
-
-        // Init Calendar
         loadCalendar(currentYear, currentMonth);
         updateMonthShiftMarkers();
-
         document.getElementById("loading-screen").classList.add("hidden");
         document.getElementById("global-header").classList.remove("hidden");
         document.getElementById("page-clock").classList.remove("hidden");
         document.getElementById("menu-fab").style.display = "flex";
         document.getElementById("hud-right").style.display = "inline-flex";
-
       } catch (e) {
         alert("連線失敗，請重試");
         document.getElementById("loading-screen").classList.add("hidden");
@@ -308,7 +358,6 @@
       document.getElementById("user-email").textContent = currentUser.email; 
       document.getElementById("hud-coin").textContent = data.tokens;
       document.getElementById("modal-coin-count").textContent = data.tokens;
-      
       const btn = document.getElementById("clockInBtn");
       const status = document.getElementById("status");
       if (data.clockStatus.includes("已")) {
@@ -323,10 +372,8 @@
         btn.textContent = "上班";
         btn.dataset.type = "上班";
       }
-      
       if (currentUser.role === 'manager' || currentUser.role === 'admin') document.getElementById("fab-mgr").classList.remove("hidden");
       if (currentUser.role === 'admin') document.getElementById("fab-adm").classList.remove("hidden");
-      
       if(currentUser.role === 'manager' || currentUser.role === 'admin') checkManagerBadge();
     }
 
@@ -338,7 +385,7 @@
     }
     function resetApp() { localStorage.removeItem("q_email"); location.reload(); }
 
-    // Navigation & Modals
+    // Navigation
     function toggleMenu() {
       const sheet = document.getElementById("menu-sheet");
       const overlay = document.getElementById("fab-overlay");
@@ -351,21 +398,14 @@
       document.querySelectorAll(".page-section").forEach(p => p.classList.add("hidden"));
       document.getElementById("page-" + page).classList.remove("hidden");
       toggleMenu();
-      
       document.querySelectorAll(".menu-pill").forEach(btn => btn.classList.remove("active"));
       document.querySelector(`.menu-pill[data-page="${page}"]`).classList.add("active");
-
       if (page === 'manager') loadManagerData();
       if (page === 'leave') loadLeaveHistory(currentUser.email);
     }
     
-    function openModal(id) {
-      document.getElementById("modal-" + id).classList.add("open");
-      if(id==='leave') prepareLeaveDates();
-    }
-    function closeModal(id) {
-      document.getElementById("modal-" + id).classList.remove("open");
-    }
+    function openModal(id) { document.getElementById("modal-" + id).classList.add("open"); if(id==='leave') prepareLeaveDates(); }
+    function closeModal(id) { document.getElementById("modal-" + id).classList.remove("open"); if(id==='gacha') resetGachaUI(); }
 
     // Schedule
     function loadCalendar(y,m){
@@ -409,7 +449,6 @@
       const btn = document.getElementById("clockInBtn");
       if (btn.disabled) return;
       if (!confirm(`確定要打「${btn.dataset.type}」卡嗎？`)) return;
-      
       btn.disabled = true; btn.textContent = "定位中...";
       navigator.geolocation.getCurrentPosition(async (pos) => {
         btn.textContent = "打卡中...";
@@ -435,7 +474,6 @@
       const dList=document.getElementById("mgr-dashboard-list");
       rList.innerHTML="載入中..."; dList.innerHTML="載入中...";
       
-      // Pending
       const rRes=await fetch(`${API_URL}?action=getAllPendingLeaves`);
       const rData=await rRes.json();
       if(rData.items.length>0){
@@ -446,7 +484,6 @@
         document.querySelector('button[data-page="manager"]').classList.remove("has-notif");
       }
       
-      // Dashboard
       const dRes=await fetch(`${API_URL}?action=getManagerDashboard`);
       const dData=await dRes.json();
       dList.innerHTML=dData.items.map(i=>`<div class="dash-item"><span>${i.name}</span><span class="dash-time">${i.in}/${i.out}</span></div>`).join("")||"無人出勤";
@@ -483,23 +520,32 @@
 
     // Gacha
     function playGacha(){
-      const btn=document.getElementById("gacha-btn");
-      const res=document.getElementById("gacha-result");
+      const btn=document.getElementById("gacha-action-btn");
+      const res=document.getElementById("gacha-result-display");
       btn.disabled=true; btn.classList.add("shake-hard"); res.innerHTML="";
-      
       setTimeout(async()=>{
         btn.classList.remove("shake-hard");
         try{
           const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"drawGacha",email:currentUser.email})});
           const d=await r.json();
           if(!d.ok){alert(d.msg);btn.disabled=false;return;}
-          
           document.getElementById("modal-coin-count").textContent=d.balance;
           document.getElementById("hud-coin").textContent=d.balance;
           res.innerHTML=d.win?"<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>":"沒中 😂";
           res.classList.add("show"); btn.disabled=false;
         }catch(e){alert("連線錯誤");btn.disabled=false;}
       },1500);
+    }
+    function resetGachaUI(){ document.getElementById("gacha-result-display").classList.remove("show"); document.getElementById("gacha-result-display").innerHTML=""; document.getElementById("gacha-action-btn").disabled=false; }
+    function switchGachaTab(tab){
+      document.getElementById("tab-gacha-play").classList.toggle("active", tab==='play');
+      document.getElementById("tab-gacha-log").classList.toggle("active", tab==='log');
+      if(tab==='play'){ document.getElementById("gacha-view-play").classList.remove("hidden"); document.getElementById("gacha-view-log").classList.add("hidden"); }
+      else { document.getElementById("gacha-view-play").classList.add("hidden"); document.getElementById("gacha-view-log").classList.remove("hidden"); renderGachaLog(); }
+    }
+    function renderGachaLog(){
+      // Note: This should ideally be fetched from API, currently just placeholder if not implemented in API
+      document.getElementById("gacha-history-list").innerHTML = "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>";
     }
 
     // Leave Helpers
