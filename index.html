@@ -422,474 +422,764 @@
     </div>
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
-    
-    let currentUser = null;
-    let currentYear = new Date().getFullYear();
-    let currentMonth = new Date().getMonth();
-    const GACHA_ICON = "gacha-icon.png?v=4.5";
+<script>
+  // ⚠️ 請確認此 URL 是否為 C 表最新部署的 Web App 網址
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
 
-    window.onload = async () => {
-      const img = new Image();
-      img.src = GACHA_ICON;
-      img.onload = () => { document.getElementById("gacha-img").src = GACHA_ICON; };
+  let currentUser = null;
+  let currentYear = new Date().getFullYear();
+  let currentMonth = new Date().getMonth();
+  const GACHA_ICON = "gacha-icon.png?v=4.5";
 
-      const email = localStorage.getItem("q_email");
-      if (email) {
-        await appInit(email);
-      } else {
-        const loading = document.getElementById("loading-screen");
-        const loginPage = document.getElementById("login-page");
-        loading.classList.add("hidden");
-        loginPage.classList.remove("hidden");
-        loginPage.classList.add("visible");
-      }
-    };
+  /** 只顯示登入頁，其他全部收起來（避免看到「白畫面」） */
+  function showLoginOnly() {
+    const loading = document.getElementById("loading-screen");
+    if (loading) loading.classList.add("hidden");
 
-    async function appInit(email) {
-      document.getElementById("login-page").classList.add("hidden");
-      document.getElementById("login-page").classList.remove("visible");
-      document.getElementById("loading-screen").classList.remove("hidden");
-      try {
-        const res = await fetch(`${API_URL}?action=initApp&email=${email}`);
-        const data = await res.json();
-        if (!data.ok) { alert(data.msg); resetApp(); return; }
-        currentUser = data.user;
-        currentUser.email = email;
-        setupUI(data);
-        if (data.announcement) {
-          const lastRead = localStorage.getItem("q_ann_id");
-          if (lastRead != data.announcement.id) {
-            document.getElementById("ann-display-title").textContent = data.announcement.title;
-            document.getElementById("ann-display-content").textContent = data.announcement.content;
-            openModal('show-announce');
-            localStorage.setItem("q_ann_id", data.announcement.id);
-          }
-        }
-        loadCalendar(currentYear, currentMonth);
-        updateMonthShiftMarkers();
-        document.getElementById("loading-screen").classList.add("hidden");
-        document.getElementById("global-header").classList.remove("hidden");
-        const clockPage = document.getElementById("page-clock");
-        clockPage.classList.remove("hidden");
-        clockPage.classList.add("visible");
-        document.getElementById("menu-fab").style.display = "flex";
-        document.getElementById("hud-right").style.display = "inline-flex";
-        // 預設 FAB 高亮打卡
-        const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
-        if (clockPill) clockPill.classList.add("active");
-      } catch (e) {
-        alert("連線失敗，請重試");
-        document.getElementById("loading-screen").classList.add("hidden");
-        const loginPage = document.getElementById("login-page");
-        loginPage.classList.remove("hidden");
-        loginPage.classList.add("visible");
-      }
-    }
+    // 隱藏所有主頁
+    ["clock", "leave", "schedule", "manager", "admin"].forEach((p) => {
+      const el = document.getElementById("page-" + p);
+      if (!el) return;
+      el.classList.add("hidden");
+      el.classList.remove("visible");
+    });
 
-    function setupUI(data) {
-      document.getElementById("user-label").textContent = currentUser.name;
-      document.getElementById("user-email").textContent = currentUser.email; 
-      document.getElementById("hud-coin").textContent = data.tokens;
-      document.getElementById("modal-coin-count").textContent = data.tokens;
-      const btn = document.getElementById("clockInBtn");
-      const status = document.getElementById("status");
-      if (data.clockStatus.includes("已")) {
-        status.textContent = data.clockStatus;
-        status.style.color = "green";
-        const isOff = data.clockStatus.includes("下班");
-        btn.textContent = isOff ? "已下班" : "下班";
-        btn.style.background = "#333";
-        btn.dataset.type = isOff ? "done" : "下班";
-        if(isOff) btn.disabled = true;
-      } else {
-        btn.textContent = "上班";
-        btn.dataset.type = "上班";
-      }
-      if (currentUser.role === 'manager' || currentUser.role === 'admin') document.getElementById("fab-mgr").classList.remove("hidden");
-      if (currentUser.role === 'admin') document.getElementById("fab-adm").classList.remove("hidden");
-      if(currentUser.role === 'manager' || currentUser.role === 'admin') checkManagerBadge();
-    }
+    // header / FAB / HUD 關掉
+    const header = document.getElementById("global-header");
+    if (header) header.classList.add("hidden");
+    const fab = document.getElementById("menu-fab");
+    if (fab) fab.style.display = "none";
+    const hud = document.getElementById("hud-right");
+    if (hud) hud.style.display = "none";
 
-    function login() {
-      const email = document.getElementById("login-email").value.trim();
-      if (!email) return;
-      localStorage.setItem("q_email", email);
-      appInit(email);
-    }
-
-    function resetApp() {
-      // 清掉登入資訊 & 回到登入頁
-      localStorage.removeItem("q_email");
-      currentUser = null;
-      document.getElementById("global-header").classList.add("hidden");
-      document.getElementById("menu-fab").style.display = "none";
-      document.getElementById("hud-right").style.display = "none";
-      document.querySelectorAll(".page-section").forEach(p=>{
-        p.classList.add("hidden");
-        p.classList.remove("visible");
-      });
-      const loginPage = document.getElementById("login-page");
+    // 顯示 login
+    const loginPage = document.getElementById("login-page");
+    if (loginPage) {
       loginPage.classList.remove("hidden");
-      loginPage.classList.add("visible");
-    }
-
-    // Navigation
-    function toggleMenu() {
-      const sheet = document.getElementById("menu-sheet");
-      const overlay = document.getElementById("fab-overlay");
-      const fab = document.querySelector(".fab-main");
-      sheet.classList.toggle("hidden");
-      overlay.classList.toggle("hidden");
-      fab.classList.toggle("open");
-    }
-
-    function nav(page) {
-      const target = document.getElementById("page-" + page);
-
-      document.querySelectorAll(".page-section").forEach(p => {
-        p.classList.add("hidden");
-        p.classList.remove("visible");
-      });
-
-      target.classList.remove("hidden");
+      // 給一點淡入動畫
       requestAnimationFrame(() => {
-        target.classList.add("visible");
+        loginPage.classList.add("visible");
       });
-
-      toggleMenu();
-      document.querySelectorAll(".menu-pill").forEach(btn => btn.classList.remove("active"));
-      const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
-      if (pill) pill.classList.add("active");
-
-      if (page === 'manager') loadManagerData();
-      if (page === 'leave') loadLeaveHistory(currentUser.email);
-      if (page === 'schedule') {
-        // 切回班表時重新畫 marker
-        updateMonthShiftMarkers();
-      }
     }
+  }
 
-    function openModal(id) {
-      document.getElementById("modal-" + id).classList.add("open");
-      if(id==='leave') prepareLeaveDates();
+  // 開啟後先判斷有沒有登入
+  window.addEventListener("load", async () => {
+    // 順手預載扭蛋 icon
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const gachaImg = document.getElementById("gacha-img");
+        if (gachaImg) gachaImg.src = GACHA_ICON;
+      };
+      img.src = GACHA_ICON;
+    } catch (e) {}
+
+    const email = localStorage.getItem("q_email");
+    if (email) {
+      await appInit(email);
+    } else {
+      showLoginOnly();
     }
-    function closeModal(id) {
-      document.getElementById("modal-" + id).classList.remove("open");
-      if(id==='gacha') resetGachaUI();
-    }
+  });
 
-    /* ====== Schedule ====== */
-    function loadCalendar(y,m){
-      const grid=document.getElementById("calendar-grid");
-      grid.innerHTML="";
-      document.getElementById("calendar-title").textContent = y + " 年 " + (m+1) + " 月";
+  async function appInit(email) {
+    const loading = document.getElementById("loading-screen");
+    if (loading) loading.classList.remove("hidden");
 
-      const firstWeekday = (new Date(y,m,1).getDay()+6)%7; // 週一當第一天
-      const daysInMonth = new Date(y,m+1,0).getDate();
+    document.getElementById("login-page").classList.add("hidden");
 
-      ["一","二","三","四","五","六","日"].forEach(n=>{
-        const c=document.createElement("div");
-        c.className="day-name";
-        c.textContent=n;
-        grid.appendChild(c);
-      });
-
-      for(let i=0;i<firstWeekday;i++){
-        grid.appendChild(document.createElement("div"));
+    try {
+      const res = await fetch(`${API_URL}?action=initApp&email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        alert(data.msg || "查無帳號");
+        resetApp();
+        return;
       }
 
-      const today = new Date();
-      const isSameMonth = (today.getFullYear()===y && today.getMonth()===m);
+      currentUser = data.user;
+      currentUser.email = email;
 
-      for(let d=1; d<=daysInMonth; d++){
-        const cell = document.createElement("div");
-        cell.className = "day-cell";
-        cell.innerHTML = `<div>${d}</div><div class="day-indicator"></div>`;
+      setupUI(data);
 
-        if(isSameMonth && d === today.getDate()){
-          cell.classList.add("today");
+      // 公告
+      if (data.announcement) {
+        const lastRead = localStorage.getItem("q_ann_id");
+        if (String(lastRead) !== String(data.announcement.id)) {
+          document.getElementById("ann-display-title").textContent =
+            data.announcement.title || "";
+          document.getElementById("ann-display-content").textContent =
+            data.announcement.content || "";
+          openModal("show-announce");
+          localStorage.setItem("q_ann_id", data.announcement.id);
         }
-
-        const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        cell.onclick = () => {
-          document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
-          cell.classList.add("selected");
-          const box = document.getElementById("selected-shift");
-          box.classList.remove("show");
-          box.innerHTML = `<div class="shift-date-title">${ds}</div><div style="color:#999">載入中...</div>`;
-          loadAllShifts(ds);
-        };
-
-        const indexForAnim = d;
-        cell.style.animationDelay = (indexForAnim * 0.01) + "s";
-
-        grid.appendChild(cell);
       }
-    }
 
-    async function updateMonthShiftMarkers(){
-      if(!currentUser) return;
-      try{
-        const ym=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
-        const res=await fetch(`${API_URL}?month=${ym}&mode=summary&email=${currentUser.email}`);
-        const d=await res.json();
-        document.querySelectorAll(".day-cell").forEach(c=>{
-          const firstDiv = c.querySelector("div");
-          if(!firstDiv) return;
-          const dv = firstDiv.textContent;
-          if(!dv || isNaN(dv)) return;
-          const f=`${ym}-${String(dv).padStart(2,'0')}`;
-          c.classList.remove("shift-zhongshan","shift-jingmei");
-          if(d.zhongshanDays && d.zhongshanDays.includes(f)) c.classList.add("shift-zhongshan");
-          if(d.jingmeiDays && d.jingmeiDays.includes(f)) c.classList.add("shift-jingmei");
-        });
-      }catch(e){}
-    }
-
-    function changeMonth(o){
-      currentMonth+=o;
-      if(currentMonth<0){currentMonth=11;currentYear--;}
-      if(currentMonth>11){currentMonth=0;currentYear++;}
-      loadCalendar(currentYear,currentMonth);
+      // 初始化班表
+      loadCalendar(currentYear, currentMonth);
       updateMonthShiftMarkers();
+
+      // 顯示主畫面（打卡頁）
+      if (loading) loading.classList.add("hidden");
+      document.getElementById("global-header").classList.remove("hidden");
+      const clockPage = document.getElementById("page-clock");
+      clockPage.classList.remove("hidden");
+      requestAnimationFrame(() => clockPage.classList.add("visible"));
+
+      const fab = document.getElementById("menu-fab");
+      if (fab) fab.style.display = "flex";
+      const hud = document.getElementById("hud-right");
+      if (hud) hud.style.display = "inline-flex";
+
+      // 預設把「打卡」pill 設為 active
+      document
+        .querySelectorAll(".menu-pill")
+        .forEach((btn) => btn.classList.remove("active"));
+      const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
+      if (clockPill) clockPill.classList.add("active");
+    } catch (e) {
+      alert("連線失敗，請重試");
+      console.error(e);
+      showLoginOnly();
     }
-    
-    // 班表詳細 – 版面靠近你截圖的樣子
-    async function loadAllShifts(ds) {
-      const box = document.getElementById("selected-shift");
-      box.classList.remove("show");
-      box.innerHTML = `<div class="shift-date-title">${ds}</div><div style="color:#999">載入中...</div>`;
+  }
 
+  function setupUI(data) {
+    document.getElementById("user-label").textContent = currentUser.name || "";
+    document.getElementById("user-email").textContent = currentUser.email || "";
+    document.getElementById("hud-coin").textContent = data.tokens || 0;
+    document.getElementById("modal-coin-count").textContent = data.tokens || 0;
+
+    const btn = document.getElementById("clockInBtn");
+    const status = document.getElementById("status");
+    const clockStatus = data.clockStatus || "";
+
+    if (clockStatus.includes("已")) {
+      status.textContent = clockStatus;
+      status.style.color = "green";
+      const isOff = clockStatus.includes("下班");
+      btn.textContent = isOff ? "已下班" : "下班";
+      btn.style.background = "#333";
+      btn.dataset.type = isOff ? "done" : "下班";
+      btn.disabled = !!isOff;
+    } else {
+      status.textContent = clockStatus || "今日未打卡";
+      status.style.color = "#8B0000";
+      btn.textContent = "上班";
+      btn.dataset.type = "上班";
+      btn.disabled = false;
+      btn.style.background = "#111";
+    }
+
+    // 權限：manager / admin
+    if (currentUser.role === "manager" || currentUser.role === "admin") {
+      document.getElementById("fab-mgr").classList.remove("hidden");
+      checkManagerBadge();
+    }
+    if (currentUser.role === "admin") {
+      document.getElementById("fab-adm").classList.remove("hidden");
+    }
+  }
+
+  function login() {
+    const email = document.getElementById("login-email").value.trim();
+    if (!email) {
+      alert("請先輸入 Email");
+      return;
+    }
+    localStorage.setItem("q_email", email);
+    appInit(email);
+  }
+
+  function resetApp() {
+    localStorage.removeItem("q_email");
+    currentUser = null;
+    showLoginOnly();
+  }
+
+  // ===== 導覽 FAB =====
+  function toggleMenu() {
+    const sheet = document.getElementById("menu-sheet");
+    const overlay = document.getElementById("fab-overlay");
+    const fab = document.querySelector(".fab-main");
+    sheet.classList.toggle("hidden");
+    overlay.classList.toggle("hidden");
+    fab.classList.toggle("open");
+  }
+
+  function nav(page) {
+    const target = document.getElementById("page-" + page);
+
+    document.querySelectorAll(".page-section").forEach((p) => {
+      p.classList.add("hidden");
+      p.classList.remove("visible");
+    });
+
+    target.classList.remove("hidden");
+    requestAnimationFrame(() => target.classList.add("visible"));
+
+    toggleMenu();
+
+    document
+      .querySelectorAll(".menu-pill")
+      .forEach((btn) => btn.classList.remove("active"));
+    const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
+    if (pill) pill.classList.add("active");
+
+    if (page === "manager") loadManagerData();
+    if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
+  }
+
+  function openModal(id) {
+    const el = document.getElementById("modal-" + id);
+    if (!el) return;
+    el.classList.add("open");
+    if (id === "leave") prepareLeaveDates();
+  }
+  function closeModal(id) {
+    const el = document.getElementById("modal-" + id);
+    if (!el) return;
+    el.classList.remove("open");
+    if (id === "gacha") resetGachaUI();
+  }
+
+  // ===== 班表：月曆 =====
+  function loadCalendar(y, m) {
+    const grid = document.getElementById("calendar-grid");
+    grid.innerHTML = "";
+    document.getElementById("calendar-title").textContent =
+      y + " 年 " + (m + 1) + " 月";
+
+    const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7; // 週一開頭
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    // 星期列
+    ["一", "二", "三", "四", "五", "六", "日"].forEach((n) => {
+      const c = document.createElement("div");
+      c.className = "day-name";
+      c.textContent = n;
+      grid.appendChild(c);
+    });
+
+    // 前面空格
+    for (let i = 0; i < firstWeekday; i++) {
+      grid.appendChild(document.createElement("div"));
+    }
+
+    const today = new Date();
+    const isSameMonth =
+      today.getFullYear() === y && today.getMonth() === m;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      cell.innerHTML = `<div>${d}</div><div class="day-indicator"></div>`;
+
+      if (isSameMonth && d === today.getDate()) {
+        cell.classList.add("today");
+      }
+
+      const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(
+        2,
+        "0"
+      )}`;
+      cell.onclick = () => {
+        document
+          .querySelectorAll(".day-cell")
+          .forEach((x) => x.classList.remove("selected"));
+        cell.classList.add("selected");
+        const box = document.getElementById("selected-shift");
+        box.classList.remove("show");
+        box.innerHTML = `<div class="shift-loading"></div>`;
+        loadAllShifts(ds);
+      };
+
+      // 進場動畫延遲
+      cell.style.animationDelay = d * 0.01 + "s";
+
+      grid.appendChild(cell);
+    }
+  }
+
+  async function updateMonthShiftMarkers() {
+    if (!currentUser) return;
+    try {
+      const ym = `${currentYear}-${String(currentMonth + 1).padStart(
+        2,
+        "0"
+      )}`;
+      const res = await fetch(
+        `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(
+          currentUser.email
+        )}`
+      );
+      const d = await res.json();
+      const zs = d.zhongshanDays || [];
+      const jm = d.jingmeiDays || [];
+
+      document.querySelectorAll(".day-cell").forEach((c) => {
+        const dv = c.querySelector("div")?.textContent;
+        if (!dv) return;
+        const f = `${ym}-${String(dv).padStart(2, "0")}`;
+        if (zs.includes(f)) c.classList.add("shift-zhongshan");
+        if (jm.includes(f)) c.classList.add("shift-jingmei");
+      });
+    } catch (e) {
+      console.warn("updateMonthShiftMarkers error", e);
+    }
+  }
+
+  function changeMonth(o) {
+    currentMonth += o;
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    }
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+    loadCalendar(currentYear, currentMonth);
+    updateMonthShiftMarkers();
+  }
+
+  /** 把「名字 (中山櫃檯)」這種字串拆成 {name, shift} */
+  function parseShiftString(str) {
+    const s = String(str || "");
+    const m = s.match(/^(.+?)\s*\((.+)\)$/);
+    if (m) return { name: m[1], shift: m[2] };
+    return { name: s, shift: "" };
+  }
+
+  function buildStoreBlock(list, storeLabel) {
+    if (!list.length) return "";
+    const groups = {};
+    const order = ["櫃檯", "彩妝", "攝影", "修圖"];
+
+    list.forEach((item) => {
+      const m = item.shift.match(/(櫃檯|彩妝|攝影|修圖)/);
+      const role = m ? m[1] : "其他";
+      if (!groups[role]) groups[role] = [];
+      groups[role].push(item.name);
+    });
+
+    let lines = [];
+    order.forEach((role) => {
+      if (groups[role]) {
+        lines.push(`${storeLabel}${role}：${groups[role].join("、")}`);
+      }
+    });
+    if (groups["其他"]) {
+      lines.push(`${storeLabel}其他：${groups["其他"].join("、")}`);
+    }
+    if (!lines.length) return "";
+    return lines.join("<br>");
+  }
+
+  // ===== 班表詳細（改成你截圖那種格式） =====
+  async function loadAllShifts(ds) {
+    const box = document.getElementById("selected-shift");
+    box.classList.remove("show");
+    box.innerHTML = `<div class="shift-loading"></div>`;
+
+    try {
+      const res = await fetch(`${API_URL}?date=${ds}&mode=all`);
+      const d = await res.json();
+
+      if (!d.ok || !d.shifts) {
+        box.innerHTML = "尚無班表資料";
+        box.classList.add("show");
+        return;
+      }
+
+      // 後端目前的 d.shifts 是：
+      // { zhongshan: ["名字 (中山櫃檯)", ...],
+      //   jingmei:   ["名字 (景美攝影)", ...],
+      //   other:     ["名字 (其他)", ...],
+      //   off:       ["名字", ...]  // 若你之後在 API 補上
+      // }
+      const raw = d.shifts;
+      const zsList = (raw.zhongshan || []).map(parseShiftString);
+      const jmList = (raw.jingmei || []).map(parseShiftString);
+
+      let html = `<div class="shift-date-title">${ds}</div><br>`;
+
+      if (zsList.length) {
+        html += "<b>[中山]</b><br>" + buildStoreBlock(zsList, "中山") + "<br><br>";
+      }
+      if (jmList.length) {
+        html += "<b>[景美]</b><br>" + buildStoreBlock(jmList, "景美") + "<br><br>";
+      }
+
+      // 若後端有提供 off，就顯示「[放假]」
+      const offList = raw.off || [];
+      if (offList.length) {
+        html += "<b>[放假]</b><br>・" + offList.join("<br>・");
+      }
+
+      if (!zsList.length && !jmList.length && !offList.length) {
+        html += "本日無人排班";
+      }
+
+      box.innerHTML = html;
+      requestAnimationFrame(() => box.classList.add("show"));
+    } catch (e) {
+      console.error(e);
+      box.innerHTML = "讀取失敗，請稍後再試";
+      box.classList.add("show");
+    }
+  }
+
+  // ===== 打卡 =====
+  function submitClockIn() {
+    const btn = document.getElementById("clockInBtn");
+    if (!currentUser) {
+      alert("請先登入");
+      return;
+    }
+    if (btn.disabled) return;
+
+    const type = btn.dataset.type || "上班";
+    if (type === "done") return;
+
+    if (!confirm(`確定要打「${type}」卡嗎？`)) return;
+
+    btn.disabled = true;
+    btn.textContent = "定位中...";
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        btn.textContent = "打卡中...";
+        try {
+          await fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+              action: "clockIn",
+              email: currentUser.email,
+              type,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            }),
+          });
+          alert("打卡成功");
+          if (type === "上班") {
+            btn.textContent = "下班";
+            btn.dataset.type = "下班";
+            btn.disabled = false;
+          } else {
+            btn.textContent = "已下班";
+            btn.dataset.type = "done";
+            btn.disabled = true;
+          }
+        } catch (e) {
+          console.error(e);
+          alert("打卡失敗，請稍後再試");
+          btn.disabled = false;
+          btn.textContent = type;
+        }
+      },
+      () => {
+        alert("定位失敗，請確認定位權限");
+        btn.disabled = false;
+        btn.textContent = type;
+      }
+    );
+  }
+
+  // ===== Manager 區 =====
+  function showMgrTab(t) {
+    document
+      .getElementById("mgr-tab-pending")
+      .classList.toggle("active", t === "pending");
+    document
+      .getElementById("mgr-tab-today")
+      .classList.toggle("active", t === "today");
+    document
+      .getElementById("mgr-view-pending")
+      .classList.toggle("hidden", t !== "pending");
+    document
+      .getElementById("mgr-view-today")
+      .classList.toggle("hidden", t !== "today");
+  }
+
+  async function loadManagerData() {
+    const rList = document.getElementById("mgr-review-list");
+    const dList = document.getElementById("mgr-dashboard-list");
+    rList.innerHTML = "載入中...";
+    dList.innerHTML = "載入中...";
+
+    try {
+      // 待審核請假
+      const rRes = await fetch(`${API_URL}?action=getAllPendingLeaves`);
+      const rData = await rRes.json();
+      const items = (rData && rData.items) || [];
+
+      const mgrBtn = document.querySelector('button[data-page="manager"]');
+      if (mgrBtn) mgrBtn.classList.toggle("has-notif", items.length > 0);
+
+      if (items.length) {
+        rList.innerHTML = items
+          .map(
+            (i) =>
+              `<div class="dash-item">
+                 <span>${i.name} - ${i.leaveType} (${i.date})</span>
+                 <button class="btn-approve" onclick="review(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
+               </div>`
+          )
+          .join("");
+      } else {
+        rList.innerHTML = "無待審核項目";
+      }
+    } catch (e) {
+      console.error("load pending error", e);
+      rList.innerHTML = "讀取錯誤";
+    }
+
+    try {
+      // 今日出勤
+      const dRes = await fetch(`${API_URL}?action=getManagerDashboard`);
+      const dData = await dRes.json();
+      const list = (dData && dData.items) || [];
+      if (list.length) {
+        dList.innerHTML = list
+          .map(
+            (i) =>
+              `<div class="dash-item">
+                 <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
+                 <span class="dash-time">${i.in}/${i.out}</span>
+               </div>`
+          )
+          .join("");
+      } else {
+        dList.innerHTML = "今日無人上班";
+      }
+    } catch (e) {
+      console.error("load dashboard error", e);
+      dList.innerHTML = "讀取錯誤";
+    }
+  }
+
+  async function checkManagerBadge() {
+    try {
+      const r = await fetch(`${API_URL}?action=getAllPendingLeaves`);
+      const d = await r.json();
+      const mgrBtn = document.querySelector('button[data-page="manager"]');
+      if (mgrBtn && d.items && d.items.length) {
+        mgrBtn.classList.add("has-notif");
+      }
+    } catch (e) {
+      console.warn("checkManagerBadge error", e);
+    }
+  }
+
+  async function review(idx, em, dt, st) {
+    if (!confirm("確定通過?")) return;
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          action: "reviewLeave",
+          rowIndex: idx,
+          email: em,
+          date: dt,
+          status: st,
+        }),
+      });
+      alert("已審核");
+      loadManagerData();
+    } catch (e) {
+      console.error(e);
+      alert("審核失敗");
+    }
+  }
+
+  // ===== Admin =====
+  async function adminGiveToken() {
+    const e = document.getElementById("adm-token-email").value.trim();
+    const a = document.getElementById("adm-token-amt").value;
+    if (!e || !a) {
+      alert("請填 Email 與數量");
+      return;
+    }
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({
+        action: "adminGiveToken",
+        targetEmail: e,
+        amount: a,
+      }),
+    });
+    alert("已發送");
+    closeModal("admin-token");
+  }
+
+  async function adminSetAnnounce() {
+    const t = document.getElementById("adm-ann-title").value;
+    const c = document.getElementById("adm-ann-content").value;
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({
+        action: "adminSetAnnounce",
+        title: t,
+        content: c,
+      }),
+    });
+    alert("已發布");
+    closeModal("admin-announce");
+  }
+
+  async function adminSync(t) {
+    if (!confirm("確定執行?")) return;
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ action: "adminSync", type: t }),
+    });
+    alert("指令已發送");
+    closeModal("admin-sync");
+  }
+
+  // ===== Gacha =====
+  function playGacha() {
+    const btn = document.getElementById("gacha-action-btn");
+    const res = document.getElementById("gacha-result-display");
+    if (!currentUser) {
+      alert("請先登入");
+      return;
+    }
+    btn.disabled = true;
+    btn.classList.add("shake-hard");
+    res.innerHTML = "";
+    setTimeout(async () => {
+      btn.classList.remove("shake-hard");
       try {
-        const res = await fetch(`${API_URL}?date=${ds}&mode=all`);
-        const d = await res.json();
-
-        if (!d.ok || !d.shifts) {
-          box.innerHTML = `<div class="shift-date-title">${ds}</div>尚無班表資料`;
-          box.classList.add("show");
+        const r = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "drawGacha", email: currentUser.email }),
+        });
+        const d = await r.json();
+        if (!d.ok) {
+          alert(d.msg || "代幣不足");
+          btn.disabled = false;
           return;
         }
-
-        let html = `<div class="shift-date-title">${ds}</div>`;
-
-        const buildSection = (title, arr) => {
-          if (!arr || !arr.length) return "";
-          // arr 內容是 "姓名 (中山攝影…)" 這種字串
-          // 盡量拆出角色名稱來排
-          const roleOrder = ["櫃檯","彩妝","攝影","修圖"];
-          const groups = {};
-          arr.forEach(str=>{
-            const m = String(str).match(/^(.+?)\s*\((.+?)\)$/);
-            let name = str;
-            let shift = "";
-            if (m) {
-              name = m[1].trim();
-              shift = m[2].trim();
-            }
-            let role = "";
-            const roleMatch = shift.match(/(櫃檯|彩妝|攝影|修圖)/);
-            role = roleMatch ? roleMatch[1] : "";
-            const key = role || "其他";
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(name);
-          });
-
-          const sortedKeys = Object.keys(groups).sort((a,b)=>{
-            const ia = roleOrder.indexOf(a);
-            const ib = roleOrder.indexOf(b);
-            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-          });
-
-          let sec = `<div class="shift-section-title">[${title}]</div>`;
-          sortedKeys.forEach(k=>{
-            sec += `<div class="shift-line">${title}${k}：${groups[k].join("、")}</div>`;
-          });
-          return sec;
-        };
-
-        if (d.shifts.zhongshan && d.shifts.zhongshan.length > 0) {
-          html += buildSection("中山", d.shifts.zhongshan);
-        }
-        if (d.shifts.jingmei && d.shifts.jingmei.length > 0) {
-          html += buildSection("景美", d.shifts.jingmei);
-        }
-        if (d.shifts.other && d.shifts.other.length > 0) {
-          html += buildSection("其他", d.shifts.other);
-        }
-
-        if (
-          (!d.shifts.zhongshan || d.shifts.zhongshan.length === 0) &&
-          (!d.shifts.jingmei || d.shifts.jingmei.length === 0) &&
-          (!d.shifts.other || d.shifts.other.length === 0)
-        ) {
-          html += `<div class="shift-line">本日無人排班</div>`;
-        }
-
-        box.innerHTML = html;
-        requestAnimationFrame(() => box.classList.add("show"));
+        document.getElementById("modal-coin-count").textContent = d.balance;
+        document.getElementById("hud-coin").textContent = d.balance;
+        res.innerHTML = d.win
+          ? "<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>"
+          : "哈哈沒中啦";
+        res.classList.add("show");
+        btn.disabled = false;
       } catch (e) {
-        box.innerHTML = `<div class="shift-date-title">${ds}</div>讀取失敗，請稍後再試`;
-        box.classList.add("show");
+        console.error(e);
+        alert("連線錯誤");
+        btn.disabled = false;
       }
-    }
+    }, 1500);
+  }
 
-    // Clock
-    function submitClockIn() {
-      const btn = document.getElementById("clockInBtn");
-      if (btn.disabled) return;
-      if (!confirm(`確定要打「${btn.dataset.type}」卡嗎？`)) return;
-      btn.disabled = true; btn.textContent = "定位中...";
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        btn.textContent = "打卡中...";
-        await fetch(API_URL, {
-          method: "POST", mode: "no-cors",
-          body: JSON.stringify({action:"clockIn",email:currentUser.email,type:btn.dataset.type,lat:pos.coords.latitude,lng:pos.coords.longitude})
-        });
-        alert("打卡成功");
-        if(btn.dataset.type==="上班"){ btn.textContent="下班"; btn.dataset.type="下班"; btn.disabled=false; }
-        else{ btn.textContent="已下班"; btn.disabled=true; }
-      },()=>{ alert("定位失敗"); btn.disabled=false; });
-    }
+  function resetGachaUI() {
+    const res = document.getElementById("gacha-result-display");
+    res.classList.remove("show");
+    res.innerHTML = "";
+    document.getElementById("gacha-action-btn").disabled = false;
+  }
 
-    // Manager
-    function showMgrTab(t){
-      document.getElementById("mgr-tab-pending").classList.toggle("active",t==='pending');
-      document.getElementById("mgr-tab-today").classList.toggle("active",t==='today');
-      document.getElementById("mgr-view-pending").classList.toggle("hidden",t!=='pending');
-      document.getElementById("mgr-view-today").classList.toggle("hidden",t!=='today');
+  function switchGachaTab(tab) {
+    document
+      .getElementById("tab-gacha-play")
+      .classList.toggle("active", tab === "play");
+    document
+      .getElementById("tab-gacha-log")
+      .classList.toggle("active", tab === "log");
+    if (tab === "play") {
+      document.getElementById("gacha-view-play").classList.remove("hidden");
+      document.getElementById("gacha-view-log").classList.add("hidden");
+    } else {
+      document.getElementById("gacha-view-play").classList.add("hidden");
+      document.getElementById("gacha-view-log").classList.remove("hidden");
+      renderGachaLog();
     }
-    async function loadManagerData(){
-      const rList=document.getElementById("mgr-review-list");
-      const dList=document.getElementById("mgr-dashboard-list");
-      rList.innerHTML="載入中..."; dList.innerHTML="載入中...";
-      
-      const rRes=await fetch(`${API_URL}?action=getAllPendingLeaves`);
-      const rData=await rRes.json();
-      if(rData.items && rData.items.length>0){
-        document.querySelector('button[data-page="manager"]').classList.add("has-notif");
-        rList.innerHTML=rData.items.map(i=>`<div class="dash-item"><span>${i.name} - ${i.leaveType} (${i.date})</span><button class="btn-approve" onclick="review(${i.rowIndex},'${i.email}','${i.date}','通過')">✅</button></div>`).join("");
-      } else {
-        rList.innerHTML="無待審核項目";
-        document.querySelector('button[data-page="manager"]').classList.remove("has-notif");
-      }
-      
-      const dRes=await fetch(`${API_URL}?action=getManagerDashboard`);
-      const dData=await dRes.json();
-      if(dData.items) {
-        dList.innerHTML=dData.items.map(i=>`<div class="dash-item"><span>${i.name} <small style="color:#888">(${i.dept})</small></span><span class="dash-time">${i.in}/${i.out}</span></div>`).join("")||"今日無人上班";
-      } else {
-        dList.innerHTML="讀取錯誤";
-      }
-    }
-    async function checkManagerBadge(){
-      try{
-        const r=await fetch(`${API_URL}?action=getAllPendingLeaves`);
-        const d=await r.json();
-        if(d.items.length)document.querySelector('button[data-page="manager"]').classList.add("has-notif");
-      }catch(e){}
-    }
-    async function review(idx,em,dt,st){
-      if(!confirm("確定通過?"))return;
-      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"reviewLeave",rowIndex:idx,email:em,date:dt,status:st})});
-      alert("已審核"); loadManagerData();
-    }
+  }
 
-    // Admin
-    async function adminGiveToken(){
-      const e=document.getElementById("adm-token-email").value;
-      const a=document.getElementById("adm-token-amt").value;
-      if(!e||!a)return;
-      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminGiveToken",targetEmail:e,amount:a})});
-      alert("已發送"); closeModal("admin-token");
-    }
-    async function adminSetAnnounce(){
-      const t=document.getElementById("adm-ann-title").value;
-      const c=document.getElementById("adm-ann-content").value;
-      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminSetAnnounce",title:t,content:c})});
-      alert("已發布"); closeModal("admin-announce");
-    }
-    async function adminSync(t){
-      if(!confirm("確定執行?"))return;
-      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminSync",type:t})});
-      alert("指令已發送"); closeModal("admin-sync");
-    }
+  function renderGachaLog() {
+    document.getElementById("gacha-history-list").innerHTML =
+      "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>";
+  }
 
-    // Gacha
-    function playGacha(){
-      const btn=document.getElementById("gacha-action-btn");
-      const res=document.getElementById("gacha-result-display");
-      btn.disabled=true; btn.classList.add("shake-hard"); res.innerHTML="";
-      setTimeout(async()=>{
-        btn.classList.remove("shake-hard");
-        try{
-          const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"drawGacha",email:currentUser.email})});
-          const d=await r.json();
-          if(!d.ok){alert(d.msg);btn.disabled=false;return;}
-          document.getElementById("modal-coin-count").textContent=d.balance;
-          document.getElementById("hud-coin").textContent=d.balance;
-          res.innerHTML=d.win?"<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>":"沒中 😂";
-          res.classList.add("show"); btn.disabled=false;
-        }catch(e){alert("連線錯誤");btn.disabled=false;}
-      },1500);
+  // ===== Leave =====
+  function prepareLeaveDates() {
+    const s = document.getElementById("leave-date");
+    s.innerHTML = "";
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const v = d.toISOString().split("T")[0];
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      s.add(o);
     }
-    function resetGachaUI(){
-      document.getElementById("gacha-result-display").classList.remove("show");
-      document.getElementById("gacha-result-display").innerHTML="";
-      document.getElementById("gacha-action-btn").disabled=false;
-    }
-    function switchGachaTab(tab){
-      document.getElementById("tab-gacha-play").classList.toggle("active", tab==='play');
-      document.getElementById("tab-gacha-log").classList.toggle("active", tab==='log');
-      if(tab==='play'){
-        document.getElementById("gacha-view-play").classList.remove("hidden");
-        document.getElementById("gacha-view-log").classList.add("hidden");
-      } else {
-        document.getElementById("gacha-view-play").classList.add("hidden");
-        document.getElementById("gacha-view-log").classList.remove("hidden");
-        renderGachaLog();
-      }
-    }
-    function renderGachaLog(){
-      document.getElementById("gacha-history-list").innerHTML =
-        "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>";
-    }
+  }
 
-    // Leave Helpers
-    function prepareLeaveDates(){
-      const s=document.getElementById("leave-date"); s.innerHTML="";
-      for(let i=0;i<30;i++){
-        let d=new Date(); d.setDate(d.getDate()+i);
-        let v=d.toISOString().split('T')[0];
-        let o=document.createElement("option"); o.text=v; o.value=v; s.add(o);
+  async function submitLeave() {
+    if (!currentUser) {
+      alert("請先登入");
+      return;
+    }
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({
+        action: "applyLeave",
+        email: currentUser.email,
+        date: document.getElementById("leave-date").value,
+        leaveType: document.getElementById("leave-type").value,
+        reason: document.getElementById("leave-reason").value,
+      }),
+    });
+    alert("已送出");
+    closeModal("leave");
+    loadLeaveHistory(currentUser.email);
+  }
+
+  async function loadLeaveHistory(e) {
+    try {
+      const r = await fetch(
+        `${API_URL}?action=leaveHistory&email=${encodeURIComponent(e)}`
+      );
+      const d = await r.json();
+      const list = d.items || [];
+      const box = document.getElementById("leave-history");
+      if (!list.length) {
+        box.innerHTML = "<p>目前沒有請假紀錄</p>";
+        return;
       }
+      box.innerHTML = list
+        .map(
+          (i) =>
+            `<div class="leave-card">
+               <div class="row-1">
+                 <span class="title">${i.leaveType}</span>
+                 <span class="status-bar status-${i.status || "審核中"}">${
+              i.status || "審核中"
+            }</span>
+               </div>
+               <div class="info">${i.date}</div>
+             </div>`
+        )
+        .join("");
+    } catch (e) {
+      console.error(e);
+      document.getElementById("leave-history").innerHTML = "載入失敗";
     }
-    async function submitLeave(){
-      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({
-        action:"applyLeave",email:currentUser.email,
-        date:document.getElementById("leave-date").value,
-        leaveType:document.getElementById("leave-type").value,
-        reason:document.getElementById("leave-reason").value
-      })});
-      alert("已送出"); closeModal("leave"); loadLeaveHistory(currentUser.email);
-    }
-    async function loadLeaveHistory(e){
-      try{
-        const r=await fetch(`${API_URL}?action=leaveHistory&email=${e}`);
-        const d=await r.json();
-        document.getElementById("leave-history").innerHTML=
-          d.items.map(i=>`<div class="leave-card">
-            <div class="row-1">
-              <span class="title">${i.leaveType}</span>
-              <span class="status-bar status-${i.status}">${i.status}</span>
-            </div>
-            <div class="info">${i.date}</div>
-          </div>`).join("");
-      }catch(err){
-        document.getElementById("leave-history").textContent="讀取失敗";
-      }
-    }
-  </script>
+  }
+</script>
 </body>
 </html>
