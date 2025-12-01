@@ -94,6 +94,7 @@
       font-size:1.6rem;font-weight:bold;
       cursor:pointer;padding:0.2rem 0.6rem;
       border-radius:999px;
+      color:#000000;
       transition:background 0.15s ease, transform 0.12s ease;
     }
     .calendar-header button:active{
@@ -703,31 +704,40 @@
     }
   }
 
-  async function updateMonthShiftMarkers() {
-    if (!currentUser) return;
+  async function updateMonthShiftMarkers(){
+    // 尚未登入就不更新
+    if (!currentUser || !currentUser.email) return;
+  
     try {
-      const ym = `${currentYear}-${String(currentMonth + 1).padStart(
-        2,
-        "0"
-      )}`;
+      const ym = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
       const res = await fetch(
-        `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(
-          currentUser.email
-        )}`
+        `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(currentUser.email)}`
       );
       const d = await res.json();
-      const zs = d.zhongshanDays || [];
-      const jm = d.jingmeiDays || [];
-
-      document.querySelectorAll(".day-cell").forEach((c) => {
-        const dv = c.querySelector("div")?.textContent;
-        if (!dv) return;
-        const f = `${ym}-${String(dv).padStart(2, "0")}`;
-        if (zs.includes(f)) c.classList.add("shift-zhongshan");
-        if (jm.includes(f)) c.classList.add("shift-jingmei");
+  
+      // 後端防呆：拿不到就當空陣列
+      const zs = Array.isArray(d.zhongshanDays) ? d.zhongshanDays : [];
+      const jm = Array.isArray(d.jingmeiDays)  ? d.jingmeiDays  : [];
+  
+      const cells = document.querySelectorAll(".day-cell");
+  
+      cells.forEach(c => {
+        // 先清掉舊的標記
+        c.classList.remove("shift-zhongshan", "shift-jingmei");
+  
+        const first = c.firstElementChild;
+        if (!first) return;
+  
+        const dayNum = parseInt(first.textContent, 10);
+        if (!dayNum) return;
+  
+        const fullDate = `${ym}-${String(dayNum).padStart(2,'0')}`;
+  
+        if (zs.includes(fullDate)) c.classList.add("shift-zhongshan");
+        if (jm.includes(fullDate)) c.classList.add("shift-jingmei");
       });
     } catch (e) {
-      console.warn("updateMonthShiftMarkers error", e);
+      console.error("updateMonthShiftMarkers error:", e);
     }
   }
 
