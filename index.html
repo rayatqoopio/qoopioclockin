@@ -14,25 +14,18 @@
   </script>
   <style>
     /* Base & Reset */
-    @supports (height: 100dvh) {
-      .container { min-height: calc(100dvh - env(safe-area-inset-bottom,0px)); }
-    }
+    @supports(height:100dvh){.container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}}
     html,body{
-      margin:0;
-      padding:0;
-      height:100%;
+      margin:0;padding:0;height:100%;
       background-color:#fdf5e6;
       font-family:"Helvetica Neue",Arial,sans-serif;
-      color:#333;
-      text-align:center;
-      overflow-x:hidden;
+      color:#333;text-align:center;overflow-x:hidden;
     }
     .hidden{display:none!important;}
 
-    /* 頁面進出動畫 */
+    /* page-section: 頁面切換淡入動畫 */
     .page-section{
-      width:100%;
-      flex:1;
+      width:100%;flex:1;
       opacity:0;
       transform:translateY(6px);
       transition:opacity 0.2s ease, transform 0.2s ease;
@@ -41,105 +34,68 @@
       opacity:1;
       transform:translateY(0);
     }
-
+    
     /* Header */
     #global-header{
-      position:fixed;
-      top:0;left:0;right:0;
-      height:60px;
-      background:#fdf5e6;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:10010;
-      padding-top:env(safe-area-inset-top,0px);
+      position:fixed;top:0;left:0;right:0;
+      height:60px;background:#fdf5e6;
+      display:flex;align-items:center;justify-content:center;
+      z-index:10010;padding-top:env(safe-area-inset-top,0px);
     }
     .header-logo{height:56px;width:auto;display:block;}
 
     /* Container */
     .container{
-      max-width:500px;
-      margin:0 auto;
+      max-width:500px;margin:0 auto;
       padding:calc(60px + env(safe-area-inset-top,0px)) 1rem calc(3rem + env(safe-area-inset-bottom,0px));
       box-sizing:border-box;
       min-height:calc(100vh - env(safe-area-inset-bottom,0px));
-      display:flex;
-      flex-direction:column;
+      display:flex;flex-direction:column;
     }
 
     /* Login */
     #login-page{padding-top:10vh;}
     .logo-large{width:200px;margin-bottom:1.5rem;}
     #login-page input{
-      width:80%;
-      padding:0.8rem;
-      margin:1rem 0;
-      border-radius:8px;
-      border:1px solid #ccc;
+      width:80%;padding:0.8rem;margin:1rem 0;
+      border-radius:8px;border:1px solid #ccc;
     }
     #login-page button{
-      padding:0.8rem 1.5rem;
-      background:#111;
-      color:#fff;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
+      padding:0.8rem 1.5rem;background:#111;color:#fff;
+      border:none;border-radius:8px;cursor:pointer;
     }
 
     /* Clock */
     #page-clock{
-      display:flex;
-      flex-direction:column;
+      display:flex;flex-direction:column;
       justify-content:center;
-      padding-top:10vh;
-      padding-bottom:15vh;
+      padding-top:10vh;padding-bottom:15vh;
     }
     .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
     .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
     #clockInBtn{
-      width:80%;
-      padding:1.7rem;
-      font-size:1.3rem;
-      background:#111;
-      color:#fff;
-      border:none;
-      border-radius:10px;
-      margin:0.8rem auto;
-      transition:opacity 0.3s;
+      width:80%;padding:1.7rem;font-size:1.3rem;
+      background:#111;color:#fff;border:none;border-radius:10px;
+      margin:0.8rem auto;transition:opacity 0.3s, background 0.2s;
     }
     #clockInBtn:disabled{background:#bbb;opacity:.6;}
-    .logout-btn{
-      background:none;
-      border:none;
-      color:#777;
-      margin:0 auto;
-      cursor:pointer;
-    }
+    .logout-btn{background:none;border:none;color:#777;margin:0 auto;}
     #status{margin-top:1rem;font-weight:bold;}
 
-    /* Schedule — 盡量貼近舊版日曆風格 */
-    #page-schedule{padding-top:4vh;}
+    /* ===== Schedule – 月曆樣式 ===== */
     .calendar-header{
-      padding-top:2vh;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:1rem;
-      font-size:1.2rem;
-      font-weight:bold;
+      padding-top:1rem;
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:0.6rem;
+      font-size:1.2rem;font-weight:bold;
     }
     .calendar-header button{
-      background:none;
-      border:none;
-      font-size:1.4rem;
-      font-weight:bold;
-      color:#333;
-      cursor:pointer;
-      padding:0.3rem 0.6rem;
-      transition:color 0.2s ease, background 0.15s ease, transform 0.12s ease;
+      background:none;border:none;
+      font-size:1.6rem;font-weight:bold;
+      cursor:pointer;padding:0.2rem 0.6rem;
       border-radius:999px;
+      transition:background 0.15s ease, transform 0.12s ease;
     }
-    .calendar-header button:hover{color:#000;}
     .calendar-header button:active{
       transform:scale(0.9);
       background:rgba(0,0,0,0.05);
@@ -148,460 +104,184 @@
     .calendar-grid{
       display:grid;
       grid-template-columns:repeat(7,1fr);
-      gap:5px;
-      margin-bottom:1rem;
+      gap:4px;
+      margin-bottom:0.8rem;
+      font-size:0.8rem;
     }
     .day-name{
-      font-weight:bold;
-      color:#666;
+      font-size:0.75rem;
+      color:#999;
       text-align:center;
       padding:0.15rem 0 0.25rem;
-      font-size:0.75rem;
     }
+
+    @keyframes dayIn{
+      from{opacity:0;transform:translateY(10px) scale(0.95);}
+      to{opacity:1;transform:translateY(0) scale(1);}
+    }
+
     .day-cell{
       position:relative;
-      padding:10px 0;
-      border-radius:8px;
-      border:1px solid transparent;
+      padding:6px 0 10px;
+      border-radius:12px;
       cursor:pointer;
-      transition:all 0.2s;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:flex-start;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
       font-size:0.9rem;
+      opacity:0;
+      transform:translateY(6px) scale(0.96);
+      animation:dayIn 0.26s ease-out forwards;
     }
     .day-cell.today{
-      border:2px solid #111;
-      font-weight:bold;
+      box-shadow:0 0 0 1px #111 inset;
+      font-weight:600;
     }
     .day-cell.selected{
-      background-color:#ddd;
+      background:#111;
+      color:#fff;
+      box-shadow:0 4px 10px rgba(0,0,0,0.18);
+      transform:translateY(-2px) scale(1.02);
     }
-    .day-indicator{
-      width:8px;
-      height:8px;
-      border-radius:50%;
-      margin-top:4px;
+    .day-cell.selected .day-indicator{
+      opacity:1;
+      border-color:rgba(255,255,255,0.6);
     }
-    .shift-zhongshan .day-indicator{background-color:#e74c3c;}
-    .shift-jingmei  .day-indicator{background-color:#27ae60;}
+    .day-cell:active{
+      transform:translateY(1px) scale(0.98);
+    }
 
+    .day-indicator{
+      width:7px;height:7px;border-radius:50%;
+      margin-top:4px;
+      border:1px solid transparent;
+      opacity:0;
+      transition:opacity 0.18s, background 0.18s, border-color 0.18s;
+    }
+    .shift-zhongshan .day-indicator{
+      background-color:#e74c3c;
+      opacity:1;
+    }
+    .shift-jingmei .day-indicator{
+      background-color:#27ae60;
+      opacity:1;
+    }
+
+    /* 選取當日班表 – 底部卡片 */
     #selected-shift{
-      font-size:1rem;
-      line-height:1.8;
-      color:#444;
-      text-align:left;
-      padding:1rem;
-      border-radius:10px;
+      padding:1rem 1rem 0.8rem;
       background:#fff;
-      box-shadow:0 0 6px rgba(0,0,0,0.1);
-      min-height:100px;
+      border-radius:14px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      min-height:60px;
+      text-align:left;
+      line-height:1.7;
+      font-size:0.9rem;
+      transform:translateY(10px);
+      opacity:0;
+      transition:opacity 0.22s ease, transform 0.22s ease;
+    }
+    #selected-shift.show{
+      opacity:1;
+      transform:translateY(0);
     }
     .shift-date-title{
       font-weight:700;
-      margin-bottom:6px;
+      margin-bottom:10px;
       font-size:0.95rem;
     }
-    .shift-block{margin-bottom:6px;}
-    .shift-tag{
-      display:inline-block;
-      font-size:0.78rem;
-      border-radius:999px;
-      padding:2px 8px;
-      margin-right:4px;
-      font-weight:600;
+    .shift-section-title{
+      font-weight:700;
+      margin-top:10px;
+      margin-bottom:6px;
+      font-size:1rem;
     }
-    .shift-tag-zhongshan{
-      background:#fde0dd;
-      color:#b71c1c;
-    }
-    .shift-tag-jingmei{
-      background:#e1f5e1;
-      color:#1b5e20;
-    }
-    .shift-tag-other{
-      background:#e0e0e0;
-      color:#424242;
-    }
-    .shift-names{margin-top:2px;}
-
-    /* 日期點選時的小 loading 圈 */
-    .shift-loading,
-    .loading-spinner{
-      display:inline-block;
-      width:20px;
-      height:20px;
-      border:3px solid #bbb;
-      border-top-color:#111;
-      border-radius:50%;
-      animation:spin 0.8s linear infinite;
-      vertical-align:middle;
-      margin-right:8px;
-    }
-
-    @keyframes spin{
-      0%{transform:rotate(0deg);}
-      100%{transform:rotate(360deg);}
-    }
+    .shift-line{margin-bottom:4px;}
 
     /* Admin/Manager */
     .manager-tabs{display:flex;gap:10px;margin-bottom:15px;justify-content:center;}
     .manager-tabs button{
-      padding:8px 16px;
-      border-radius:8px;
-      border:1px solid #ccc;
-      background:transparent;
-      font-weight:bold;
-      color:#777;
-      font-size:1.1rem;
-      cursor:pointer;
+      padding:8px 16px;border-radius:8px;
+      border:1px solid #ccc;background:transparent;
+      font-weight:bold;color:#777;font-size:1.1rem;cursor:pointer;
     }
-    .manager-tabs button.active{
-      background:#111;
-      color:#fff;
-      border-color:#111;
-    }
+    .manager-tabs button.active{background:#111;color:#fff;border-color:#111;}
+    
     .dash-title{font-size:1.1rem;font-weight:bold;margin:20px 0 10px 0;border-left:4px solid #111;padding-left:10px;}
-    .dashboard-card{
-      background:#fff;
-      padding:15px;
-      border-radius:12px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom:10px;
-      text-align:left;
-    }
-    .dash-item{
-      display:flex;
-      justify-content:space-between;
-      padding:8px 0;
-      border-bottom:1px solid #eee;
-      font-size:0.95rem;
-    }
+    .dashboard-card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px;text-align:left;}
+    .dash-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95rem;}
     .dash-item:last-child{border-bottom:none;}
-    .btn-approve{
-      padding:4px 8px;
-      border-radius:6px;
-      border:none;
-      background:#27ae60;
-      color:#fff;
-      font-weight:bold;
-      cursor:pointer;
-    }
-    .admin-menu-btn{
-      width:100%;
-      padding:16px;
-      background:#fff;
-      border:1px solid #ddd;
-      border-radius:12px;
-      margin-bottom:10px;
-      font-size:1rem;
-      font-weight:bold;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      cursor:pointer;
-      box-shadow:0 2px 5px rgba(0,0,0,0.05);
-    }
-    .admin-input{
-      width:100%;
-      padding:12px;
-      margin-bottom:10px;
-      border:1px solid #ddd;
-      border-radius:8px;
-      box-sizing:border-box;
-      font-size:1rem;
-    }
-    .admin-action-btn{
-      width:100%;
-      padding:12px;
-      background:#111;
-      color:#fff;
-      border:none;
-      border-radius:8px;
-      font-weight:bold;
-      cursor:pointer;
-      font-size:1rem;
-    }
+    .btn-approve{padding:4px 8px;border-radius:6px;border:none;background:#27ae60;color:#fff;font-weight:bold;cursor:pointer;}
+    
+    .admin-menu-btn{width:100%;padding:16px;background:#fff;border:1px solid #ddd;border-radius:12px;margin-bottom:10px;font-size:1rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+    .admin-input{width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;}
+    .admin-action-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1rem;}
 
     /* Leave Page */
     .leave-btn-main{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
+      position:fixed;left:50%;transform:translateX(-50%);
       bottom:calc(100px + env(safe-area-inset-bottom,0px));
-      z-index:9998;
-      width:55%;
-      min-width:180px;
-      max-width:300px;
-      padding:0.9rem;
-      font-size:1rem;
-      border-radius:999px;
-      border:none;
-      background:#111;
-      color:#fff;
-      cursor:pointer;
+      z-index:9998;width:55%;min-width:180px;max-width:300px;
+      padding:0.9rem;font-size:1rem;border-radius:999px;border:none;
+      background:#111;color:#fff;cursor:pointer;
       box-shadow:0 4px 14px rgba(0,0,0,0.12);
     }
     #leave-history{margin-top:0.5rem;font-size:0.9rem;color:#555;}
-    .leave-card{
-      padding:0.8rem;
-      border-radius:12px;
-      background:#fff;
-      box-shadow:0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom:0.8rem;
-      text-align:left;
-    }
-    .leave-card .row-1{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:0.4rem;
-      font-weight:bold;
-    }
-    .status-bar{
-      padding:2px 8px;
-      border-radius:4px;
-      color:#fff;
-      font-size:0.8rem;
-    }
-    .status-審核中{background:#e67e22;}
-    .status-通過{background:#27ae60;}
-    .status-退回{background:#c0392b;}
+    .leave-card{padding:0.8rem;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:0.8rem;text-align:left;}
+    .leave-card .row-1{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;font-weight:bold;}
+    .status-bar{padding:2px 8px;border-radius:4px;color:#fff;font-size:0.8rem;}
+    .status-審核中{background:#e67e22;} .status-通過{background:#27ae60;} .status-退回{background:#c0392b;}
 
     /* FAB */
-    #fab-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.45);
-      z-index:10015;
-    }
-    .menu-fab{
-      position:fixed;
-      left:24px;
-      bottom:calc(24px + env(safe-area-inset-bottom,0px));
-      z-index:10020;
-      display:none;
-      flex-direction:column;
-      align-items:flex-start;
-    }
-    .fab-main{
-      width:60px;
-      height:60px;
-      border-radius:50%;
-      background:#111;
-      color:#fff;
-      border:none;
-      box-shadow:0 6px 16px rgba(0,0,0,0.35);
-      font-size:1.6rem;
-      position:relative;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-    }
-    .fab-icon-o,.fab-icon-x{
-      position:absolute;
-      font-family:sans-serif;
-      font-weight:700;
-      transition:all 0.3s;
-    }
-    .fab-icon-o{opacity:1;transform:scale(1);}
-    .fab-icon-x{opacity:0;transform:rotate(-90deg)scale(0.5);}
-    .fab-main.open .fab-icon-o{opacity:0;transform:scale(0.5);}
-    .fab-main.open .fab-icon-x{opacity:1;transform:rotate(0deg)scale(1);}
-    .menu-sheet{margin-bottom:10px;}
-    .menu-sheet.hidden{display:none;}
+    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10015;}
+    .menu-fab{position:fixed;left:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:10020;display:none;flex-direction:column;align-items:flex-start;}
+    .fab-main{width:60px;height:60px;border-radius:50%;background:#111;color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,0.35);font-size:1.6rem;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .fab-icon-o,.fab-icon-x{position:absolute;font-family:sans-serif;font-weight:700;transition:all 0.3s;}
+    .fab-icon-o{opacity:1;transform:scale(1);} .fab-icon-x{opacity:0;transform:rotate(-90deg)scale(0.5);}
+    .fab-main.open .fab-icon-o{opacity:0;transform:scale(0.5);} .fab-main.open .fab-icon-x{opacity:1;transform:rotate(0deg)scale(1);}
+    .menu-sheet{margin-bottom:10px;} .menu-sheet.hidden{display:none;}
     .fab-option{display:flex;align-items:center;margin-bottom:8px;}
-    .menu-pill{
-      padding:7px 16px;
-      background:#fff;
-      border:none;
-      color:#333;
-      font-size:0.95rem;
-      font-weight:bold;
-      border-radius:999px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.18);
-      cursor:pointer;
-      white-space:nowrap;
-    }
+    .menu-pill{padding:7px 16px;background:#fff;border:none;color:#333;font-size:0.95rem;font-weight:bold;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,0.18);cursor:pointer;white-space:nowrap;}
     .menu-pill.active{background:#111;color:#fff;}
     .menu-pill.has-notif{position:relative;}
-    .menu-pill.has-notif::after{
-      content:'';
-      position:absolute;
-      top:0;
-      right:0;
-      width:10px;
-      height:10px;
-      background:#ff3b30;
-      border-radius:50%;
-      border:2px solid #fff;
-      box-shadow:0 1px 3px rgba(0,0,0,0.2);
-    }
+    .menu-pill.has-notif::after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;background:#ff3b30;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
 
     /* HUD & Modals */
-    .hud-right{
-      position:fixed;
-      right:16px;
-      bottom:calc(16px + env(safe-area-inset-bottom,0px));
-      display:none;
-      z-index:10001;
-    }
-    .gacha-btn{background:transparent;border:0;}
-    .gacha-img{width:96px;}
-    .gacha-badge{
-      position:absolute;
-      right:-6px;
-      top:-6px;
-      min-width:22px;
-      padding:0 6px;
-      border-radius:999px;
-      background:#111;
-      color:#fff;
-      font-size:12px;
-      font-weight:800;
-      border:1px solid #fff;
-    }
-
-    .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:rgba(0,0,0,0.45);
-      z-index:10030;
-    }
-    .modal.open{display:flex;}
-    .modal-card{
-      width:min(520px,92%);
-      background:#fff;
-      border-radius:16px;
-      padding:20px;
-      text-align:left;
-      position:relative;
-      max-height:85vh;
-      overflow-y:auto;
-    }
-    .modal-close-btn{
-      position:absolute;
-      top:15px;
-      right:15px;
-      background:none;
-      border:none;
-      font-size:1.5rem;
-      cursor:pointer;
-      line-height:1;
-    }
-    .modal-title{
-      font-size:1.2rem;
-      font-weight:bold;
-      margin-bottom:15px;
-      text-align:center;
-    }
+    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
+    .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
+    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
+    
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
+    .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;}
+    .modal-close-btn{position:absolute;top:15px;right:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;line-height:1;}
+    .modal-title{font-size:1.2rem;font-weight:bold;margin-bottom:15px;text-align:center;}
 
     /* Gacha UI */
     .modal-tabs{display:flex;gap:8px;margin-bottom:10px;}
-    .modal-tabs button{
-      flex:1;
-      padding:8px;
-      border-radius:10px;
-      border:1px solid #222;
-      background:#fff;
-      cursor:pointer;
-      font-weight:700;
-      color:#111;
-    }
-    .modal-tabs button.active{
-      background:#111;
-      color:#fff;
-      border-color:#111;
-    }
+    .modal-tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid #222;background:#fff;cursor:pointer;font-weight:700;color:#111;}
+    .modal-tabs button.active{background:#111;color:#fff;border-color:#111;}
     .gacha-body-content{text-align:center;padding:10px 0;}
-    .gacha-btn-main{
-      width:100%;
-      padding:16px;
-      font-size:1.2rem;
-      font-weight:bold;
-      color:#fff;
-      background:#111;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      box-shadow:0 6px 0 #444;
-      margin-bottom:10px;
-      transform:translateY(0);
-      transition:all 0.1s;
-    }
-    .gacha-btn-main:active{
-      box-shadow:0 2px 0 #444;
-      transform:translateY(4px);
-    }
-    .gacha-btn-main:disabled{
-      background:#aaa;
-      box-shadow:none;
-      transform:translateY(4px);
-      cursor:not-allowed;
-    }
-    .gacha-result{
-      min-height:60px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:1.2rem;
-      font-weight:bold;
-      color:#111;
-      margin-top:10px;
-      opacity:0;
-      transition:opacity 0.3s;
-    }
-    .gacha-result.show{opacity:1;}
-    .shake-hard{
-      animation:shake 0.5s infinite;
-    }
-    @keyframes shake{
-      0%,100%{transform:translateX(0);}
-      25%{transform:translateX(-5px);}
-      75%{transform:translateX(5px);}
-    }
+    .gacha-btn-main{width:100%;padding:16px;font-size:1.2rem;font-weight:bold;color:#fff;background:#111;border:none;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #444;margin-bottom:10px;transform:translateY(0);transition:all 0.1s;}
+    .gacha-btn-main:active{box-shadow:0 2px 0 #444;transform:translateY(4px);}
+    .gacha-btn-main:disabled{background:#aaa;box-shadow:none;transform:translateY(4px);cursor:not-allowed;}
+    .gacha-result{min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;color:#111;margin-top:10px;opacity:0;transition:opacity 0.3s;} .gacha-result.show{opacity:1;}
+    .shake-hard{animation:shake 0.5s infinite;} @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
     /* Loading */
-    #loading-screen{
-      position:fixed;
-      inset:0;
-      background:#fdf5e6;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      z-index:20000;
-      transition:opacity 0.3s;
-    }
-    #loading-screen.hidden{
-      opacity:0;
-      pointer-events:none;
-    }
-    .spinner{
-      width:40px;
-      height:40px;
-      border:4px solid #ccc;
-      border-top-color:#111;
-      border-radius:50%;
-      animation:spin 0.8s linear infinite;
-      margin-bottom:10px;
-    }
+    #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
+    #loading-screen.hidden{opacity:0;pointer-events:none;}
+    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
   </style>
 </head>
 <body>
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    <p>系統連線中...</p>
-  </div>
+  <div id="loading-screen"><div class="spinner"></div><p>系統連線中...</p></div>
   <div id="fab-overlay" class="hidden" onclick="toggleMenu()"></div>
-  <header id="global-header" class="hidden">
-    <img src="qoopio logo.png" class="header-logo" />
-  </header>
+  <header id="global-header" class="hidden"><img src="qoopio logo.png" class="header-logo" /></header>
 
   <div class="container">
     <div id="login-page" class="hidden page-section">
@@ -633,7 +313,7 @@
         <button onclick="changeMonth(1)">〉</button>
       </div>
       <div id="calendar-grid" class="calendar-grid"></div>
-      <div id="selected-shift">📅 請選擇日期查看班別</div>
+      <div id="selected-shift" class="show">📅 請選擇日期查看班別</div>
     </div>
 
     <div id="page-manager" class="hidden page-section">
@@ -641,12 +321,8 @@
         <button id="mgr-tab-pending" class="active" onclick="showMgrTab('pending')">待審核</button>
         <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
       </div>
-      <div id="mgr-view-pending">
-        <div class="dashboard-card" id="mgr-review-list">載入中...</div>
-      </div>
-      <div id="mgr-view-today" class="hidden">
-        <div class="dashboard-card" id="mgr-dashboard-list">載入中...</div>
-      </div>
+      <div id="mgr-view-pending"><div class="dashboard-card" id="mgr-review-list">載入中...</div></div>
+      <div id="mgr-view-today" class="hidden"><div class="dashboard-card" id="mgr-dashboard-list">載入中...</div></div>
     </div>
 
     <div id="page-admin" class="hidden page-section">
@@ -665,17 +341,11 @@
       <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">請假審核</button></div>
       <div class="fab-option hidden" id="fab-adm"><button class="menu-pill" data-page="admin" onclick="nav('admin')">管理員</button></div>
     </div>
-    <button class="fab-main" onclick="toggleMenu()">
-      <span class="fab-icon-o">O</span>
-      <span class="fab-icon-x">✕</span>
-    </button>
+    <button class="fab-main" onclick="toggleMenu()"><span class="fab-icon-o">O</span><span class="fab-icon-x">✕</span></button>
   </div>
 
   <div class="hud-right" id="hud-right">
-    <button class="gacha-btn" onclick="openModal('gacha')">
-      <img id="gacha-img" src="icon.png" class="gacha-img" />
-      <span class="gacha-badge" id="hud-coin">0</span>
-    </button>
+    <button class="gacha-btn" onclick="openModal('gacha')"><img id="gacha-img" src="icon.png" class="gacha-img" /><span class="gacha-badge" id="hud-coin">0</span></button>
   </div>
 
   <div class="modal" id="modal-gacha">
@@ -753,58 +423,41 @@
   </div>
 
   <script>
-    // ⚠️ 請確認此 URL 是否為 C 表最新部署的 Web App 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
-
+    
     let currentUser = null;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
-    let monthCache = {};
     const GACHA_ICON = "gacha-icon.png?v=4.5";
 
-    // 開機
     window.onload = async () => {
       const img = new Image();
       img.src = GACHA_ICON;
-      img.onload = () => {
-        const gi = document.getElementById("gacha-img");
-        if (gi) gi.src = GACHA_ICON;
-      };
+      img.onload = () => { document.getElementById("gacha-img").src = GACHA_ICON; };
 
       const email = localStorage.getItem("q_email");
       if (email) {
         await appInit(email);
       } else {
         const loading = document.getElementById("loading-screen");
-        const login   = document.getElementById("login-page");
-        const clock   = document.getElementById("page-clock");
-
-        if (loading) loading.classList.add("hidden");
-        if (clock) {
-          clock.classList.add("hidden");
-          clock.classList.remove("visible");
-        }
-        if (login) {
-          login.classList.remove("hidden");
-          requestAnimationFrame(() => login.classList.add("visible"));
-        }
+        const loginPage = document.getElementById("login-page");
+        loading.classList.add("hidden");
+        loginPage.classList.remove("hidden");
+        loginPage.classList.add("visible");
       }
     };
 
     async function appInit(email) {
-      const login = document.getElementById("login-page");
-      const loading = document.getElementById("loading-screen");
-      if (login) login.classList.add("hidden");
-      if (loading) loading.classList.remove("hidden");
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("login-page").classList.remove("visible");
+      document.getElementById("loading-screen").classList.remove("hidden");
       try {
         const res = await fetch(`${API_URL}?action=initApp&email=${email}`);
         const data = await res.json();
         if (!data.ok) { alert(data.msg); resetApp(); return; }
         currentUser = data.user;
         currentUser.email = email;
-
         setupUI(data);
-
         if (data.announcement) {
           const lastRead = localStorage.getItem("q_ann_id");
           if (lastRead != data.announcement.id) {
@@ -814,39 +467,32 @@
             localStorage.setItem("q_ann_id", data.announcement.id);
           }
         }
-
         loadCalendar(currentYear, currentMonth);
         updateMonthShiftMarkers();
-
-        if (loading) loading.classList.add("hidden");
+        document.getElementById("loading-screen").classList.add("hidden");
         document.getElementById("global-header").classList.remove("hidden");
-
-        const clock = document.getElementById("page-clock");
-        if (clock) {
-          clock.classList.remove("hidden");
-          requestAnimationFrame(() => clock.classList.add("visible"));
-        }
-
+        const clockPage = document.getElementById("page-clock");
+        clockPage.classList.remove("hidden");
+        clockPage.classList.add("visible");
         document.getElementById("menu-fab").style.display = "flex";
         document.getElementById("hud-right").style.display = "inline-flex";
+        // 預設 FAB 高亮打卡
+        const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
+        if (clockPill) clockPill.classList.add("active");
       } catch (e) {
         alert("連線失敗，請重試");
-        const loading = document.getElementById("loading-screen");
-        const login   = document.getElementById("login-page");
-        if (loading) loading.classList.add("hidden");
-        if (login) {
-          login.classList.remove("hidden");
-          requestAnimationFrame(() => login.classList.add("visible"));
-        }
+        document.getElementById("loading-screen").classList.add("hidden");
+        const loginPage = document.getElementById("login-page");
+        loginPage.classList.remove("hidden");
+        loginPage.classList.add("visible");
       }
     }
 
     function setupUI(data) {
       document.getElementById("user-label").textContent = currentUser.name;
-      document.getElementById("user-email").textContent = currentUser.email;
+      document.getElementById("user-email").textContent = currentUser.email; 
       document.getElementById("hud-coin").textContent = data.tokens;
       document.getElementById("modal-coin-count").textContent = data.tokens;
-
       const btn = document.getElementById("clockInBtn");
       const status = document.getElementById("status");
       if (data.clockStatus.includes("已")) {
@@ -856,18 +502,14 @@
         btn.textContent = isOff ? "已下班" : "下班";
         btn.style.background = "#333";
         btn.dataset.type = isOff ? "done" : "下班";
-        if (isOff) btn.disabled = true;
+        if(isOff) btn.disabled = true;
       } else {
         btn.textContent = "上班";
         btn.dataset.type = "上班";
       }
-
-      if (currentUser.role === 'manager' || currentUser.role === 'admin')
-        document.getElementById("fab-mgr").classList.remove("hidden");
-      if (currentUser.role === 'admin')
-        document.getElementById("fab-adm").classList.remove("hidden");
-      if (currentUser.role === 'manager' || currentUser.role === 'admin')
-        checkManagerBadge();
+      if (currentUser.role === 'manager' || currentUser.role === 'admin') document.getElementById("fab-mgr").classList.remove("hidden");
+      if (currentUser.role === 'admin') document.getElementById("fab-adm").classList.remove("hidden");
+      if(currentUser.role === 'manager' || currentUser.role === 'admin') checkManagerBadge();
     }
 
     function login() {
@@ -876,9 +518,21 @@
       localStorage.setItem("q_email", email);
       appInit(email);
     }
+
     function resetApp() {
+      // 清掉登入資訊 & 回到登入頁
       localStorage.removeItem("q_email");
-      location.reload();
+      currentUser = null;
+      document.getElementById("global-header").classList.add("hidden");
+      document.getElementById("menu-fab").style.display = "none";
+      document.getElementById("hud-right").style.display = "none";
+      document.querySelectorAll(".page-section").forEach(p=>{
+        p.classList.add("hidden");
+        p.classList.remove("visible");
+      });
+      const loginPage = document.getElementById("login-page");
+      loginPage.classList.remove("hidden");
+      loginPage.classList.add("visible");
     }
 
     // Navigation
@@ -900,151 +554,169 @@
       });
 
       target.classList.remove("hidden");
-      requestAnimationFrame(() => target.classList.add("visible"));
+      requestAnimationFrame(() => {
+        target.classList.add("visible");
+      });
 
       toggleMenu();
       document.querySelectorAll(".menu-pill").forEach(btn => btn.classList.remove("active"));
-      document.querySelector(`.menu-pill[data-page="${page}"]`).classList.add("active");
+      const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
+      if (pill) pill.classList.add("active");
 
       if (page === 'manager') loadManagerData();
       if (page === 'leave') loadLeaveHistory(currentUser.email);
-      if (page === 'schedule') updateMonthShiftMarkers();
+      if (page === 'schedule') {
+        // 切回班表時重新畫 marker
+        updateMonthShiftMarkers();
+      }
     }
 
     function openModal(id) {
       document.getElementById("modal-" + id).classList.add("open");
-      if (id === 'leave') prepareLeaveDates();
+      if(id==='leave') prepareLeaveDates();
     }
     function closeModal(id) {
       document.getElementById("modal-" + id).classList.remove("open");
-      if (id === 'gacha') resetGachaUI();
+      if(id==='gacha') resetGachaUI();
     }
 
-    /* ====== Schedule / Calendar ====== */
-    function loadCalendar(y, m) {
-      const grid = document.getElementById("calendar-grid");
-      grid.innerHTML = "";
-      document.getElementById("calendar-title").textContent = y + " 年 " + (m + 1) + " 月";
+    /* ====== Schedule ====== */
+    function loadCalendar(y,m){
+      const grid=document.getElementById("calendar-grid");
+      grid.innerHTML="";
+      document.getElementById("calendar-title").textContent = y + " 年 " + (m+1) + " 月";
 
-      const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
-      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const firstWeekday = (new Date(y,m,1).getDay()+6)%7; // 週一當第一天
+      const daysInMonth = new Date(y,m+1,0).getDate();
 
-      // 星期列
-      ["一","二","三","四","五","六","日"].forEach(n => {
-        const c = document.createElement("div");
-        c.className = "day-name";
-        c.textContent = n;
+      ["一","二","三","四","五","六","日"].forEach(n=>{
+        const c=document.createElement("div");
+        c.className="day-name";
+        c.textContent=n;
         grid.appendChild(c);
       });
 
-      // 前面空格
-      for (let i = 0; i < firstWeekday; i++) {
+      for(let i=0;i<firstWeekday;i++){
         grid.appendChild(document.createElement("div"));
       }
 
       const today = new Date();
-      const isSameMonth = (today.getFullYear() === y && today.getMonth() === m);
+      const isSameMonth = (today.getFullYear()===y && today.getMonth()===m);
 
-      // 日期
-      for (let d = 1; d <= daysInMonth; d++) {
+      for(let d=1; d<=daysInMonth; d++){
         const cell = document.createElement("div");
         cell.className = "day-cell";
         cell.innerHTML = `<div>${d}</div><div class="day-indicator"></div>`;
 
-        if (isSameMonth && d === today.getDate()) {
+        if(isSameMonth && d === today.getDate()){
           cell.classList.add("today");
         }
 
-        const ds = `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         cell.onclick = () => {
-          document.querySelectorAll(".day-cell").forEach(x => x.classList.remove("selected"));
+          document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
           cell.classList.add("selected");
           const box = document.getElementById("selected-shift");
-          box.innerHTML = `<span class="loading-spinner"></span>讀取中...`;
+          box.classList.remove("show");
+          box.innerHTML = `<div class="shift-date-title">${ds}</div><div style="color:#999">載入中...</div>`;
           loadAllShifts(ds);
         };
+
+        const indexForAnim = d;
+        cell.style.animationDelay = (indexForAnim * 0.01) + "s";
 
         grid.appendChild(cell);
       }
     }
 
-    async function updateMonthShiftMarkers() {
-      if (!currentUser) return;
-      const ym = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
-
-      if (monthCache[ym]) {
-        applyMarkers(monthCache[ym], ym);
-        return;
-      }
-      try {
-        const res = await fetch(`${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(currentUser.email)}`);
-        const d = await res.json();
-        monthCache[ym] = d;
-        applyMarkers(d, ym);
-      } catch (e) {
-        console.log("無法取得有班日", e);
-      }
+    async function updateMonthShiftMarkers(){
+      if(!currentUser) return;
+      try{
+        const ym=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+        const res=await fetch(`${API_URL}?month=${ym}&mode=summary&email=${currentUser.email}`);
+        const d=await res.json();
+        document.querySelectorAll(".day-cell").forEach(c=>{
+          const firstDiv = c.querySelector("div");
+          if(!firstDiv) return;
+          const dv = firstDiv.textContent;
+          if(!dv || isNaN(dv)) return;
+          const f=`${ym}-${String(dv).padStart(2,'0')}`;
+          c.classList.remove("shift-zhongshan","shift-jingmei");
+          if(d.zhongshanDays && d.zhongshanDays.includes(f)) c.classList.add("shift-zhongshan");
+          if(d.jingmeiDays && d.jingmeiDays.includes(f)) c.classList.add("shift-jingmei");
+        });
+      }catch(e){}
     }
 
-    function applyMarkers(data, ym) {
-      const zs = (data && data.zhongshanDays) || [];
-      const jm = (data && data.jingmeiDays) || [];
-      document.querySelectorAll(".day-cell").forEach(c => {
-        c.classList.remove("shift-zhongshan", "shift-jingmei");
-        const numDiv = c.querySelector("div");
-        if (!numDiv) return;
-        const dv = numDiv.textContent;
-        if (!dv || isNaN(dv)) return;
-        const full = `${ym}-${String(dv).padStart(2,'0')}`;
-        if (zs.includes(full)) c.classList.add("shift-zhongshan");
-        if (jm.includes(full)) c.classList.add("shift-jingmei");
-      });
-    }
-
-    function changeMonth(o) {
-      currentMonth += o;
-      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-      loadCalendar(currentYear, currentMonth);
+    function changeMonth(o){
+      currentMonth+=o;
+      if(currentMonth<0){currentMonth=11;currentYear--;}
+      if(currentMonth>11){currentMonth=0;currentYear++;}
+      loadCalendar(currentYear,currentMonth);
       updateMonthShiftMarkers();
     }
-
-    // 班表詳細
+    
+    // 班表詳細 – 版面靠近你截圖的樣子
     async function loadAllShifts(ds) {
       const box = document.getElementById("selected-shift");
-      box.innerHTML = `<span class="loading-spinner"></span>讀取中...`;
+      box.classList.remove("show");
+      box.innerHTML = `<div class="shift-date-title">${ds}</div><div style="color:#999">載入中...</div>`;
 
       try {
         const res = await fetch(`${API_URL}?date=${ds}&mode=all`);
         const d = await res.json();
 
         if (!d.ok || !d.shifts) {
-          box.textContent = "尚無班表資料";
+          box.innerHTML = `<div class="shift-date-title">${ds}</div>尚無班表資料`;
+          box.classList.add("show");
           return;
         }
 
-        let html = `<div class="shift-date-title">${ds} 排班</div>`;
+        let html = `<div class="shift-date-title">${ds}</div>`;
+
+        const buildSection = (title, arr) => {
+          if (!arr || !arr.length) return "";
+          // arr 內容是 "姓名 (中山攝影…)" 這種字串
+          // 盡量拆出角色名稱來排
+          const roleOrder = ["櫃檯","彩妝","攝影","修圖"];
+          const groups = {};
+          arr.forEach(str=>{
+            const m = String(str).match(/^(.+?)\s*\((.+?)\)$/);
+            let name = str;
+            let shift = "";
+            if (m) {
+              name = m[1].trim();
+              shift = m[2].trim();
+            }
+            let role = "";
+            const roleMatch = shift.match(/(櫃檯|彩妝|攝影|修圖)/);
+            role = roleMatch ? roleMatch[1] : "";
+            const key = role || "其他";
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(name);
+          });
+
+          const sortedKeys = Object.keys(groups).sort((a,b)=>{
+            const ia = roleOrder.indexOf(a);
+            const ib = roleOrder.indexOf(b);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          });
+
+          let sec = `<div class="shift-section-title">[${title}]</div>`;
+          sortedKeys.forEach(k=>{
+            sec += `<div class="shift-line">${title}${k}：${groups[k].join("、")}</div>`;
+          });
+          return sec;
+        };
 
         if (d.shifts.zhongshan && d.shifts.zhongshan.length > 0) {
-          html += `
-            <div class="shift-block">
-              <span class="shift-tag shift-tag-zhongshan">中山店</span>
-              <div class="shift-names">${d.shifts.zhongshan.join("、")}</div>
-            </div>`;
+          html += buildSection("中山", d.shifts.zhongshan);
         }
         if (d.shifts.jingmei && d.shifts.jingmei.length > 0) {
-          html += `
-            <div class="shift-block">
-              <span class="shift-tag shift-tag-jingmei">景美店</span>
-              <div class="shift-names">${d.shifts.jingmei.join("、")}</div>
-            </div>`;
+          html += buildSection("景美", d.shifts.jingmei);
         }
         if (d.shifts.other && d.shifts.other.length > 0) {
-          html += `
-            <div class="shift-block">
-              <span class="shift-tag shift-tag-other">其他</span>
-              <div class="shift-names">${d.shifts.other.join("、")}</div>
-            </div>`;
+          html += buildSection("其他", d.shifts.other);
         }
 
         if (
@@ -1052,12 +724,14 @@
           (!d.shifts.jingmei || d.shifts.jingmei.length === 0) &&
           (!d.shifts.other || d.shifts.other.length === 0)
         ) {
-          html += `<div class="shift-block">本日無人排班</div>`;
+          html += `<div class="shift-line">本日無人排班</div>`;
         }
 
         box.innerHTML = html;
+        requestAnimationFrame(() => box.classList.add("show"));
       } catch (e) {
-        box.textContent = "讀取失敗，請稍後再試";
+        box.innerHTML = `<div class="shift-date-title">${ds}</div>讀取失敗，請稍後再試`;
+        box.classList.add("show");
       }
     }
 
@@ -1066,34 +740,17 @@
       const btn = document.getElementById("clockInBtn");
       if (btn.disabled) return;
       if (!confirm(`確定要打「${btn.dataset.type}」卡嗎？`)) return;
-      btn.disabled = true;
-      btn.textContent = "定位中...";
+      btn.disabled = true; btn.textContent = "定位中...";
       navigator.geolocation.getCurrentPosition(async (pos) => {
         btn.textContent = "打卡中...";
         await fetch(API_URL, {
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify({
-            action:"clockIn",
-            email:currentUser.email,
-            type:btn.dataset.type,
-            lat:pos.coords.latitude,
-            lng:pos.coords.longitude
-          })
+          method: "POST", mode: "no-cors",
+          body: JSON.stringify({action:"clockIn",email:currentUser.email,type:btn.dataset.type,lat:pos.coords.latitude,lng:pos.coords.longitude})
         });
         alert("打卡成功");
-        if (btn.dataset.type === "上班") {
-          btn.textContent = "下班";
-          btn.dataset.type = "下班";
-          btn.disabled = false;
-        } else {
-          btn.textContent = "已下班";
-          btn.disabled = true;
-        }
-      }, () => {
-        alert("定位失敗");
-        btn.disabled = false;
-      });
+        if(btn.dataset.type==="上班"){ btn.textContent="下班"; btn.dataset.type="下班"; btn.disabled=false; }
+        else{ btn.textContent="已下班"; btn.disabled=true; }
+      },()=>{ alert("定位失敗"); btn.disabled=false; });
     }
 
     // Manager
@@ -1106,9 +763,8 @@
     async function loadManagerData(){
       const rList=document.getElementById("mgr-review-list");
       const dList=document.getElementById("mgr-dashboard-list");
-      rList.innerHTML="載入中...";
-      dList.innerHTML="載入中...";
-
+      rList.innerHTML="載入中..."; dList.innerHTML="載入中...";
+      
       const rRes=await fetch(`${API_URL}?action=getAllPendingLeaves`);
       const rData=await rRes.json();
       if(rData.items && rData.items.length>0){
@@ -1118,7 +774,7 @@
         rList.innerHTML="無待審核項目";
         document.querySelector('button[data-page="manager"]').classList.remove("has-notif");
       }
-
+      
       const dRes=await fetch(`${API_URL}?action=getManagerDashboard`);
       const dData=await dRes.json();
       if(dData.items) {
@@ -1136,13 +792,8 @@
     }
     async function review(idx,em,dt,st){
       if(!confirm("確定通過?"))return;
-      await fetch(API_URL,{
-        method:"POST",
-        mode:"no-cors",
-        body:JSON.stringify({action:"reviewLeave",rowIndex:idx,email:em,date:dt,status:st})
-      });
-      alert("已審核");
-      loadManagerData();
+      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"reviewLeave",rowIndex:idx,email:em,date:dt,status:st})});
+      alert("已審核"); loadManagerData();
     }
 
     // Admin
@@ -1150,67 +801,42 @@
       const e=document.getElementById("adm-token-email").value;
       const a=document.getElementById("adm-token-amt").value;
       if(!e||!a)return;
-      await fetch(API_URL,{
-        method:"POST",
-        mode:"no-cors",
-        body:JSON.stringify({action:"adminGiveToken",targetEmail:e,amount:a})
-      });
-      alert("已發送");
-      closeModal("admin-token");
+      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminGiveToken",targetEmail:e,amount:a})});
+      alert("已發送"); closeModal("admin-token");
     }
     async function adminSetAnnounce(){
       const t=document.getElementById("adm-ann-title").value;
       const c=document.getElementById("adm-ann-content").value;
-      await fetch(API_URL,{
-        method:"POST",
-        mode:"no-cors",
-        body:JSON.stringify({action:"adminSetAnnounce",title:t,content:c})
-      });
-      alert("已發布");
-      closeModal("admin-announce");
+      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminSetAnnounce",title:t,content:c})});
+      alert("已發布"); closeModal("admin-announce");
     }
     async function adminSync(t){
       if(!confirm("確定執行?"))return;
-      await fetch(API_URL,{
-        method:"POST",
-        mode:"no-cors",
-        body:JSON.stringify({action:"adminSync",type:t})
-      });
-      alert("指令已發送");
-      closeModal("admin-sync");
+      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({action:"adminSync",type:t})});
+      alert("指令已發送"); closeModal("admin-sync");
     }
 
     // Gacha
     function playGacha(){
       const btn=document.getElementById("gacha-action-btn");
       const res=document.getElementById("gacha-result-display");
-      btn.disabled=true;
-      btn.classList.add("shake-hard");
-      res.innerHTML="";
+      btn.disabled=true; btn.classList.add("shake-hard"); res.innerHTML="";
       setTimeout(async()=>{
         btn.classList.remove("shake-hard");
         try{
-          const r=await fetch(API_URL,{
-            method:"POST",
-            body:JSON.stringify({action:"drawGacha",email:currentUser.email})
-          });
+          const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"drawGacha",email:currentUser.email})});
           const d=await r.json();
           if(!d.ok){alert(d.msg);btn.disabled=false;return;}
           document.getElementById("modal-coin-count").textContent=d.balance;
           document.getElementById("hud-coin").textContent=d.balance;
           res.innerHTML=d.win?"<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>":"沒中 😂";
-          res.classList.add("show");
-          btn.disabled=false;
-        }catch(e){
-          alert("連線錯誤");
-          btn.disabled=false;
-        }
+          res.classList.add("show"); btn.disabled=false;
+        }catch(e){alert("連線錯誤");btn.disabled=false;}
       },1500);
     }
     function resetGachaUI(){
-      const r = document.getElementById("gacha-result-display");
-      r.classList.remove("show");
-      r.innerHTML="";
+      document.getElementById("gacha-result-display").classList.remove("show");
+      document.getElementById("gacha-result-display").innerHTML="";
       document.getElementById("gacha-action-btn").disabled=false;
     }
     function switchGachaTab(tab){
@@ -1219,7 +845,7 @@
       if(tab==='play'){
         document.getElementById("gacha-view-play").classList.remove("hidden");
         document.getElementById("gacha-view-log").classList.add("hidden");
-      }else{
+      } else {
         document.getElementById("gacha-view-play").classList.add("hidden");
         document.getElementById("gacha-view-log").classList.remove("hidden");
         renderGachaLog();
@@ -1232,50 +858,36 @@
 
     // Leave Helpers
     function prepareLeaveDates(){
-      const s=document.getElementById("leave-date");
-      s.innerHTML="";
+      const s=document.getElementById("leave-date"); s.innerHTML="";
       for(let i=0;i<30;i++){
-        let d=new Date();
-        d.setDate(d.getDate()+i);
+        let d=new Date(); d.setDate(d.getDate()+i);
         let v=d.toISOString().split('T')[0];
-        let o=document.createElement("option");
-        o.text=v;
-        o.value=v;
-        s.add(o);
+        let o=document.createElement("option"); o.text=v; o.value=v; s.add(o);
       }
     }
     async function submitLeave(){
-      await fetch(API_URL,{
-        method:"POST",
-        mode:"no-cors",
-        body:JSON.stringify({
-          action:"applyLeave",
-          email:currentUser.email,
-          date:document.getElementById("leave-date").value,
-          leaveType:document.getElementById("leave-type").value,
-          reason:document.getElementById("leave-reason").value
-        })
-      });
-      alert("已送出");
-      closeModal("leave");
-      loadLeaveHistory(currentUser.email);
+      await fetch(API_URL,{method:"POST",mode:"no-cors",body:JSON.stringify({
+        action:"applyLeave",email:currentUser.email,
+        date:document.getElementById("leave-date").value,
+        leaveType:document.getElementById("leave-type").value,
+        reason:document.getElementById("leave-reason").value
+      })});
+      alert("已送出"); closeModal("leave"); loadLeaveHistory(currentUser.email);
     }
     async function loadLeaveHistory(e){
       try{
-        const r=await fetch(`${API_URL}?action=leaveHistory&email=${encodeURIComponent(e)}`);
+        const r=await fetch(`${API_URL}?action=leaveHistory&email=${e}`);
         const d=await r.json();
-        document.getElementById("leave-history").innerHTML =
-          d.items.map(i =>
-            `<div class="leave-card">
-              <div class="row-1">
-                <span class="title">${i.leaveType}</span>
-                <span class="status-bar status-${i.status}">${i.status}</span>
-              </div>
-              <div class="info">${i.date}</div>
-            </div>`
-          ).join("");
+        document.getElementById("leave-history").innerHTML=
+          d.items.map(i=>`<div class="leave-card">
+            <div class="row-1">
+              <span class="title">${i.leaveType}</span>
+              <span class="status-bar status-${i.status}">${i.status}</span>
+            </div>
+            <div class="info">${i.date}</div>
+          </div>`).join("");
       }catch(err){
-        console.log(err);
+        document.getElementById("leave-history").textContent="讀取失敗";
       }
     }
   </script>
