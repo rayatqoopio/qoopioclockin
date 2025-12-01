@@ -31,10 +31,11 @@
       opacity:1;
       transform:translateY(0);
     }
+
     /* Login */
     #login-page{padding-top:10vh;}
     .logo-large{width:200px;margin-bottom:1.5rem;}
-    #login-page input{width:80%;padding:0.8rem;margin:1rem 0;border-radius:8px;border:1px solid #ccc;}
+    #login-page input{width:80%;padding:0.8rem;margin:1rem 0;border-radius:8px;border:1px solid:#ccc;}
     #login-page button{padding:0.8rem 1.5rem;background:#111;color:#fff;border:none;border-radius:8px;cursor:pointer;}
 
     /* Clock */
@@ -186,7 +187,7 @@
       margin:4px auto;
     }
 
-    /* 星期列 */
+    /* 星期列（加強版，覆蓋一次） */
     .day-name{
       font-size:0.75rem;
       color:#999;
@@ -194,7 +195,7 @@
       padding:0.1rem 0 0.3rem;
     }
 
-    /* 日期 cell */
+    /* 日期 cell – 動畫版（覆蓋前面設定） */
     .day-cell{
       position:relative;
       padding:6px 0 10px;
@@ -369,7 +370,7 @@
     /* HUD & Modals */
     .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
     .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
-    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
+    .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid:#fff;}
     
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;} .modal.open{display:flex;}
     .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;}
@@ -378,7 +379,7 @@
 
     /* Gacha UI */
     .modal-tabs{display:flex;gap:8px;margin-bottom:10px;}
-    .modal-tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid #222;background:#fff;cursor:pointer;font-weight:700;color:#111;}
+    .modal-tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid:#222;background:#fff;cursor:pointer;font-weight:700;color:#111;}
     .modal-tabs button.active{background:#111;color:#fff;border-color:#111;}
     .gacha-body-content{text-align:center;padding:10px 0;}
     .gacha-btn-main{width:100%;padding:16px;font-size:1.2rem;font-weight:bold;color:#fff;background:#111;border:none;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #444;margin-bottom:10px;transform:translateY(0);transition:all 0.1s;}
@@ -390,7 +391,7 @@
     /* Loading */
     #loading-screen{position:fixed;inset:0;background:#fdf5e6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:opacity 0.3s;}
     #loading-screen.hidden{opacity:0;pointer-events:none;}
-    .spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
+    .spinner{width:40px;height:40px;border:4px solid:#ccc;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;}
     @keyframes spin{to{transform:rotate(360deg);}}
   </style>
 </head>
@@ -544,6 +545,8 @@
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     const GACHA_ICON = "gacha-icon.png?v=4.5";
+    // 月曆快取（避免每次換頁都重抓）
+    const monthCache = {};
 
     window.onload = async () => {
       const img = new Image(); img.src=GACHA_ICON;
@@ -580,7 +583,9 @@
         updateMonthShiftMarkers();
         document.getElementById("loading-screen").classList.add("hidden");
         document.getElementById("global-header").classList.remove("hidden");
-        document.getElementById("page-clock").classList.remove("hidden");
+        const clockPage = document.getElementById("page-clock");
+        clockPage.classList.remove("hidden");
+        requestAnimationFrame(()=>clockPage.classList.add("visible"));
         document.getElementById("menu-fab").style.display = "flex";
         document.getElementById("hud-right").style.display = "inline-flex";
       } catch (e) {
@@ -651,13 +656,16 @@
 
       if (page === 'manager') loadManagerData();
       if (page === 'leave') loadLeaveHistory(currentUser.email);
+      if (page === 'schedule') updateMonthShiftMarkers();
     }
+
     function openModal(id) { document.getElementById("modal-" + id).classList.add("open"); if(id==='leave') prepareLeaveDates(); }
     function closeModal(id) { document.getElementById("modal-" + id).classList.remove("open"); if(id==='gacha') resetGachaUI(); }
 
-    // Schedule
+    // ===== Schedule（月曆） =====
     function loadCalendar(y,m){
       const grid=document.getElementById("calendar-grid");
+      if(!grid) return;
       grid.innerHTML="";
       document.getElementById("calendar-title").textContent = y + " 年 " + (m+1) + " 月";
 
@@ -707,22 +715,52 @@
         grid.appendChild(cell);
       }
     }
+
     async function updateMonthShiftMarkers(){
+      if (!currentUser || !currentUser.email) return;
+      const ym = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+
+      // 有快取就直接用
+      if (monthCache[ym]) {
+        applyMonthMarkers(monthCache[ym]);
+        return;
+      }
+
       try{
-        const ym=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
-        const res=await fetch(`${API_URL}?month=${ym}&mode=summary&email=${currentUser.email}`);
-        const d=await res.json();
-        document.querySelectorAll(".day-cell").forEach(c=>{
-          const dv=c.querySelector("div").textContent; if(!dv)return;
-          const f=`${ym}-${String(dv).padStart(2,'0')}`;
-          if(d.zhongshanDays.includes(f))c.classList.add("shift-zhongshan");
-          if(d.jingmeiDays.includes(f))c.classList.add("shift-jingmei");
-        });
-      }catch(e){}
+        const res = await fetch(`${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(currentUser.email)}`);
+        const d   = await res.json();
+        monthCache[ym] = d || {};
+        applyMonthMarkers(monthCache[ym]);
+      }catch(e){
+        console.log("無法取得有班日", e);
+      }
     }
-    function changeMonth(o){currentMonth+=o;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}loadCalendar(currentYear,currentMonth);updateMonthShiftMarkers();}
+
+    function applyMonthMarkers(d){
+      const ym = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+      const zs = (d && d.zhongshanDays) || [];
+      const jm = (d && d.jingmeiDays)  || [];
+
+      document.querySelectorAll(".day-cell").forEach(c=>{
+        c.classList.remove("shift-zhongshan","shift-jingmei");
+        const firstDiv = c.querySelector("div");
+        const dv = firstDiv ? firstDiv.textContent : "";
+        if(!dv || isNaN(dv)) return;
+        const f = `${ym}-${String(dv).padStart(2,'0')}`;
+        if(zs.includes(f)) c.classList.add("shift-zhongshan");
+        if(jm.includes(f)) c.classList.add("shift-jingmei");
+      });
+    }
+
+    function changeMonth(o){
+      currentMonth+=o;
+      if(currentMonth<0){currentMonth=11;currentYear--;}
+      if(currentMonth>11){currentMonth=0;currentYear++;}
+      loadCalendar(currentYear,currentMonth);
+      updateMonthShiftMarkers();
+    }
     
-    // 班表詳細 (Restore Good Old Memory)
+    // 班表詳細 (Restore Good Old Memory + 新樣式)
     async function loadAllShifts(ds) {
       const box = document.getElementById("selected-shift");
       box.classList.remove("show");
@@ -787,7 +825,7 @@
       btn.disabled = true; btn.textContent = "定位中...";
       navigator.geolocation.getCurrentPosition(async (pos) => {
         btn.textContent = "打卡中...";
-        const res = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: "POST", mode: "no-cors",
           body: JSON.stringify({action:"clockIn",email:currentUser.email,type:btn.dataset.type,lat:pos.coords.latitude,lng:pos.coords.longitude})
         });
