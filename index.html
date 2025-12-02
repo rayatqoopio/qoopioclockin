@@ -595,44 +595,53 @@
     }
   }
 
-  function setupUI(data) {
-    document.getElementById("user-label").textContent = currentUser.name || "";
-    document.getElementById("user-email").textContent = currentUser.email || "";
-    document.getElementById("hud-coin").textContent = data.tokens || 0;
-    document.getElementById("modal-coin-count").textContent = data.tokens || 0;
-
+    function setupUI(data) {
     const nameEl   = document.getElementById("user-label");
     const symbolEl = document.getElementById("user-symbol");
     const emailEl  = document.getElementById("user-email");
+    const btn      = document.getElementById("clockInBtn");
+    const statusEl = document.getElementById("status");
   
-    nameEl.textContent = currentUser.name || "";
+    // 從後端帶回來的打卡狀態
+    const clockStatus = data.clockStatus || "";
   
-    // 新增：顯示符號（如果有）
+    // 顯示名稱 / Email
+    nameEl.textContent  = currentUser.name  || "";
+    emailEl.textContent = currentUser.email || "";
+  
+    // 顯示符號（如果有人員名單有填）
     if (currentUser.symbol) {
       symbolEl.textContent = currentUser.symbol;
       symbolEl.classList.remove("hidden");
     } else {
       symbolEl.textContent = "";
-      symbolEl.classList.add("hidden"); // 沒填就不佔空間
+      symbolEl.classList.add("hidden"); // 沒填就不顯示那一行
     }
-
+  
+    // 代幣
+    document.getElementById("hud-coin").textContent        = data.tokens || 0;
+    document.getElementById("modal-coin-count").textContent = data.tokens || 0;
+  
+    // 打卡按鈕 / 狀態文字
     if (clockStatus.includes("已")) {
-      status.textContent = clockStatus;
-      status.style.color = "green";
+      statusEl.textContent = clockStatus;
+      statusEl.style.color = "green";
+  
       const isOff = clockStatus.includes("下班");
-      btn.textContent = isOff ? "已下班" : "下班";
+      btn.textContent   = isOff ? "已下班" : "下班";
       btn.style.background = "#333";
-      btn.dataset.type = isOff ? "done" : "下班";
-      btn.disabled = !!isOff;
+      btn.dataset.type  = isOff ? "done" : "下班";
+      btn.disabled      = !!isOff;
     } else {
-      status.textContent = clockStatus || "今日未打卡";
-      status.style.color = "#8B0000";
-      btn.textContent = "上班";
-      btn.dataset.type = "上班";
-      btn.disabled = false;
+      statusEl.textContent = clockStatus || "今日未打卡";
+      statusEl.style.color = "#8B0000";
+      btn.textContent   = "上班";
+      btn.dataset.type  = "上班";
+      btn.disabled      = false;
       btn.style.background = "#111";
     }
-
+  
+    // 權限：manager / admin
     if (currentUser.role === "manager" || currentUser.role === "admin") {
       document.getElementById("fab-mgr").classList.remove("hidden");
       checkManagerBadge();
