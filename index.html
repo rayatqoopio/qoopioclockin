@@ -265,7 +265,7 @@
     .menu-pill.has-notif::after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;background:#ff3b30;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
 
     /* HUD & Modals */
-    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10001;}
+    .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10025;}
     .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
     .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
     
@@ -307,46 +307,6 @@
     }
     @keyframes spin{to{transform:rotate(360deg);}}
 
-        /* === 全局文字樣式統一 === */
-    * {
-      color: #333;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-    }
-    
-    /* 連結（避免變藍色） */
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-    
-    /* 避免 iOS/Android 對按鈕強制藍色樣式 */
-    button {
-      background: #111;
-      color: #fff;
-      border: none;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-    }
-    button:active {
-      opacity: 0.7;
-    }
-    
-    /* input/select */
-    input, select, textarea {
-      color: #333 !important;
-      background-color: #fff !important;
-      border: 1px solid #ccc;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-    }
-    
-    input::placeholder, textarea::placeholder {
-      color: #999;
-    }
-    
-    /* 選取文字（避免高亮藍色太突兀） */
-    ::selection {
-      background: #ffe7b8;
-      color: #111;
-    }
   </style>
 </head>
 <body>
@@ -408,7 +368,7 @@
     </div>
 
     <div id="page-admin" class="hidden page-section">
-      <div class="dash-title">管理員功能</div>
+      <div class="dash-title">在狗叫什麼</div>
       <button class="admin-menu-btn" onclick="openModal('admin-token')">
         🎁 發送扭蛋代幣 <span>›</span>
       </button>
@@ -599,8 +559,6 @@
     if (header) header.classList.add("hidden");
     const fab = document.getElementById("menu-fab");
     if (fab) fab.style.display = "none";
-    const hud = document.getElementById("hud-right");
-    if (hud) hud.style.display = "none";
 
     const loginPage = document.getElementById("login-page");
     if (loginPage) {
@@ -771,14 +729,17 @@
     const fab     = document.querySelector(".fab-main");
     const hud     = document.getElementById("hud-right");
   
+    // 現在這次呼叫 toggleMenu 之後，導覽列會變成「打開」還是「關閉」？
+    const willOpen = sheet.classList.contains("hidden"); 
+    // 如果原本是 hidden，代表這次會被打開
+  
     sheet.classList.toggle("hidden");
     overlay.classList.toggle("hidden");
     fab.classList.toggle("open");
   
-    // ✅ 只要導覽列展開，就顯示扭蛋機；收起就隱藏
+    // 導覽列打開時顯示扭蛋機，關掉時隱藏
     if (hud) {
-      const isMenuOpen = !sheet.classList.contains("hidden");
-      hud.style.display = isMenuOpen ? "inline-flex" : "none";
+      hud.style.display = willOpen ? "inline-flex" : "none";
     }
   }
 
@@ -1295,12 +1256,13 @@
       alert("請先登入");
       return;
     }
+  
     btn.disabled = true;
-    btn.classList.add("shake-hard");
-    res.innerHTML = "";
+    btn.classList.add("shake-hard");  // 一開始就開始晃
     res.classList.remove("show");
-
-    setTimeout(async ()=>{
+    res.innerHTML = "";
+  
+    (async () => {
       try {
         const r = await fetch(API_URL, {
           method: "POST",
@@ -1309,10 +1271,14 @@
         const d = await r.json();
         if (!d.ok) {
           alert(d.msg || "代幣不足");
+          btn.disabled = false;
+          btn.classList.remove("shake-hard"); // 出錯時停掉動畫
           return;
         }
+  
         document.getElementById("modal-coin-count").textContent = d.balance;
         document.getElementById("hud-coin").textContent = d.balance;
+  
         res.innerHTML = d.win
           ? "<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>"
           : "哈哈沒中啦";
@@ -1321,11 +1287,11 @@
         console.error(e);
         alert("連線錯誤");
       } finally {
-        // ✅ 到結果出來 / 錯誤時才停止動畫＋解鎖按鈕
-        btn.classList.remove("shake-hard");
+        // ✅ 無論成功 / 失敗，結果顯示後才停
         btn.disabled = false;
+        btn.classList.remove("shake-hard");
       }
-    }, 1500);
+    })();
   }
 
   function resetGachaUI() {
