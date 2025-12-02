@@ -74,6 +74,7 @@
       padding-top:10vh;padding-bottom:15vh;
     }
     .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
+    .user-symbol{font-size:0.95rem;color:#444;margin-bottom:0.3rem;}
     .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
     #clockInBtn{
       width:80%;padding:1.7rem;font-size:1.3rem;
@@ -327,6 +328,7 @@
 
     <div id="page-clock" class="hidden page-section">
       <div id="user-label" class="user-label"></div>
+      <div id="user-symbol" class="user-symbol"></div>  <!-- 新增這行 -->
       <div id="user-email" class="user-email"></div>
       <button id="clockInBtn" type="button" onclick="submitClockIn()">讀取中...</button>
       <button onclick="resetApp()" class="logout-btn">登出</button>
@@ -599,9 +601,20 @@
     document.getElementById("hud-coin").textContent = data.tokens || 0;
     document.getElementById("modal-coin-count").textContent = data.tokens || 0;
 
-    const btn = document.getElementById("clockInBtn");
-    const status = document.getElementById("status");
-    const clockStatus = data.clockStatus || "";
+    const nameEl   = document.getElementById("user-label");
+    const symbolEl = document.getElementById("user-symbol");
+    const emailEl  = document.getElementById("user-email");
+  
+    nameEl.textContent = currentUser.name || "";
+  
+    // 新增：顯示符號（如果有）
+    if (currentUser.symbol) {
+      symbolEl.textContent = currentUser.symbol;
+      symbolEl.classList.remove("hidden");
+    } else {
+      symbolEl.textContent = "";
+      symbolEl.classList.add("hidden"); // 沒填就不佔空間
+    }
 
     if (clockStatus.includes("已")) {
       status.textContent = clockStatus;
