@@ -442,14 +442,47 @@
     </div>
   </div>
 
+    <!-- Review Leave Modal -->
+  <div class="modal" id="modal-review">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('review')">✕</button>
+      <div class="modal-title">請假審核</div>
+      <div style="font-size:0.95rem; line-height:1.7;">
+        <div><b>申請人：</b><span id="rv-name"></span></div>
+        <div><b>申請時間：</b><span id="rv-appliedAt"></span></div>
+        <div><b>請假日期：</b><span id="rv-date"></span></div>
+        <div><b>假別：</b><span id="rv-type"></span></div>
+        <div><b>原因：</b><span id="rv-reason"></span></div>
+      </div>
+      <div style="margin-top:12px;">
+        <label style="font-size:0.9rem;display:block;margin-bottom:4px;">審核備註（選填）</label>
+        <textarea id="rv-note" class="admin-input" rows="3" placeholder="例如：班表已調整、請補假單..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="admin-action-btn" style="flex:1;background:#27ae60;"
+                onclick="handleReviewAction('通過')">通過</button>
+        <button class="admin-action-btn" style="flex:1;background:#c0392b;"
+                onclick="handleReviewAction('退回')">退回</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin: Token -->
   <div class="modal" id="modal-admin-token">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('admin-token')">✕</button>
       <div class="modal-title">發送代幣</div>
-      <input id="adm-token-email" class="admin-input" placeholder="員工 Email" />
-      <input id="adm-token-amt" class="admin-input" type="number" placeholder="數量" />
-      <button class="admin-action-btn" onclick="adminGiveToken()">發送</button>
+
+      <div style="font-size:0.9rem;margin-bottom:6px;">選擇對象（可複選）</div>
+      <div id="adm-user-list"
+           style="max-height:180px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:0.9rem;text-align:left;">
+        讀取中...
+      </div>
+
+      <input id="adm-token-amt" class="admin-input" type="number" placeholder="每人發放數量" />
+      <input id="adm-token-reason" class="admin-input" placeholder="原因（例如：活動獎勵、表現優秀…）" />
+
+      <button id="adm-token-submit" class="admin-action-btn" onclick="adminGiveToken()">發送</button>
     </div>
   </div>
 
@@ -461,6 +494,7 @@
       <input id="adm-ann-title" class="admin-input" placeholder="標題" />
       <textarea id="adm-ann-content" class="admin-input" rows="4" placeholder="內容..."></textarea>
       <button class="admin-action-btn" onclick="adminSetAnnounce()">發布</button>
+      <button id="adm-announce-submit" class="admin-action-btn" onclick="adminSetAnnounce()">發布</button>
     </div>
   </div>
 
@@ -483,6 +517,17 @@
     </div>
   </div>
 
+    <!-- Token Reward Modal -->
+  <div class="modal" id="modal-token-reward">
+    <div class="modal-card" style="text-align:center">
+      <div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px;">🎁 你有新的代幣</div>
+      <div style="font-size:0.95rem;margin-bottom:16px;">
+        本次新增 <span id="reward-token-amount" style="font-weight:bold;"></span> 顆代幣
+      </div>
+      <button class="admin-action-btn" onclick="closeModal('token-reward')">收下代幣</button>
+    </div>
+  </div>
+
 <script>
   // ⚠️ C 表 Web App URL
   const API_URL =
@@ -491,6 +536,9 @@
   let currentUser = null;
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
+  let pendingLeaveItems = [];
+  let currentReviewIndex = null;
+  let allUsersForAdmin = [];
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
   /** 只顯示登入頁，其他全部收起來（避免看到「白畫面」） */
@@ -558,6 +606,17 @@
 
       setupUI(data);
 
+      // ✅ 代幣差額提示（登入時）
+      const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
+      const nowBalance  = Number(data.tokens || 0);
+      if (nowBalance > prevBalance) {
+        const diff = nowBalance - prevBalance;
+        const span = document.getElementById("reward-token-amount");
+        if (span) span.textContent = diff;
+        openModal("token-reward");
+      }
+      localStorage.setItem("q_token_balance", nowBalance);
+
       // 公告
       if (data.announcement) {
         const lastRead = localStorage.getItem("q_ann_id");
@@ -582,8 +641,6 @@
 
       const fab = document.getElementById("menu-fab");
       if (fab) fab.style.display = "flex";
-      const hud = document.getElementById("hud-right");
-      if (hud) hud.style.display = "inline-flex";
 
       document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
       const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
@@ -667,12 +724,22 @@
 
   // ===== 導覽 FAB =====
   function toggleMenu() {
-    const sheet = document.getElementById("menu-sheet");
+    const sheet   = document.getElementById("menu-sheet");
     const overlay = document.getElementById("fab-overlay");
-    const fab = document.querySelector(".fab-main");
+    const fab     = document.querySelector(".fab-main");
+    const hud     = document.getElementById("hud-right");
+
     sheet.classList.toggle("hidden");
     overlay.classList.toggle("hidden");
     fab.classList.toggle("open");
+
+    // 只有「主頁 (打卡) + 選單展開」時顯示扭蛋機
+    if (hud) {
+      const isMenuOpen = !sheet.classList.contains("hidden");
+      const activePill = document.querySelector(".menu-pill.active");
+      const isOnClock  = activePill && activePill.dataset.page === "clock";
+      hud.style.display = isMenuOpen && isOnClock ? "inline-flex" : "none";
+    }
   }
 
   function nav(page) {
@@ -705,6 +772,7 @@
     if (!el) return;
     el.classList.add("open");
     if (id === "leave") prepareLeaveDates();
+    if (id === "admin-token") loadAdminUserList();   // ✅ 新增
   }
   function closeModal(id) {
     const el = document.getElementById("modal-" + id);
@@ -971,16 +1039,27 @@
       const rData = await rRes.json();
       const items = (rData && rData.items) || [];
 
+      // ✅ 把結果存起來，後面審核用
+      pendingLeaveItems = items;
+
       const mgrBtn = document.querySelector('button[data-page="manager"]');
       if (mgrBtn) mgrBtn.classList.toggle("has-notif", items.length > 0);
 
       if (items.length) {
-        rList.innerHTML = items.map(i=>
+        rList.innerHTML = items.map((i, idx)=>
           `<div class="dash-item">
              <span>${i.name} - ${i.leaveType} (${i.date})</span>
-             <button class="btn-approve" onclick="review(${i.rowIndex}, '${i.email}', '${i.date}', '通過')">✅</button>
+             <button class="btn-approve btn-review" data-idx="${idx}">審核</button>
            </div>`
         ).join("");
+
+        // 綁定審核按鈕事件
+        rList.querySelectorAll(".btn-review").forEach(btn=>{
+          btn.addEventListener("click", ()=>{
+            const idx = Number(btn.dataset.idx);
+            openReviewModal(idx);
+          });
+        });
       } else {
         rList.innerHTML = "無待審核項目";
       }
@@ -1044,6 +1123,54 @@
     }
   }
 
+    function openReviewModal(idx) {
+    currentReviewIndex = idx;
+    const item = pendingLeaveItems[idx];
+    if (!item) return;
+
+    document.getElementById("rv-name").textContent      = item.name || "";
+    document.getElementById("rv-appliedAt").textContent = item.appliedAt || "";
+    document.getElementById("rv-date").textContent      = item.date || "";
+    document.getElementById("rv-type").textContent      = item.leaveType || "";
+    document.getElementById("rv-reason").textContent    = item.reason || "";
+    document.getElementById("rv-note").value            = "";
+
+    openModal("review");
+  }
+
+  async function handleReviewAction(statusText) {
+    if (currentReviewIndex == null) return;
+    const item = pendingLeaveItems[currentReviewIndex];
+    if (!item) return;
+
+    if (!confirm(`確定要將「${item.name} ${item.date} 的 ${item.leaveType}」標記為「${statusText}」嗎？`)) {
+      return;
+    }
+
+    const note = document.getElementById("rv-note").value.trim();
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          action: "reviewLeave",
+          rowIndex: item.rowIndex,   // 直接用後端給的 rowIndex
+          email: item.email,
+          date: item.date,
+          status: statusText,
+          note: note
+        }),
+      });
+      alert("已送出審核結果");
+      closeModal("review");
+      loadManagerData();
+    } catch (e) {
+      console.error(e);
+      alert("審核失敗，請稍後再試");
+    }
+  }
+  
   // ===== Admin =====
   async function adminGiveToken() {
     const e = document.getElementById("adm-token-email").value.trim();
@@ -1068,28 +1195,56 @@
   async function adminSetAnnounce() {
     const t = document.getElementById("adm-ann-title").value;
     const c = document.getElementById("adm-ann-content").value;
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({
-        action: "adminSetAnnounce",
-        title: t,
-        content: c,
-      }),
-    });
-    alert("已發布");
-    closeModal("admin-announce");
+    const btn = document.getElementById("adm-announce-submit");
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "發布中...";
+    }
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          action: "adminSetAnnounce",
+          title: t,
+          content: c,
+        }),
+      });
+      alert("已發布");
+      closeModal("admin-announce");
+    } catch (e) {
+      console.error(e);
+      alert("發布失敗，請稍後再試");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "發布";
+      }
+    }
   }
 
   async function adminSync(t) {
     if (!confirm("確定執行?")) return;
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ action: "adminSync", type: t }),
-    });
-    alert("指令已發送");
-    closeModal("admin-sync");
+
+    const buttons = document.querySelectorAll("#modal-admin-sync .admin-menu-btn");
+    buttons.forEach(b => b.disabled = true);
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ action: "adminSync", type: t }),
+      });
+      alert("指令已發送");
+      closeModal("admin-sync");
+    } catch (e) {
+      console.error(e);
+      alert("執行失敗，請稍後再試");
+    } finally {
+      buttons.forEach(b => b.disabled = false);
+    }
   }
 
   // ===== Gacha =====
@@ -1103,8 +1258,9 @@
     btn.disabled = true;
     btn.classList.add("shake-hard");
     res.innerHTML = "";
+    res.classList.remove("show");
+
     setTimeout(async ()=>{
-      btn.classList.remove("shake-hard");
       try {
         const r = await fetch(API_URL, {
           method: "POST",
@@ -1113,7 +1269,6 @@
         const d = await r.json();
         if (!d.ok) {
           alert(d.msg || "代幣不足");
-          btn.disabled = false;
           return;
         }
         document.getElementById("modal-coin-count").textContent = d.balance;
@@ -1122,10 +1277,12 @@
           ? "<span style='color:red;font-size:1.5rem'>🎉 中獎！</span>"
           : "哈哈沒中啦";
         res.classList.add("show");
-        btn.disabled = false;
       } catch (e) {
         console.error(e);
         alert("連線錯誤");
+      } finally {
+        // ✅ 到結果出來 / 錯誤時才停止動畫＋解鎖按鈕
+        btn.classList.remove("shake-hard");
         btn.disabled = false;
       }
     }, 1500);
@@ -1156,6 +1313,88 @@
       "<div style='text-align:center;padding:10px;color:#999'>開發中...</div>";
   }
 
+    // 需要後端提供：GET ?action=listUsers
+  // 回傳格式示意：
+  // { ok:true, items:[ {email:"a@...", name:"某某", symbol:"🐻"}, ... ] }
+  async function loadAdminUserList() {
+    const box = document.getElementById("adm-user-list");
+    if (!box) return;
+    box.textContent = "讀取中...";
+
+    try {
+      const r = await fetch(`${API_URL}?action=listUsers`);
+      const d = await r.json();
+      const items = d.items || [];
+      allUsersForAdmin = items;
+
+      if (!items.length) {
+        box.textContent = "尚無人員名單";
+        return;
+      }
+
+      box.innerHTML = items.map((u, idx)=>
+        `<label style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+           <input type="checkbox" class="adm-user-checkbox" data-email="${u.email}" />
+           <span>${u.name}${u.symbol ? `（${u.symbol}）` : ""} 
+             <small style="color:#999;">${u.email}</small>
+           </span>
+         </label>`
+      ).join("");
+    } catch (e) {
+      console.error(e);
+      box.textContent = "讀取失敗";
+    }
+  }
+
+  async function adminGiveToken() {
+    const checkboxes = Array.from(
+      document.querySelectorAll(".adm-user-checkbox:checked")
+    );
+    const amount = Number(document.getElementById("adm-token-amt").value);
+    const reason = document.getElementById("adm-token-reason").value.trim();
+
+    if (!checkboxes.length) {
+      alert("請至少選擇一位員工");
+      return;
+    }
+    if (!amount) {
+      alert("請輸入發放數量");
+      return;
+    }
+
+    const btn = document.getElementById("adm-token-submit");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "發送中...";
+    }
+
+    try {
+      for (const cb of checkboxes) {
+        const email = cb.dataset.email;
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify({
+            action: "adminGiveToken",
+            targetEmail: email,
+            amount: amount,
+            reason: reason,
+          }),
+        });
+      }
+      alert("已發送");
+      closeModal("admin-token");
+    } catch (e) {
+      console.error(e);
+      alert("發送失敗，請稍後再試");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "發送";
+      }
+    }
+  }
+  
   // ===== Leave =====
   function prepareLeaveDates() {
     const s = document.getElementById("leave-date");
@@ -1176,20 +1415,37 @@
       alert("請先登入");
       return;
     }
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({
-        action: "applyLeave",
-        email: currentUser.email,
-        date: document.getElementById("leave-date").value,
-        leaveType: document.getElementById("leave-type").value,
-        reason: document.getElementById("leave-reason").value,
-      }),
-    });
-    alert("已送出");
-    closeModal("leave");
-    loadLeaveHistory(currentUser.email);
+
+    const btn = document.querySelector("#modal-leave .admin-action-btn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "送出中...";
+    }
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          action: "applyLeave",
+          email: currentUser.email,
+          date: document.getElementById("leave-date").value,
+          leaveType: document.getElementById("leave-type").value,
+          reason: document.getElementById("leave-reason").value,
+        }),
+      });
+      alert("已送出");
+      closeModal("leave");
+      loadLeaveHistory(currentUser.email);
+    } catch (e) {
+      console.error(e);
+      alert("送出失敗，請稍後再試");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "送出申請";
+      }
+    }
   }
 
   async function loadLeaveHistory(e) {
