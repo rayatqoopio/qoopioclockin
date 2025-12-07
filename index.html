@@ -495,7 +495,6 @@
       <div class="modal-title">發布公告</div>
       <input id="adm-ann-title" class="admin-input" placeholder="標題" />
       <textarea id="adm-ann-content" class="admin-input" rows="4" placeholder="內容..."></textarea>
-      <button class="admin-action-btn" onclick="adminSetAnnounce()">發布</button>
       <button id="adm-announce-submit" class="admin-action-btn" onclick="adminSetAnnounce()">發布</button>
     </div>
   </div>
@@ -653,19 +652,31 @@
   }
 
   function setupUI(data) {
+    // ===== 先重置權限相關 UI =====
+    const mgrFab = document.getElementById("fab-mgr");
+    const admFab = document.getElementById("fab-adm");
+    if (mgrFab) mgrFab.classList.add("hidden");
+    if (admFab) admFab.classList.add("hidden");
+  
+    const mgrPill = document.querySelector('.menu-pill[data-page="manager"]');
+    const admPill = document.querySelector('.menu-pill[data-page="admin"]');
+    if (mgrPill) mgrPill.classList.remove("has-notif");
+    // （頁面本身是否能被直接 nav 到，你目前是沒鎖，但入口按鈕看不到就好）
+  
+    // ===== 以下維持原本邏輯 =====
     const nameEl   = document.getElementById("user-label");
     const symbolEl = document.getElementById("user-symbol");
     const emailEl  = document.getElementById("user-email");
     const btn      = document.getElementById("clockInBtn");
     const status   = document.getElementById("status");
-  
+    
     const clockStatus = data.clockStatus || "";
-  
+    
     // 名稱、Email
     nameEl.textContent  = currentUser.name  || "";
     emailEl.textContent = currentUser.email || "";
-  
-    // 符號（如果有就顯示，沒有就隱藏）
+    
+    // 符號
     if (currentUser.symbol) {
       symbolEl.textContent = currentUser.symbol;
       symbolEl.classList.remove("hidden");
@@ -673,11 +684,11 @@
       symbolEl.textContent = "";
       symbolEl.classList.add("hidden");
     }
-  
+    
     // 代幣數
-    document.getElementById("hud-coin").textContent        = data.tokens || 0;
+    document.getElementById("hud-coin").textContent         = data.tokens || 0;
     document.getElementById("modal-coin-count").textContent = data.tokens || 0;
-  
+    
     // 打卡狀態
     if (clockStatus.includes("已")) {
       status.textContent = clockStatus;
@@ -695,14 +706,14 @@
       btn.disabled = false;
       btn.style.background = "#111";
     }
-  
-    // 權限：manager / admin 才看得到請假審核 / 管理員
+    
+    // 權限：manager / admin
     if (currentUser.role === "manager" || currentUser.role === "admin") {
-      document.getElementById("fab-mgr").classList.remove("hidden");
+      if (mgrFab) mgrFab.classList.remove("hidden");
       checkManagerBadge();
     }
     if (currentUser.role === "admin") {
-      document.getElementById("fab-adm").classList.remove("hidden");
+      if (admFab) admFab.classList.remove("hidden");
     }
   }
 
@@ -718,7 +729,17 @@
 
   function resetApp() {
     localStorage.removeItem("q_email");
+    // 如果希望代幣差額提示重新計算，也可以順便清
+    // localStorage.removeItem("q_token_balance");
+  
     currentUser = null;
+  
+    // 把 FAB 應該看不到的先藏起來（保險）
+    const mgrFab = document.getElementById("fab-mgr");
+    const admFab = document.getElementById("fab-adm");
+    if (mgrFab) mgrFab.classList.add("hidden");
+    if (admFab) admFab.classList.add("hidden");
+  
     showLoginOnly();
   }
 
