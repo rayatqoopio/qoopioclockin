@@ -972,15 +972,15 @@
       return;
     }
     if (btn.disabled) return;
-
+  
     const type = btn.dataset.type || "上班";
     if (type === "done") return;
-
+  
     if (!confirm(`確定要打「${type}」卡嗎？`)) return;
-
+  
     btn.disabled = true;
     btn.textContent = "定位中...";
-
+  
     navigator.geolocation.getCurrentPosition(
       async (pos)=>{
         btn.textContent = "打卡中...";
