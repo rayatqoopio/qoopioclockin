@@ -78,51 +78,6 @@
     .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
     .user-symbol{font-size:0.95rem;color:#444;margin-bottom:0.3rem;}
     .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
-    /* Clock Header：左紙娃娃 + 右資訊列 */
-    .clockin-header{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-bottom:1.2rem;}
-    /* 紅色框：之後放紙娃娃 */
-    .avatar-slot{
-      flex:0 0 96px;          /* 紙娃娃寬度，可自行調整 */
-      aspect-ratio:3 / 4;     /* 紙娃娃比例 */
-      border:2px solid red;   /* 之後可以拿掉，只是幫你看到框 */
-      border-radius:10px;
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-sizing:border-box;
-    }
-    .avatar-placeholder{font-size:12px;opacity:0.6;}
-    .user-info-block{
-      flex:1;
-      border:1px dashed green;   /* 之後可以拿掉 */
-      border-radius:8px;
-      padding:6px 10px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:4px;
-      box-sizing:border-box;
-      min-width:0;          /* 讓 flex 裡面的寬度可以縮 */
-    }
-    
-    /* 三行文字：單行、不換行、交給 JS 自動縮字級 */
-    .user-info-block > div{white-space:nowrap;overflow:hidden;text-overflow:clip;}       /* 不要 … 由縮字來處理 */
-    
-    /* 風格微調 */
-    .user-name{font-weight:600;}
-    .user-symbol{opacity:0.85;}
-    .user-email{opacity:0.7;font-family:monospace;}
-    
-    /* 統一打卡區塊 layout */
-    #page-clock{
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-      padding-top:10vh;
-      padding-bottom:15vh;
-      align-items:stretch;
-    }
     #clockInBtn{
       width:80%;padding:1.7rem;font-size:1.3rem;
       background:#111;color:#fff;border:none;border-radius:10px;
@@ -375,33 +330,10 @@
     </div>
 
     <div id="page-clock" class="hidden page-section">
-      <!-- 頂部：紙娃娃 + 使用者資訊 -->
-      <div class="clockin-header">
-        <!-- 紅色框：未來紙娃娃顯示區 -->
-        <div class="avatar-slot">
-          <!-- 之後可以換成 <img> 或 canvas -->
-          <span class="avatar-placeholder">紙娃娃</span>
-        </div>
-    
-        <!-- 綠色框：名稱 / 符號 / email（自動縮字級） -->
-        <div class="user-info-block">
-          <div id="user-label"
-               class="user-name auto-fit-text"
-               data-min="14" data-max="20"></div>
-    
-          <div id="user-symbol"
-               class="user-symbol auto-fit-text"
-               data-min="12" data-max="18"></div>
-    
-          <div id="user-email"
-               class="user-email auto-fit-text"
-               data-min="10" data-max="16"></div>
-        </div>
-      </div>
-    
-      <!-- 中間：打卡按鈕 -->
+      <div id="user-label" class="user-label"></div>
+      <div id="user-symbol" class="user-symbol"></div>  <!-- 新增這行 -->
+      <div id="user-email" class="user-email"></div>
       <button id="clockInBtn" type="button" onclick="submitClockIn()">讀取中...</button>
-      <!-- 下方：登出 / 狀態文字 -->
       <button onclick="resetApp()" class="logout-btn">登出</button>
       <div id="status"></div>
     </div>
@@ -706,11 +638,7 @@
       document.getElementById("global-header").classList.remove("hidden");
       const clockPage = document.getElementById("page-clock");
       clockPage.classList.remove("hidden");
-      requestAnimationFrame(() => {
-        clockPage.classList.add("visible");
-        // 名稱 / 符號 / email 文字自動縮放
-        applyAutoFitText();
-      });
+      requestAnimationFrame(()=>clockPage.classList.add("visible"));
 
       const fab = document.getElementById("menu-fab");
       if (fab) fab.style.display = "flex";
@@ -725,42 +653,6 @@
     }
   }
 
-  // ===== 文字自動縮放，確保不換行 =====
-  function fitTextToOneLine(el) {
-    if (!el) return;
-  
-    // 如果這個元素目前是 hidden（display:none），先跳過，避免算到 0 寬度
-    if (el.offsetParent === null) return;
-  
-    const min = parseFloat(el.dataset.min) || 10;
-    const max = parseFloat(el.dataset.max) || 18;
-  
-    let size = max;
-    el.style.fontSize = size + "px";
-  
-    // 一直縮，直到寬度不超過容器或到達最小字級
-    while (el.scrollWidth > el.clientWidth && size > min) {
-      size -= 1;
-      el.style.fontSize = size + "px";
-    }
-  }
-  
-  function applyAutoFitText() {
-    const elements = document.querySelectorAll(".auto-fit-text");
-  
-    // 先清空字級，避免重複縮越縮越小
-    elements.forEach((el) => {
-      el.style.fontSize = "";
-    });
-  
-    elements.forEach(fitTextToOneLine);
-  }
-  
-  // 視窗尺寸變化時再重算一次
-  window.addEventListener("resize", () => {
-    applyAutoFitText();
-  });
-  
   function setupUI(data) {
     // ===== 先重置權限相關 UI =====
     const mgrFab = document.getElementById("fab-mgr");
@@ -894,13 +786,8 @@
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
     if (page === "schedule") {
+      // 再更新一次標記，避免跨月後沒刷新
       updateMonthShiftMarkers();
-    }
-    if (page === "clock") {
-      // 切回打卡頁時，重新依目前寬度縮一次字
-      requestAnimationFrame(() => {
-        applyAutoFitText();
-      });
     }
   }
 
