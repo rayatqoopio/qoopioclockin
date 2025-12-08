@@ -988,6 +988,8 @@
   // ===== 打卡 =====
   function submitClockIn() {
     const btn = document.getElementById("clockInBtn");
+    const statusEl = document.getElementById("status");
+  
     if (!currentUser) {
       alert("請先登入");
       return;
@@ -1003,12 +1005,15 @@
     btn.textContent = "定位中...";
   
     navigator.geolocation.getCurrentPosition(
-      async (pos)=>{
+      async (pos) => {
         btn.textContent = "打卡中...";
+  
         try {
-          await fetch(API_URL, {
+          const res = await fetch(API_URL, {
             method: "POST",
-            mode: "no-cors",
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               action: "clockIn",
               email: currentUser.email,
@@ -1017,15 +1022,51 @@
               lng: pos.coords.longitude,
             }),
           });
+  
+          if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+          }
+  
+          const data = await res.json();   // ← 這裡就能吃到 handleClockIn_ 回傳
+  
+          if (!data.ok) {
+            alert(data.msg || "打卡失敗，請稍後再試");
+            btn.disabled = false;
+            btn.textContent = type;
+            return;
+          }
+  
+          // ✅ 顯示打卡成功訊息
           alert("打卡成功");
+  
+          // ✅ 更新畫面上的「今日已上班 / 今日已下班」
+          if (statusEl && data.status) {
+            statusEl.textContent = data.status;
+            statusEl.style.color = data.status.includes("未") ? "#8B0000" : "green";
+          }
+  
+          // ✅ 如果後端有回傳最新代幣餘額，順便刷新右下角扭蛋數
+          if (typeof data.tokens === "number") {
+            const hudCoin = document.getElementById("hud-coin");
+            const modalCoin = document.getElementById("modal-coin-count");
+            if (hudCoin) hudCoin.textContent = data.tokens;
+            if (modalCoin) modalCoin.textContent = data.tokens;
+  
+            // 跟 initApp 一樣更新 localStorage，之後登入可以算差額提示
+            localStorage.setItem("q_token_balance", data.tokens);
+          }
+  
+          // ✅ 按鈕狀態切換（上班 → 下班 → done）
           if (type === "上班") {
             btn.textContent = "下班";
             btn.dataset.type = "下班";
             btn.disabled = false;
-          } else {
+            btn.style.background = "#111";
+          } else if (type === "下班") {
             btn.textContent = "已下班";
             btn.dataset.type = "done";
             btn.disabled = true;
+            btn.style.background = "#333";
           }
         } catch (e) {
           console.error(e);
@@ -1034,7 +1075,7 @@
           btn.textContent = type;
         }
       },
-      ()=>{
+      () => {
         alert("定位失敗，請確認定位權限");
         btn.disabled = false;
         btn.textContent = type;
