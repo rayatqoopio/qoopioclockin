@@ -1125,8 +1125,9 @@
         try {
           const res = await fetch(API_URL, {
             method: "POST",
+            // ⚠️ 用「簡單請求」避免 CORS preflight
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type": "text/plain;charset=utf-8",
             },
             body: JSON.stringify({
               action: "clockIn",
@@ -1141,7 +1142,8 @@
             throw new Error("HTTP " + res.status);
           }
   
-          const data = await res.json();   // ← 這裡就能吃到 handleClockIn_ 回傳
+          // 這裡就能吃到 handleClockIn_ 回傳的 { ok, status, tokens }
+          const data = await res.json();
   
           if (!data.ok) {
             alert(data.msg || "打卡失敗，請稍後再試");
@@ -1156,7 +1158,9 @@
           // ✅ 更新畫面上的「今日已上班 / 今日已下班」
           if (statusEl && data.status) {
             statusEl.textContent = data.status;
-            statusEl.style.color = data.status.includes("未") ? "#8B0000" : "green";
+            statusEl.style.color = data.status.includes("未")
+              ? "#8B0000"
+              : "green";
           }
   
           // ✅ 如果後端有回傳最新代幣餘額，順便刷新右下角扭蛋數
