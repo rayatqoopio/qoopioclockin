@@ -1665,8 +1665,8 @@
 
   // ===== Avatar Frontend =====
   const AVATAR_ASSET_BASE = "./assets/avatar/";
-  const AVATAR_BASE_IMAGE = "base.png"; // 你的紙娃娃架子底圖檔名
-  let avatarCache = null; // 存最後一次的 avatarGet，之後要做換裝 UI 也會用到
+  const AVATAR_BASE_IMAGE = "base.png";
+  let avatarCache = null;
   
   async function loadAvatar(email) {
     try {
@@ -1674,12 +1674,16 @@
       const d = await r.json();
       if (!d.ok) {
         console.warn("avatarGet failed:", d.msg);
+        // 就算沒資料也先畫底圖，確保你看得到 base
+        renderAvatar([], {});
         return;
       }
       avatarCache = d;
       renderAvatar(d.items || [], d.equipped || {});
     } catch (e) {
       console.error("loadAvatar error:", e);
+      // 失敗也畫底圖
+      renderAvatar([], {});
     }
   }
   
@@ -1689,19 +1693,16 @@
   
     stage.innerHTML = "";
   
-    // ✅ 先放底圖（永遠最底層）
+    // ✅ 永遠先畫底圖（你現在就能立刻確認看不看得到）
     const base = document.createElement("img");
     base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
     base.alt = "avatar base";
-    base.dataset.layer = "0";
     stage.appendChild(base);
   
-    // equipped 裡面會是 {HEAD:"...", HAIR:"...", ...}
     const equippedIds = new Set(
       Object.values(equipped || {}).map(x => String(x || "").trim()).filter(Boolean)
     );
   
-    // 把已穿上的 item 找出來，依 layer 排序
     const toDraw = (items || [])
       .filter(it => equippedIds.has(String(it.itemID || "").trim()))
       .sort((a, b) => Number(a.layer || 0) - Number(b.layer || 0));
@@ -1713,7 +1714,6 @@
       const img = document.createElement("img");
       img.src = AVATAR_ASSET_BASE + key;
       img.alt = it.name || it.itemID || "avatar part";
-      img.dataset.layer = String(it.layer || 0);
       stage.appendChild(img);
     }
   }
