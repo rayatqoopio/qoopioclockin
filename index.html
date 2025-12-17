@@ -348,6 +348,76 @@
       user-select:none;
     }
 
+    /* ===== Shop Sticky Layout ===== */
+    .shop-card{
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      max-height:85vh;  /* 你原本 modal-card 也有，這裡確保 shop 不爆版 */
+    }
+    
+    .shop-fixed{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#fff;
+      padding:18px 16px 10px;
+      border-bottom:1px solid #eee;
+    }
+    
+    .shop-preview-wrapper{
+      width:150px;
+      aspect-ratio:3/4;
+      margin:10px auto 12px;
+      position:relative;
+    }
+    
+    .shop-tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:10px;
+      justify-content:flex-start;
+    }
+    
+    .shop-categories{
+      display:flex;
+      gap:6px;
+      overflow-x:auto;
+      padding-bottom:2px;
+    }
+    
+    .shop-categories button{
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #ccc;
+      background:#fff;
+      font-size:0.85rem;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    
+    .shop-categories button.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+    
+    .shop-scroll{
+      flex:1;
+      overflow-y:auto;
+      padding:12px 16px 10px;
+    }
+    
+    .shop-footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:10px 16px 16px;
+      border-top:1px solid #eee;
+      background:#fff;
+    }
+    
     .save-btn{position:relative;overflow:hidden;transition:transform .12s ease, box-shadow .12s ease;}
     .save-btn:active{transform:scale(.96);}
     .save-btn.loading{pointer-events:none;opacity:.85;}
@@ -357,6 +427,67 @@
       inset:0;
       background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
       animation:shine 1s infinite;
+    }
+
+    /* ===== Shop Buy Button ===== */
+    .shop-buy-btn{
+      position:relative;
+      padding:10px 16px;
+      border-radius:999px;
+      border:none;
+      background:#111;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      transition:
+        transform .12s ease,
+        box-shadow .12s ease,
+        background .15s ease,
+        opacity .15s ease;
+      box-shadow:0 6px 0 #444;
+    }
+    
+    /* Hover */
+    .shop-buy-btn:hover{
+      background:#000;
+    }
+    
+    /* Pressed */
+    .shop-buy-btn:active{
+      transform:translateY(4px);
+      box-shadow:0 2px 0 #444;
+    }
+    
+    /* Disabled / loading */
+    .shop-buy-btn.loading{
+      pointer-events:none;
+      opacity:.85;
+      box-shadow:0 2px 0 #777;
+    }
+    
+    /* Shine animation */
+    .shop-buy-btn.loading::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        120deg,
+        transparent 30%,
+        rgba(255,255,255,.4) 50%,
+        transparent 70%
+      );
+      animation:shopShine 1s infinite;
+    }
+    
+    @keyframes shopShine{
+      from{ transform:translateX(-100%); }
+      to  { transform:translateX(100%); }
+    }
+    
+    /* Success state */
+    .shop-buy-btn.success{
+      background:#27ae60;
+      box-shadow:0 2px 0 #1e874b;
     }
     @keyframes shine{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
   </style>
@@ -616,34 +747,54 @@
     </div>
   </div>
 
-  <!-- ✅ Shop Modal（移出 wardrobe，避免 modal 包 modal） -->
-  <div class="modal" id="modal-shop">
-    <div class="modal-card">
-      <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
-      <div class="modal-title">商店</div>
-
-      <div style="display:flex; justify-content:center; margin:10px 0 14px;">
-        <div style="width:150px; aspect-ratio:3/4; position:relative;">
-          <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
+    <!-- ✅ Shop Modal（Sticky 預覽 + 分類 + 列表滾動） -->
+    <div class="modal" id="modal-shop">
+      <div class="modal-card shop-card">
+        <!-- 固定區 -->
+        <div class="shop-fixed">
+          <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
+          <div class="modal-title">商店</div>
+    
+          <!-- 預覽（固定） -->
+          <div class="shop-preview-wrapper">
+            <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
+          </div>
+    
+          <!-- 分頁：道具 / 已擁有（固定） -->
+          <div class="shop-tabs">
+            <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">服裝>fu zhuan
+            <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
+          </div>
+    
+          <!-- 分類（固定；只在「道具」分頁顯示） -->
+          <div id="shop-catbar" class="shop-categories">
+            <button data-cat="ALL"  class="active" onclick="shopSwitchCat('ALL')">全部</button>
+            <button data-cat="HEAD" onclick="shopSwitchCat('HEAD')">頭飾</button>
+            <button data-cat="HAIR" onclick="shopSwitchCat('HAIR')">髮型</button>
+            <button data-cat="EYE"  onclick="shopSwitchCat('EYE')">眼飾</button>
+            <button data-cat="FACE" onclick="shopSwitchCat('FACE')">臉飾</button>
+            <button data-cat="EAR"  onclick="shopSwitchCat('EAR')">耳飾</button>
+            <button data-cat="CLOTH" onclick="shopSwitchCat('CLOTH')">服裝</button>
+            <button data-cat="PET"  onclick="shopSwitchCat('PET')">寵物</button>
+          </div>
         </div>
-      </div>
-
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
-        <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
-      </div>
-
-      <div id="shop-view-items">
-        <div id="shop-item-list" style="text-align:left;">載入中...</div>
-      </div>
-
-      <div id="shop-view-owned" class="hidden">
-        <div id="shop-owned-list" style="text-align:left;">載入中...</div>
-      </div>
-
-      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
-        <button class="admin-action-btn" style="width:auto;padding:10px 14px;" onclick="backToWardrobe()">回衣櫃</button>
+    
+        <!-- 可滾動區 -->
+        <div class="shop-scroll">
+          <div id="shop-view-items">
+            <div id="shop-item-list" style="text-align:left;">載入中...</div>
+          </div>
+    
+          <div id="shop-view-owned" class="hidden">
+            <div id="shop-owned-list" style="text-align:left;">載入中...</div>
+          </div>
+        </div>
+    
+        <!-- 底部固定列 -->
+        <div class="shop-footer">
+          <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
+          <button class="admin-action-btn" style="width:auto;padding:10px 14px;" onclick="backToWardrobe()">回衣櫃</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1897,19 +2048,116 @@
       document.getElementById("shop-view-owned").classList.toggle("hidden", tab !== "owned");
     }
     
+    // ===== Shop State (GLOBAL) =====
+    let shopState = {
+      tab: "items",     // items | owned
+      cat: "ALL",       // ALL | HEAD | HAIR | EYE | FACE | EAR | CLOTH | PET
+      allItems: [],     // 全部（含 owned）
+      buyable: [],      // 可購買
+      owned: []         // 已擁有
+    };
+    
+    function shopSwitchTab(tab){
+      shopState.tab = tab;
+    
+      document.getElementById("shop-tab-items")?.classList.toggle("active", tab === "items");
+      document.getElementById("shop-tab-owned")?.classList.toggle("active", tab === "owned");
+    
+      document.getElementById("shop-view-items")?.classList.toggle("hidden", tab !== "items");
+      document.getElementById("shop-view-owned")?.classList.toggle("hidden", tab !== "owned");
+    
+      // 分類列只在 items 顯示
+      const catbar = document.getElementById("shop-catbar");
+      if (catbar) catbar.style.display = (tab === "items") ? "flex" : "none";
+    
+      // 切 tab 時預覽回到「目前裝備」
+      renderShopPreview("");
+    
+      // scroll 回頂（有 shop-scroll 才做）
+      document.querySelector(".shop-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    
+    function shopSwitchCat(cat){
+      shopState.cat = cat;
+    
+      document.querySelectorAll("#shop-catbar button").forEach(b=>{
+        b.classList.toggle("active", b.dataset.cat === cat);
+      });
+    
+      renderShopBuyableList();
+      document.querySelector(".shop-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    
+    function renderShopBuyableList(){
+      const box = document.getElementById("shop-item-list");
+      if (!box) return;
+    
+      const list = (shopState.cat === "ALL")
+        ? shopState.buyable
+        : shopState.buyable.filter(it => String(it.category || "") === shopState.cat);
+    
+      if (!list.length){
+        box.innerHTML = `<div style="color:#888;text-align:center;padding:12px 0;">此分類目前沒有可購買道具</div>`;
+        return;
+      }
+    
+      box.innerHTML = list.map(it => {
+        const name  = it.name || it.itemID;
+        const price = Number(it.pricetoken || 0);
+        const safeId = String(it.itemID || "").replace(/'/g, "\\'");
+    
+        return `
+          <div class="dashboard-card" style="margin-bottom:10px; cursor:pointer;"
+               onclick="renderShopPreview('${safeId}')">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <div style="min-width:0;">
+                <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
+                <div style="font-size:0.8rem;color:#999;">點卡片可預覽</div>
+              </div>
+              <button class="shop-buy-btn" 
+                      style="width:auto;padding:10px 14px;flex:0 0 auto;"
+                      onclick="event.stopPropagation(); shopBuy('${safeId}', this)">
+                ${price} 代幣
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+    
+    function renderShopOwnedList(){
+      const ownedBox = document.getElementById("shop-owned-list");
+      if (!ownedBox) return;
+    
+      const owned = shopState.owned || [];
+      ownedBox.innerHTML = owned.length ? owned.map(it => {
+        const name = it.name || it.itemID;
+        return `
+          <div class="dashboard-card" style="margin-bottom:10px;">
+            <div style="font-weight:700;">${name}</div>
+            <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜已擁有</div>
+          </div>
+        `;
+      }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">你目前沒有道具</div>`;
+    }
+    
     async function shopInit(){
-      // 先顯示代幣
+      // 先顯示代幣（用 HUD 當暫存）
       const coin = Number(document.getElementById("hud-coin")?.textContent || "0");
       const coinEl = document.getElementById("shop-coin");
       if (coinEl) coinEl.textContent = coin;
     
-      // 先顯示 loading
-      const shopBox = document.getElementById("shop-item-list");
+      // loading
+      const shopBox  = document.getElementById("shop-item-list");
       const ownedBox = document.getElementById("shop-owned-list");
-      if (shopBox) shopBox.innerHTML = "載入中...";
+      if (shopBox)  shopBox.innerHTML  = "載入中...";
       if (ownedBox) ownedBox.innerHTML = "載入中...";
     
-      // ✅ 叫後端 shop list
+      // 先畫現有裝備，避免預覽空白
+      renderShopPreview("");
+    
+      // 拉後端清單
       const r = await fetch(
         `${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}&v=${Date.now()}`,
         { cache: "no-store" }
@@ -1921,52 +2169,32 @@
       const balance = Number(d.balance || 0);
       if (coinEl) coinEl.textContent = balance;
     
-      // 已擁有：用 shopItems 裡的 owned 欄位分
+      // 拆分
       const buyable = shopItems.filter(it => !it.owned);
-      const owned   = shopItems.filter(it => it.owned);
+      const owned   = shopItems.filter(it =>  it.owned);
     
-      if (shopBox){
-        shopBox.innerHTML = buyable.length ? buyable.map(it => {
-          const name  = it.name || it.itemID;
-          const price = Number(it.pricetoken || 0);
-          const safeId = String(it.itemID||"").replace(/'/g,"\\'");
-        
-          return `
-            <div class="dashboard-card" style="margin-bottom:10px; cursor:pointer;"
-                 onclick="renderShopPreview('${safeId}')">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:700;">${name}</div>
-                  <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
-                  <div style="font-size:0.8rem;color:#999;">點卡片可預覽</div>
-                </div>
-                <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                        onclick="event.stopPropagation(); shopBuy('${safeId}')">
-                  ${price} 代幣
-                </button>
-              </div>
-            </div>
-          `;
-        }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">目前沒有可購買道具</div>`;
-      }
+      // 存到 state
+      shopState.allItems = shopItems;
+      shopState.buyable  = buyable;
+      shopState.owned    = owned;
     
-      if (ownedBox){
-        ownedBox.innerHTML = owned.length ? owned.map(it => {
-          const name = it.name || it.itemID;
-          return `
-            <div class="dashboard-card" style="margin-bottom:10px;">
-              <div style="font-weight:700;">${name}</div>
-              <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜已擁有</div>
-            </div>
-          `;
-        }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">你目前沒有道具</div>`;
-      }
-
-      renderShopPreview(""); // 先畫現有裝備
+      // 先渲染已擁有（不管目前在哪個 tab 都先備好）
+      renderShopOwnedList();
+    
+      // 預設：道具 tab + 全部分類
       shopSwitchTab("items");
+      shopSwitchCat("ALL");
+    
+      // 保險：再畫一次（避免 avatarCache 尚未更新時）
+      renderShopPreview("");
     }
     
-    async function shopBuy(itemID){
+    async function shopBuy(itemID, btn){
+      if (btn){
+        btn.classList.add("loading");
+        btn.textContent = "購買中…";
+      }
+    
       try {
         const r = await fetch(API_URL, {
           method:"POST",
@@ -1981,19 +2209,35 @@
         if (!r.ok) throw new Error("HTTP " + r.status);
     
         const d = await r.json();
-        if (!d.ok) return alert(d.msg || "購買失敗");
+        if (!d.ok) throw new Error(d.msg || "購買失敗");
     
+        /* ===== 成功動畫 ===== */
+        if (btn){
+          btn.classList.remove("loading");
+          btn.classList.add("success");
+          btn.textContent = "✓ 已購買";
+        }
+    
+        // 更新代幣
         const shopCoin = document.getElementById("shop-coin");
         const hudCoin  = document.getElementById("hud-coin");
         if (shopCoin) shopCoin.textContent = d.balance;
         if (hudCoin)  hudCoin.textContent  = d.balance;
     
-        await loadAvatar(currentUser.email); // 重新抓 owned
-        if (typeof shopInit === "function") shopInit(); // ✅ 立刻刷新商店清單
-        alert("購買成功！");
+        // 重新抓 avatar（owned 會更新）
+        await loadAvatar(currentUser.email);
+    
+        // 刷新商店清單（會把該道具移到「已擁有」）
+        await shopInit();
+    
       } catch (e) {
         console.error("shopBuy error:", e);
-        alert("購買失敗，請稍後再試");
+        alert(e.message || "購買失敗");
+    
+        if (btn){
+          btn.classList.remove("loading");
+          btn.textContent = "重試";
+        }
       }
     }
     
