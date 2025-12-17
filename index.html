@@ -628,17 +628,50 @@
   </div>
 
   <!-- Avatar Wardrobe Modal -->
-  <div class="modal" id="modal-wardrobe">
+  <div style="display:flex; gap:10px; margin-top:14px;">
+    <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
+            onclick="wardrobeReset()">還原</button>
+  
+    <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;"
+            onclick="openShopFromWardrobe()">商店</button>
+  
+    <button class="admin-action-btn" style="flex:1;"
+            onclick="wardrobeSave()">儲存</button>
+  </div>
+
+  <!-- Shop Modal -->
+  <div class="modal" id="modal-shop">
     <div class="modal-card">
-      <button class="modal-close-btn" onclick="closeModal('wardrobe')">✕</button>
-      <div class="modal-title">換裝</div>
+      <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
+      <div class="modal-title">商店</div>
+  
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
+        <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
+      </div>
+  
+      <div id="shop-view-items">
+        <div id="shop-item-list" style="text-align:left;">載入中...</div>
+      </div>
+  
+      <div id="shop-view-owned" class="hidden">
+        <div id="shop-owned-list" style="text-align:left;">載入中...</div>
+      </div>
+  
+      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
+        <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
+                onclick="backToWardrobe()">回換裝</button>
+      </div>
+    </div>
+  </div>
   
       <!-- 上方預覽 -->
-      <div style="display:flex; justify-content:center; margin-bottom:12px;">
-        <div style="width:180px; aspect-ratio:3/4; position:relative;">
-          <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
-        </div>
-      </div>
+  <div style="display:flex; justify-content:center; margin-bottom:12px;">
+     <div style="width:180px; aspect-ratio:3/4; position:relative;">
+      <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
+    </div>
+  </div>
   
       <!-- 分類 tabs -->
       <div class="modal-tabs" id="wardrobe-tabs">
@@ -1783,10 +1816,29 @@
       equipped: {},
       items: []
     };
+
+  function getWearableItemsFromCache_() {
+    const items = (avatarCache && Array.isArray(avatarCache.items)) ? avatarCache.items : [];
+    const ownedArr = (avatarCache && Array.isArray(avatarCache.owned)) ? avatarCache.owned : [];
+    const owned = new Set(ownedArr.map(x => String(x || "").trim()).filter(Boolean));
+  
+    return items.filter(it => {
+      const id = String(it.itemID || "").trim();
+      if (!id) return false;
+  
+      const price = Number(it.pricetoken || 0);
+      const unlock = String(it.unlocktype || "").trim().toLowerCase();
+  
+      const isFree = (unlock === "free") || price === 0;
+      if (isFree) return true;
+  
+      return owned.has(id);
+    });
+  }
     
     function openAvatarWardrobe(){
-      // avatarCache 來自 loadAvatar 成功後的資料
-      const items = (avatarCache && avatarCache.items) ? avatarCache.items : [];
+    // avatarCache 來自 loadAvatar 成功後的資料
+      const items = getWearableItemsFromCache_(); // ✅ 只顯示可穿（free + owned）
       const eq    = (avatarCache && avatarCache.equipped) ? avatarCache.equipped : {};
     
       wardrobeState.items = items;
@@ -1881,6 +1933,94 @@
       renderWardrobeList();
       renderWardrobePreview();
       renderAvatar(wardrobeState.items, wardrobeState.equipped);
+    }
+
+    function openShopFromWardrobe(){
+      closeModal("wardrobe");
+      openModal("shop");
+      shopInit();
+    }
+    
+    function backToWardrobe(){
+      closeModal("shop");
+      openModal("wardrobe");
+      // 回來時刷新一下清單/預覽也行
+      renderWardrobeList();
+      renderWardrobePreview();
+    }
+    
+    function shopSwitchTab(tab){
+      document.getElementById("shop-tab-items").classList.toggle("active", tab === "items");
+      document.getElementById("shop-tab-owned").classList.toggle("active", tab === "owned");
+      document.getElementById("shop-view-items").classList.toggle("hidden", tab !== "items");
+      document.getElementById("shop-view-owned").classList.toggle("hidden", tab !== "owned");
+    }
+    
+    function shopInit(){
+      // 先用現有資料塞畫面（之後再接 shop API）
+      const coin = Number(document.getElementById("hud-coin")?.textContent || "0");
+      const coinEl = document.getElementById("shop-coin");
+      if (coinEl) coinEl.textContent = coin;
+    
+      // 目前先用 AvatarItems 當作商店商品展示（等你做 shopList API 再換）
+      const items = (avatarCache && Array.isArray(avatarCache.items)) ? avatarCache.items : [];
+      const owned = new Set(((avatarCache && avatarCache.owned) || []).map(x => String(x||"").trim()));
+    
+      // 商店清單：先顯示「未擁有」+ enabled
+      const shopItems = items.filter(it => {
+        const id = String(it.itemID || "").trim();
+        if (!id) return false;
+        const price = Number(it.pricetoken || 0);
+        const unlock = String(it.unlocktype || "").toLowerCase();
+        const isFree = (unlock === "free") || price === 0;
+        return !isFree && !owned.has(id);
+      });
+    
+      const ownedItems = items.filter(it => owned.has(String(it.itemID||"").trim()));
+    
+      const shopBox = document.getElementById("shop-item-list");
+      const ownedBox = document.getElementById("shop-owned-list");
+    
+      if (shopBox){
+        shopBox.innerHTML = shopItems.length ? shopItems.map(it => {
+          const name = it.name || it.itemID;
+          const price = Number(it.pricetoken || 0);
+          return `
+            <div class="dashboard-card" style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;">${name}</div>
+                  <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
+                </div>
+                <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
+                        onclick="shopBuyStub('${String(it.itemID||"").replace(/'/g,"\\'")}')">
+                  ${price} 代幣
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">目前沒有可購買道具</div>`;
+      }
+    
+      if (ownedBox){
+        ownedBox.innerHTML = ownedItems.length ? ownedItems.map(it => {
+          const name = it.name || it.itemID;
+          return `
+            <div class="dashboard-card" style="margin-bottom:10px;">
+              <div style="font-weight:700;">${name}</div>
+              <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜已擁有</div>
+            </div>
+          `;
+        }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">你目前沒有道具</div>`;
+      }
+    
+      // 預設停在「道具」
+      shopSwitchTab("items");
+    }
+    
+    // 先做假的購買，等後端 shopBuy API 好了再改成真的
+    function shopBuyStub(itemID){
+      alert("商店購買 API 還沒接：\nitemID = " + itemID);
     }
 </script>
 </body>
