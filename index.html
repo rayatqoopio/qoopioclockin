@@ -1373,26 +1373,6 @@
   }
   
   // ===== Admin =====
-  async function adminGiveToken() {
-    const e = document.getElementById("adm-token-email").value.trim();
-    const a = document.getElementById("adm-token-amt").value;
-    if (!e || !a) {
-      alert("請填 Email 與數量");
-      return;
-    }
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({
-        action: "adminGiveToken",
-        targetEmail: e,
-        amount: a,
-      }),
-    });
-    alert("已發送");
-    closeModal("admin-token");
-  }
-
   async function adminSetAnnounce() {
     const t = document.getElementById("adm-ann-title").value;
     const c = document.getElementById("adm-ann-content").value;
@@ -1684,7 +1664,8 @@
   }
 
   // ===== Avatar Frontend =====
-  const AVATAR_ASSET_BASE = "./assets/avatar/"; // 建議你素材放這裡（GitHub Pages）
+  const AVATAR_ASSET_BASE = "./assets/avatar/";
+  const AVATAR_BASE_IMAGE = "base.png"; // 你的紙娃娃架子底圖檔名
   let avatarCache = null; // 存最後一次的 avatarGet，之後要做換裝 UI 也會用到
   
   async function loadAvatar(email) {
@@ -1701,9 +1682,6 @@
       console.error("loadAvatar error:", e);
     }
   }
-  
-  const AVATAR_ASSET_BASE = "./assets/avatar/";
-  const AVATAR_BASE_IMAGE = "base.png"; // 你的紙娃娃架子底圖檔名
   
   function renderAvatar(items, equipped) {
     const stage = document.getElementById("avatar-stage");
