@@ -1657,7 +1657,10 @@
   
   async function loadAvatar(email) {
     try {
-      const r = await fetch(`${API_URL}?action=avatarGet&email=${encodeURIComponent(email)}`);
+      const r = await fetch(
+        `${API_URL}?action=avatarGet&email=${encodeURIComponent(email)}&v=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const d = await r.json();
       if (!d.ok) {
         console.warn("avatarGet failed:", d.msg);
@@ -1907,7 +1910,10 @@
       if (ownedBox) ownedBox.innerHTML = "載入中...";
     
       // ✅ 叫後端 shop list
-      const r = await fetch(`${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}`);
+      const r = await fetch(
+        `${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}&v=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const d = await r.json();
       if (!d.ok) throw new Error(d.msg || "avatarShopList failed");
     
@@ -1924,22 +1930,24 @@
           const name  = it.name || it.itemID;
           const price = Number(it.pricetoken || 0);
           const safeId = String(it.itemID||"").replace(/'/g,"\\'");
+        
           return `
-            <div class="dashboard-card" style="margin-bottom:10px;">
+            <div class="dashboard-card" style="margin-bottom:10px; cursor:pointer;"
+                 onclick="renderShopPreview('${safeId}')">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                   <div style="font-weight:700;">${name}</div>
                   <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
+                  <div style="font-size:0.8rem;color:#999;">點卡片可預覽</div>
                 </div>
                 <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                        onclick="shopBuy('${safeId}')">
+                        onclick="event.stopPropagation(); shopBuy('${safeId}')">
                   ${price} 代幣
                 </button>
               </div>
             </div>
           `;
         }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">目前沒有可購買道具</div>`;
-      }
     
       if (ownedBox){
         ownedBox.innerHTML = owned.length ? owned.map(it => {
@@ -1952,7 +1960,8 @@
           `;
         }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">你目前沒有道具</div>`;
       }
-    
+
+      renderShopPreview(""); // 先畫現有裝備
       shopSwitchTab("items");
     }
     
