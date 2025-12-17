@@ -14,6 +14,7 @@
       navigator.serviceWorker.register("service-worker.js?v=20251201");
     }
   </script>
+
   <style>
     /* Base & Reset */
     @supports(height:120dvh){
@@ -38,7 +39,7 @@
       opacity:1;
       transform:translateY(0);
     }
-    
+
     /* Header */
     #global-header{
       position:fixed;top:0;left:0;right:0;
@@ -72,18 +73,17 @@
     /* Clock */
     #page-clock{
       display:flex;flex-direction:column;
-      justify-content:center;
-      padding-top:14vh;padding-bottom:8vh;
+      justify-content:flex-start;
+      padding-top:12vh;
+      padding-bottom:15vh;
+      align-items:stretch;
     }
-    .user-label{font-size:1.1rem;font-weight:bold;margin-bottom:0.4rem;}
-    .user-symbol{font-size:0.95rem;color:#444;margin-bottom:0.3rem;}
-    .user-email{font-size:0.9rem;color:#666;margin-bottom:1rem;font-family:monospace;}
-    /* Clock Header：左紙娃娃 + 右資訊列 */
+
     .clockin-header{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-bottom:1.2rem;}
-    /* 紅色框：之後放紙娃娃 */
+
     .avatar-slot{
-      flex:0 0 96px;          /* 紙娃娃寬度，可自行調整 */
-      aspect-ratio:3 / 4;     /* 紙娃娃比例 */
+      flex:0 0 96px;
+      aspect-ratio:3 / 4;
       border-radius:10px;
       overflow:hidden;
       display:flex;
@@ -91,7 +91,6 @@
       justify-content:center;
       box-sizing:border-box;
     }
-    /* Avatar Stage（疊圖舞台） */
     #avatar-stage{
       position:relative;
       width:100%;
@@ -99,8 +98,7 @@
     }
     .avatar-click{cursor:pointer; position:relative;}
     .avatar-click:active{transform:scale(0.98);}
-    
-    /* 每一層都是一張透明 PNG 疊在同一個框內 */
+
     #avatar-stage img{
       position:absolute;
       inset:0;
@@ -110,7 +108,7 @@
       pointer-events:none;
       user-select:none;
     }
-    .avatar-placeholder{font-size:12px;opacity:0.6;}
+
     .user-info-block{
       flex:1;
       border-radius:8px;
@@ -121,27 +119,14 @@
       align-items:flex-start;
       gap:4px;
       box-sizing:border-box;
-      min-width:0;          /* 讓 flex 裡面的寬度可以縮 */
+      min-width:0;
       text-align:left;
     }
-    
-    /* 三行文字：單行、不換行、交給 JS 自動縮字級 */
-    .user-info-block > div{white-space:nowrap;overflow:hidden;text-overflow:clip;}       /* 不要 … 由縮字來處理 */
-    
-    /* 風格微調 */
+    .user-info-block > div{white-space:nowrap;overflow:hidden;text-overflow:clip;}
     .user-name{font-weight:600;}
     .user-symbol{opacity:0.85;}
     .user-email{opacity:0.7;font-family:monospace;}
-    
-    /* 統一打卡區塊 layout */
-    #page-clock{
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-      padding-top:12vh;
-      padding-bottom:15vh;
-      align-items:stretch;
-    }
+
     #clockInBtn{
       width:80%;padding:1.7rem;font-size:1.3rem;
       background:#111;color:#fff;border:none;border-radius:10px;
@@ -163,7 +148,7 @@
       font-size:1.6rem;font-weight:bold;
       cursor:pointer;padding:0.2rem 0.6rem;
       border-radius:999px;
-      color:#000; /* 箭頭維持黑色 */
+      color:#000;
       transition:background 0.15s ease, transform 0.12s ease;
     }
     .calendar-header button:active{
@@ -232,23 +217,10 @@
       opacity:0;
       transition:opacity 0.18s, background 0.18s, border-color 0.18s;
     }
-    /* 中山 = 紅點 */
-    .shift-zhongshan .day-indicator{
-      background-color:#e74c3c;
-      opacity:1;
-    }
-    /* 景美 = 綠點 */
-    .shift-jingmei .day-indicator{
-      background-color:#27ae60;
-      opacity:1;
-    }
-    /* 後備：有排班但無門市資訊，用綠點 */
-    .shift-any .day-indicator{
-      background-color:#27ae60;
-      opacity:1;
-    }
+    .shift-zhongshan .day-indicator{background-color:#e74c3c;opacity:1;}
+    .shift-jingmei  .day-indicator{background-color:#27ae60;opacity:1;}
+    .shift-any      .day-indicator{background-color:#27ae60;opacity:1;}
 
-    /* 選取當日班表 – 底部卡片 */
     #selected-shift{
       padding:1rem 1rem 0.8rem;
       background:#fff;
@@ -266,20 +238,12 @@
       opacity:1;
       transform:translateY(0);
     }
-    .shift-date-title{
-      font-weight:700;
-      margin-bottom:10px;
-      font-size:0.95rem;
-    }
+    .shift-date-title{font-weight:700;margin-bottom:10px;font-size:0.95rem;}
 
-    /* 日期切換時的小 loading 圈圈 */
     .shift-loading{
-      width:18px;height:18px;
-      border-radius:50%;
-      border:2px solid #ddd;
-      border-top-color:#111;
-      animation:spin 0.7s linear infinite;
-      margin:4px auto;
+      width:18px;height:18px;border-radius:50%;
+      border:2px solid #ddd;border-top-color:#111;
+      animation:spin 0.7s linear infinite;margin:4px auto;
     }
 
     /* Admin/Manager */
@@ -290,13 +254,13 @@
       font-weight:bold;color:#777;font-size:1.1rem;cursor:pointer;
     }
     .manager-tabs button.active{background:#111;color:#fff;border-color:#111;}
-    
+
     .dash-title{font-size:1.1rem;font-weight:bold;margin:20px 0 10px 0;border-left:4px solid #111;text-align:left;padding-left:10px;}
     .dashboard-card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px;text-align:left;}
     .dash-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95rem;}
     .dash-item:last-child{border-bottom:none;}
     .btn-approve{padding:4px 8px;border-radius:6px;border:none;background:#27ae60;color:#fff;font-weight:bold;cursor:pointer;}
-    
+
     .admin-menu-btn{width:100%;padding:16px;background:#fff;border:1px solid #ddd;border-radius:12px;margin-bottom:10px;font-size:1rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
     .admin-input{width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;}
     .admin-action-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1rem;}
@@ -334,7 +298,7 @@
     .hud-right{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:10025;}
     .gacha-btn{background:transparent;border:0;} .gacha-img{width:96px;}
     .gacha-badge{position:absolute;right:-6px;top:-6px;min-width:22px;padding:0 6px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800;border:1px solid #fff;}
-    
+
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:10030;}
     .modal.open{display:flex;}
     .modal-card{width:min(520px,92%);background:#fff;border-radius:16px;padding:20px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;}
@@ -373,7 +337,8 @@
     }
     @keyframes spin{to{transform:rotate(360deg);}}
 
-    #wardrobe-stage img{
+    /* Wardrobe/Shop stage (疊圖) */
+    #wardrobe-stage img, #shop-preview-stage img{
       position:absolute;
       inset:0;
       width:100%;
@@ -383,54 +348,28 @@
       user-select:none;
     }
 
-    #shop-preview-stage img{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:contain;
-      pointer-events:none;
-      user-select:none;
-    }
-
-    .save-btn{
-      position:relative;
-      overflow:hidden;
-      transition:transform .12s ease, box-shadow .12s ease;
-    }
-    .save-btn:active{
-      transform:scale(.96);
-    }
-    .save-btn.loading{
-      pointer-events:none;
-      opacity:.85;
-    }
+    .save-btn{position:relative;overflow:hidden;transition:transform .12s ease, box-shadow .12s ease;}
+    .save-btn:active{transform:scale(.96);}
+    .save-btn.loading{pointer-events:none;opacity:.85;}
     .save-btn.loading::after{
       content:"";
       position:absolute;
       inset:0;
-      background:linear-gradient(
-        120deg,
-        transparent 30%,
-        rgba(255,255,255,.4) 50%,
-        transparent 70%
-      );
+      background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
       animation:shine 1s infinite;
     }
-    
-    @keyframes shine{
-      from{transform:translateX(-100%);}
-      to{transform:translateX(100%);}
-    }
-    
+    @keyframes shine{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
   </style>
 </head>
+
 <body>
   <div id="loading-screen">
     <div class="spinner"></div>
     <p>系統連線中...</p>
   </div>
+
   <div id="fab-overlay" class="hidden" onclick="toggleMenu()"></div>
+
   <header id="global-header" class="hidden">
     <img src="qoopio logo.png" class="header-logo" />
   </header>
@@ -444,32 +383,19 @@
     </div>
 
     <div id="page-clock" class="hidden page-section">
-      <!-- 頂部：紙娃娃 + 使用者資訊 -->
       <div class="clockin-header">
-        <!-- 紅色框：未來紙娃娃顯示區 -->
-      <div class="avatar-slot avatar-click" onclick="openAvatarWardrobe()">
-        <div id="avatar-stage" aria-label="avatar stage"></div>
-      </div>
-    
-        <!-- 綠色框：名稱 / 符號 / email（自動縮字級） -->
+        <div class="avatar-slot avatar-click" onclick="openAvatarWardrobe()">
+          <div id="avatar-stage" aria-label="avatar stage"></div>
+        </div>
+
         <div class="user-info-block">
-          <div id="user-label"
-               class="user-name auto-fit-text"
-               data-min="14" data-max="20"></div>
-    
-          <div id="user-symbol"
-               class="user-symbol auto-fit-text"
-               data-min="12" data-max="18"></div>
-    
-          <div id="user-email"
-               class="user-email auto-fit-text"
-               data-min="10" data-max="16"></div>
+          <div id="user-label" class="user-name auto-fit-text" data-min="14" data-max="20"></div>
+          <div id="user-symbol" class="user-symbol auto-fit-text" data-min="12" data-max="18"></div>
+          <div id="user-email" class="user-email auto-fit-text" data-min="10" data-max="16"></div>
         </div>
       </div>
-    
-      <!-- 中間：打卡按鈕 -->
+
       <button id="clockInBtn" type="button" onclick="submitClockIn()">讀取中...</button>
-      <!-- 下方：登出 / 狀態文字 -->
       <button onclick="resetApp()" class="logout-btn">登出</button>
       <div id="status"></div>
     </div>
@@ -507,15 +433,9 @@
 
     <div id="page-admin" class="hidden page-section">
       <div class="dash-title">在狗叫什麼</div>
-      <button class="admin-menu-btn" onclick="openModal('admin-token')">
-        🎁 發送扭蛋代幣 <span>›</span>
-      </button>
-      <button class="admin-menu-btn" onclick="openModal('admin-announce')">
-        📢 發布全域公告 <span>›</span>
-      </button>
-      <button class="admin-menu-btn" onclick="openModal('admin-sync')">
-        ⚙️ 系統資料同步 <span>›</span>
-      </button>
+      <button class="admin-menu-btn" onclick="openModal('admin-token')">🎁 發送扭蛋代幣 <span>›</span></button>
+      <button class="admin-menu-btn" onclick="openModal('admin-announce')">📢 發布全域公告 <span>›</span></button>
+      <button class="admin-menu-btn" onclick="openModal('admin-sync')">⚙️ 系統資料同步 <span>›</span></button>
     </div>
   </div>
 
@@ -582,7 +502,7 @@
     </div>
   </div>
 
-    <!-- Review Leave Modal -->
+  <!-- Review Leave Modal -->
   <div class="modal" id="modal-review">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('review')">✕</button>
@@ -599,10 +519,8 @@
         <textarea id="rv-note" class="admin-input" rows="3" placeholder="例如：班表已調整、請補假單..."></textarea>
       </div>
       <div style="display:flex;gap:10px;margin-top:14px;">
-        <button class="admin-action-btn" style="flex:1;background:#27ae60;"
-                onclick="handleReviewAction('通過')">通過</button>
-        <button class="admin-action-btn" style="flex:1;background:#c0392b;"
-                onclick="handleReviewAction('退回')">退回</button>
+        <button class="admin-action-btn" style="flex:1;background:#27ae60;" onclick="handleReviewAction('通過')">通過</button>
+        <button class="admin-action-btn" style="flex:1;background:#c0392b;" onclick="handleReviewAction('退回')">退回</button>
       </div>
     </div>
   </div>
@@ -621,7 +539,6 @@
 
       <input id="adm-token-amt" class="admin-input" type="number" placeholder="每人發放數量" />
       <input id="adm-token-reason" class="admin-input" placeholder="原因（例如：活動獎勵、表現優秀…）" />
-
       <button id="adm-token-submit" class="admin-action-btn" onclick="adminGiveToken()">發送</button>
     </div>
   </div>
@@ -656,7 +573,7 @@
     </div>
   </div>
 
-    <!-- Token Reward Modal -->
+  <!-- Token Reward Modal -->
   <div class="modal" id="modal-token-reward">
     <div class="modal-card" style="text-align:center">
       <div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px;">🎁 你有新的代幣</div>
@@ -667,85 +584,66 @@
     </div>
   </div>
 
-  <!-- Avatar Wardrobe Modal -->
+  <!-- ✅ 衣櫃 Modal（原本「換裝」→「衣櫃」） -->
   <div class="modal" id="modal-wardrobe">
-  <div class="modal-card">
-    <button class="modal-close-btn" onclick="closeModal('wardrobe')">✕</button>
-    <div class="modal-title">換裝</div>
-    
-    <div style="display:flex; gap:10px; margin-top:14px;">
-      <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
-              onclick="wardrobeReset()">還原</button>
-    
-      <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;"
-              onclick="openShopFromWardrobe()">商店</button>
-    
-      <button class="admin-action-btn" style="flex:1;"
-              onclick="wardrobeSave()">儲存</button>
-    </div>
-  
-    <!-- Shop Modal -->
-    <div class="modal" id="modal-shop">
-      <div class="modal-card">
-        <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
-        <div class="modal-title">商店</div>
-        <!-- 商店預覽 -->
-        <div style="display:flex; justify-content:center; margin:10px 0 14px;">
-          <div style="width:150px; aspect-ratio:3/4; position:relative;">
-            <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
-          </div>
-        </div>
-        <div style="display:flex; gap:8px; margin-bottom:10px;">
-          <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
-          <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
-        </div>
-    
-        <div id="shop-view-items">
-          <div id="shop-item-list" style="text-align:left;">載入中...</div>
-        </div>
-    
-        <div id="shop-view-owned" class="hidden">
-          <div id="shop-owned-list" style="text-align:left;">載入中...</div>
-        </div>
-    
-        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
-          <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                  onclick="backToWardrobe()">回換裝</button>
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('wardrobe')">✕</button>
+      <div class="modal-title">衣櫃</div>
+
+      <div style="display:flex; justify-content:center; margin-bottom:12px;">
+        <div style="width:180px; aspect-ratio:3/4; position:relative;">
+          <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
         </div>
       </div>
-    </div>
-    
-        <!-- 上方預覽 -->
-    <div style="display:flex; justify-content:center; margin-bottom:12px;">
-       <div style="width:180px; aspect-ratio:3/4; position:relative;">
-        <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
+
+      <div class="modal-tabs" id="wardrobe-tabs">
+        <button class="active" data-cat="HEAD" onclick="wardrobeSwitchCat('HEAD')">頭飾</button>
+        <button data-cat="HAIR" onclick="wardrobeSwitchCat('HAIR')">髮型</button>
+        <button data-cat="EYE"  onclick="wardrobeSwitchCat('EYE')">眼飾</button>
+        <button data-cat="FACE" onclick="wardrobeSwitchCat('FACE')">臉飾</button>
+        <button data-cat="EAR"  onclick="wardrobeSwitchCat('EAR')">耳飾</button>
+        <button data-cat="CLOTH" onclick="wardrobeSwitchCat('CLOTH')">服裝</button>
+        <button data-cat="PET" onclick="wardrobeSwitchCat('PET')">寵物</button>
+      </div>
+
+      <div id="wardrobe-list" style="text-align:left; margin-top:10px;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;" onclick="wardrobeReset()">還原</button>
+        <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;" onclick="openModal('shop')">商店</button>
+        <button id="wardrobe-save-btn" class="admin-action-btn save-btn" style="flex:1;" onclick="wardrobeSave()">儲存</button>
       </div>
     </div>
-    
-        <!-- 分類 tabs -->
-        <div class="modal-tabs" id="wardrobe-tabs">
-          <button class="active" data-cat="HEAD" onclick="wardrobeSwitchCat('HEAD')">頭飾</button>
-          <button data-cat="HAIR" onclick="wardrobeSwitchCat('HAIR')">髮型</button>
-          <button data-cat="EYE"  onclick="wardrobeSwitchCat('EYE')">眼飾</button>
-          <button data-cat="FACE" onclick="wardrobeSwitchCat('FACE')">臉飾</button>
-          <button data-cat="EAR"  onclick="wardrobeSwitchCat('EAR')">耳飾</button>
-          <button data-cat="CLOTH" onclick="wardrobeSwitchCat('CLOTH')">服裝</button>
-          <button data-cat="PET" onclick="wardrobeSwitchCat('PET')">寵物</button>
+  </div>
+
+  <!-- ✅ Shop Modal（移出 wardrobe，避免 modal 包 modal） -->
+  <div class="modal" id="modal-shop">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
+      <div class="modal-title">商店</div>
+
+      <div style="display:flex; justify-content:center; margin:10px 0 14px;">
+        <div style="width:150px; aspect-ratio:3/4; position:relative;">
+          <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
         </div>
-    
-        <!-- 道具清單 -->
-        <div id="wardrobe-list" style="text-align:left; margin-top:10px;"></div>
-    
-        <div style="display:flex; gap:10px; margin-top:14px;">
-          <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
-                  onclick="wardrobeReset()">還原</button>
-          <button id="wardrobe-save-btn"
-                  class="admin-action-btn save-btn"
-                  style="flex:1;"
-                  onclick="wardrobeSave()">
-            儲存
-          </button>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
+        <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
+      </div>
+
+      <div id="shop-view-items">
+        <div id="shop-item-list" style="text-align:left;">載入中...</div>
+      </div>
+
+      <div id="shop-view-owned" class="hidden">
+        <div id="shop-owned-list" style="text-align:left;">載入中...</div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
+        <button class="admin-action-btn" style="width:auto;padding:10px 14px;" onclick="backToWardrobe()">回衣櫃</button>
       </div>
     </div>
   </div>
@@ -763,7 +661,7 @@
   let allUsersForAdmin = [];
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
-  /** 只顯示登入頁，其他全部收起來（避免看到「白畫面」） */
+  /** 只顯示登入頁，其他全部收起來 */
   function showLoginOnly() {
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.add("hidden");
@@ -787,9 +685,7 @@
     }
   }
 
-  // 進站：判斷是否已登入
   window.addEventListener("load", async () => {
-    // 預載扭蛋 icon
     try {
       const img = new Image();
       img.onload = () => {
@@ -800,11 +696,8 @@
     } catch (e) {}
 
     const email = localStorage.getItem("q_email");
-    if (email) {
-      await appInit(email);
-    } else {
-      showLoginOnly();
-    }
+    if (email) await appInit(email);
+    else showLoginOnly();
   });
 
   async function appInit(email) {
@@ -825,10 +718,9 @@
       currentUser.email = email;
 
       setupUI(data);
-      
-      // ✅ 載入紙娃娃
+
       await loadAvatar(email);
-      // ✅ 代幣差額提示（登入時）
+
       const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
       const nowBalance  = Number(data.tokens || 0);
       if (nowBalance > prevBalance) {
@@ -839,7 +731,6 @@
       }
       localStorage.setItem("q_token_balance", nowBalance);
 
-      // 公告
       if (data.announcement) {
         const lastRead = localStorage.getItem("q_ann_id");
         if (String(lastRead) !== String(data.announcement.id)) {
@@ -850,18 +741,16 @@
         }
       }
 
-      // 初始化班表
       loadCalendar(currentYear, currentMonth);
       updateMonthShiftMarkers();
 
-      // 顯示主畫面（打卡頁）
       if (loading) loading.classList.add("hidden");
       document.getElementById("global-header").classList.remove("hidden");
+
       const clockPage = document.getElementById("page-clock");
       clockPage.classList.remove("hidden");
       requestAnimationFrame(() => {
         clockPage.classList.add("visible");
-        // 名稱 / 符號 / email 文字自動縮放
         applyAutoFitText();
       });
 
@@ -878,68 +767,48 @@
     }
   }
 
-  // ===== 文字自動縮放，確保不換行 =====
+  // ===== 文字自動縮放 =====
   function fitTextToOneLine(el) {
     if (!el) return;
-  
-    // 如果這個元素目前是 hidden（display:none），先跳過，避免算到 0 寬度
     if (el.offsetParent === null) return;
-  
     const min = parseFloat(el.dataset.min) || 10;
     const max = parseFloat(el.dataset.max) || 18;
-  
+
     let size = max;
     el.style.fontSize = size + "px";
-  
-    // 一直縮，直到寬度不超過容器或到達最小字級
     while (el.scrollWidth > el.clientWidth && size > min) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
   }
-  
+
   function applyAutoFitText() {
     const elements = document.querySelectorAll(".auto-fit-text");
-  
-    // 先清空字級，避免重複縮越縮越小
-    elements.forEach((el) => {
-      el.style.fontSize = "";
-    });
-  
+    elements.forEach((el) => { el.style.fontSize = ""; });
     elements.forEach(fitTextToOneLine);
   }
-  
-  // 視窗尺寸變化時再重算一次
-  window.addEventListener("resize", () => {
-    applyAutoFitText();
-  });
-  
+  window.addEventListener("resize", applyAutoFitText);
+
   function setupUI(data) {
-    // ===== 先重置權限相關 UI =====
     const mgrFab = document.getElementById("fab-mgr");
     const admFab = document.getElementById("fab-adm");
     if (mgrFab) mgrFab.classList.add("hidden");
     if (admFab) admFab.classList.add("hidden");
-  
+
     const mgrPill = document.querySelector('.menu-pill[data-page="manager"]');
-    const admPill = document.querySelector('.menu-pill[data-page="admin"]');
     if (mgrPill) mgrPill.classList.remove("has-notif");
-    // （頁面本身是否能被直接 nav 到，你目前是沒鎖，但入口按鈕看不到就好）
-  
-    // ===== 以下維持原本邏輯 =====
+
     const nameEl   = document.getElementById("user-label");
     const symbolEl = document.getElementById("user-symbol");
     const emailEl  = document.getElementById("user-email");
     const btn      = document.getElementById("clockInBtn");
     const status   = document.getElementById("status");
-    
+
     const clockStatus = data.clockStatus || "";
-    
-    // 名稱、Email
+
     nameEl.textContent  = currentUser.name  || "";
     emailEl.textContent = currentUser.email || "";
-    
-    // 符號
+
     if (currentUser.symbol) {
       symbolEl.textContent = currentUser.symbol;
       symbolEl.classList.remove("hidden");
@@ -947,12 +816,10 @@
       symbolEl.textContent = "";
       symbolEl.classList.add("hidden");
     }
-    
-    // 代幣數
+
     document.getElementById("hud-coin").textContent         = data.tokens || 0;
     document.getElementById("modal-coin-count").textContent = data.tokens || 0;
-    
-    // 打卡狀態
+
     if (clockStatus.includes("已")) {
       status.textContent = clockStatus;
       status.style.color = "green";
@@ -969,8 +836,7 @@
       btn.disabled = false;
       btn.style.background = "#111";
     }
-    
-    // 權限：manager / admin
+
     if (currentUser.role === "manager" || currentUser.role === "admin") {
       if (mgrFab) mgrFab.classList.remove("hidden");
       checkManagerBadge();
@@ -982,27 +848,20 @@
 
   function login() {
     const email = document.getElementById("login-email").value.trim();
-    if (!email) {
-      alert("請先輸入 Email");
-      return;
-    }
+    if (!email) return alert("請先輸入 Email");
     localStorage.setItem("q_email", email);
     appInit(email);
   }
 
   function resetApp() {
     localStorage.removeItem("q_email");
-    // 如果希望代幣差額提示重新計算，也可以順便清
-    // localStorage.removeItem("q_token_balance");
-  
     currentUser = null;
-  
-    // 把 FAB 應該看不到的先藏起來（保險）
+
     const mgrFab = document.getElementById("fab-mgr");
     const admFab = document.getElementById("fab-adm");
     if (mgrFab) mgrFab.classList.add("hidden");
     if (admFab) admFab.classList.add("hidden");
-  
+
     showLoginOnly();
   }
 
@@ -1012,19 +871,14 @@
     const overlay = document.getElementById("fab-overlay");
     const fab     = document.querySelector(".fab-main");
     const hud     = document.getElementById("hud-right");
-  
-    // 現在這次呼叫 toggleMenu 之後，導覽列會變成「打開」還是「關閉」？
-    const willOpen = sheet.classList.contains("hidden"); 
-    // 如果原本是 hidden，代表這次會被打開
-  
+
+    const willOpen = sheet.classList.contains("hidden");
+
     sheet.classList.toggle("hidden");
     overlay.classList.toggle("hidden");
     fab.classList.toggle("open");
-  
-    // 導覽列打開時顯示扭蛋機，關掉時隱藏
-    if (hud) {
-      hud.style.display = willOpen ? "inline-flex" : "none";
-    }
+
+    if (hud) hud.style.display = willOpen ? "inline-flex" : "none";
   }
 
   function nav(page) {
@@ -1046,11 +900,8 @@
 
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
-    if (page === "schedule") {
-      updateMonthShiftMarkers();
-    }
+    if (page === "schedule") updateMonthShiftMarkers();
     if (page === "clock") {
-      // 切回打卡頁時，重新依目前寬度縮一次字
       requestAnimationFrame(() => {
         applyAutoFitText();
         if (currentUser?.email) loadAvatar(currentUser.email);
