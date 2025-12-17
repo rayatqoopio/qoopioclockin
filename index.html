@@ -490,6 +490,44 @@
       box-shadow:0 2px 0 #1e874b;
     }
     @keyframes shine{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
+
+    /* 1️⃣ Avatar 整體放大 1.5 倍 */
+    .clockin-header .avatar-slot{
+      transform: scale(1.5);
+      transform-origin: left center;
+    }
+    
+    /* 為了避免放大後擠到右邊文字，補一點間距 */
+    .clockin-header{
+      gap: 18px;
+    }
+    
+    /* 2️⃣ 使用者資訊字級比例調整 */
+    .user-name{
+      /* 維持原本，不動 */
+    }
+    
+    .user-symbol{
+      font-size: 0.5em;   /* 原本的一半 */
+      line-height: 1.1;
+    }
+    
+    .user-email{
+      font-size: 0.25em;  /* 原本的 0.75 */
+    }
+    
+    /* 3️⃣ 行為區整體下移 1.5 倍 */
+    #clockInBtn{
+      margin-top: calc(0.8rem * 1.5);
+    }
+    
+    .logout-btn{
+      margin-top: calc(0.6rem * 1.5);
+    }
+    
+    #status{
+      margin-top: calc(1rem * 1.5);
+    }
   </style>
 </head>
 
