@@ -2018,9 +2018,24 @@
       shopSwitchTab("items");
     }
     
-    // 先做假的購買，等後端 shopBuy API 好了再改成真的
-    function shopBuyStub(itemID){
-      alert("商店購買 API 還沒接：\nitemID = " + itemID);
+    async function shopBuy(itemID){
+      const r = await fetch(API_URL, {
+        method:"POST",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action:"avatarShopBuy",
+          email: currentUser.email,
+          itemID
+        })
+      });
+      const d = await r.json();
+      if (!d.ok) return alert(d.msg);
+    
+      document.getElementById("shop-coin").textContent = d.balance;
+      document.getElementById("hud-coin").textContent = d.balance;
+    
+      await loadAvatar(currentUser.email); // 重新抓 owned
+      alert("購買成功！");
     }
 </script>
 </body>
