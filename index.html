@@ -1706,47 +1706,46 @@
       
   async function wardrobeSave(){
     const btn = document.getElementById("wardrobe-save-btn");
-      if (btn) {
-        btn.classList.add("loading");
-        btn.textContent = "儲存中…";
+    if (btn) {
+      btn.classList.add("loading");
+      btn.textContent = "儲存中…";
+    }
+  
+    try{
+      const r = await fetch(API_URL, {
+        method:"POST",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action:"avatarEquip",
+          email: currentUser.email,
+          equipped: wardrobeState.equipped
+        })
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg||"儲存失敗");
+  
+      if (btn){
+        btn.classList.remove("loading");
+        btn.textContent = "✓ 已儲存";
       }
-    
-      try{
-        const r = await fetch(API_URL, {
-          method:"POST",
-          headers:{ "Content-Type":"text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action:"avatarEquip",
-            email: currentUser.email,
-            equipped: wardrobeState.equipped
-          })
-        });
-        const d = await r.json();
-        if (!d.ok) throw new Error(d.msg||"儲存失敗");
-    
-        // 成功視覺回饋
+  
+      avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped));
+  
+      setTimeout(()=>{
+        closeModal("wardrobe");
         if (btn){
-          btn.classList.remove("loading");
-          btn.textContent = "✓ 已儲存";
-        }
-    
-        // 同步快取
-        avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped));
-    
-        setTimeout(()=>{
-          closeModal("wardrobe");
-          if (btn){
-            btn.textContent = "儲存";
-          }
-        }, 600);
-    
-      }catch(err){
-        alert(err.message);
-        if (btn){
-          btn.classList.remove("loading");
           btn.textContent = "儲存";
+        }
+      }, 600);
+  
+    }catch(err){
+      alert(err.message);
+      if (btn){
+        btn.classList.remove("loading");
+        btn.textContent = "儲存";
       }
     }
+  } // ✅ 這個一定要有
 
   // ===== Wardrobe (GLOBAL) =====
     let wardrobeState = {
