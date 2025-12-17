@@ -610,7 +610,7 @@
 
       <div style="display:flex; gap:10px; margin-top:14px;">
         <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;" onclick="wardrobeReset()">還原</button>
-        <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;" onclick="openModal('shop')">商店</button>
+        <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;" onclick="openShopFromWardrobe()">商店</button>
         <button id="wardrobe-save-btn" class="admin-action-btn save-btn" style="flex:1;" onclick="wardrobeSave()">儲存</button>
       </div>
     </div>
@@ -914,7 +914,8 @@
     if (!el) return;
     el.classList.add("open");
     if (id === "leave") prepareLeaveDates();
-    if (id === "admin-token") loadAdminUserList();   // ✅ 新增
+    if (id === "admin-token") loadAdminUserList();
+    if (id === "shop") shopInit();              // ✅ 加這行
   }
   function closeModal(id) {
     const el = document.getElementById("modal-" + id);
@@ -1901,7 +1902,7 @@
       if (coinEl) coinEl.textContent = coin;
     
       // 目前先用 AvatarItems 當作商店商品展示（等你做 shopList API 再換）
-      const items = (avatarCache && Array.isArray(avatarCache.items)) ? avatarCache.items : [];
+      const r = await fetch(`${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}`);
       const owned = new Set(((avatarCache && avatarCache.owned) || []).map(x => String(x||"").trim()));
     
       // 商店清單：先顯示「未擁有」+ enabled
@@ -1931,7 +1932,7 @@
                   <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
                 </div>
                 <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                        onclick="shopBuyStub('${String(it.itemID||"").replace(/'/g,"\\'")}')">
+                        onclick="shopBuy('${String(it.itemID||"").replace(/'/g,"\\'")}')">
                   ${price} 代幣
                 </button>
               </div>
