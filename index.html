@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#fdf5e6" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <link rel="manifest" href="manifest.json?v=20251201" />
+  <link rel="manifest" href="manifest.json?v=20251218" />
   <link rel="icon" href="icon.png" />
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js?v=20251201");
+      navigator.serviceWorker.register("service-worker.js?v=20251218");
     }
   </script>
 
@@ -1873,11 +1873,10 @@
       renderWardrobePreview();
       renderAvatar(wardrobeState.items, wardrobeState.equipped);
     }
-
+  
     function openShopFromWardrobe(){
       closeModal("wardrobe");
-      openModal("shop");
-      shopInit();
+      openModal("shop"); // openModal 會自動 shopInit()
     }
     
     function backToWardrobe(){
@@ -1895,35 +1894,36 @@
       document.getElementById("shop-view-owned").classList.toggle("hidden", tab !== "owned");
     }
     
-    function shopInit(){
-      // 先用現有資料塞畫面（之後再接 shop API）
+    async function shopInit(){
+      // 先顯示代幣
       const coin = Number(document.getElementById("hud-coin")?.textContent || "0");
       const coinEl = document.getElementById("shop-coin");
       if (coinEl) coinEl.textContent = coin;
     
-      // 目前先用 AvatarItems 當作商店商品展示（等你做 shopList API 再換）
-      const r = await fetch(`${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}`);
-      const owned = new Set(((avatarCache && avatarCache.owned) || []).map(x => String(x||"").trim()));
-    
-      // 商店清單：先顯示「未擁有」+ enabled
-      const shopItems = items.filter(it => {
-        const id = String(it.itemID || "").trim();
-        if (!id) return false;
-        const price = Number(it.pricetoken || 0);
-        const unlock = String(it.unlocktype || "").toLowerCase();
-        const isFree = (unlock === "free") || price === 0;
-        return !isFree && !owned.has(id);
-      });
-    
-      const ownedItems = items.filter(it => owned.has(String(it.itemID||"").trim()));
-    
+      // 先顯示 loading
       const shopBox = document.getElementById("shop-item-list");
       const ownedBox = document.getElementById("shop-owned-list");
+      if (shopBox) shopBox.innerHTML = "載入中...";
+      if (ownedBox) ownedBox.innerHTML = "載入中...";
+    
+      // ✅ 叫後端 shop list
+      const r = await fetch(`${API_URL}?action=avatarShopList&email=${encodeURIComponent(currentUser.email)}`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "avatarShopList failed");
+    
+      const shopItems = Array.isArray(d.items) ? d.items : [];
+      const balance = Number(d.balance || 0);
+      if (coinEl) coinEl.textContent = balance;
+    
+      // 已擁有：用 shopItems 裡的 owned 欄位分
+      const buyable = shopItems.filter(it => !it.owned);
+      const owned   = shopItems.filter(it => it.owned);
     
       if (shopBox){
-        shopBox.innerHTML = shopItems.length ? shopItems.map(it => {
-          const name = it.name || it.itemID;
+        shopBox.innerHTML = buyable.length ? buyable.map(it => {
+          const name  = it.name || it.itemID;
           const price = Number(it.pricetoken || 0);
+          const safeId = String(it.itemID||"").replace(/'/g,"\\'");
           return `
             <div class="dashboard-card" style="margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1932,7 +1932,7 @@
                   <div style="font-size:0.85rem;color:#888;">${it.category || ""}｜${it.rarity || ""}</div>
                 </div>
                 <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                        onclick="shopBuy('${String(it.itemID||"").replace(/'/g,"\\'")}')">
+                        onclick="shopBuy('${safeId}')">
                   ${price} 代幣
                 </button>
               </div>
@@ -1942,7 +1942,7 @@
       }
     
       if (ownedBox){
-        ownedBox.innerHTML = ownedItems.length ? ownedItems.map(it => {
+        ownedBox.innerHTML = owned.length ? owned.map(it => {
           const name = it.name || it.itemID;
           return `
             <div class="dashboard-card" style="margin-bottom:10px;">
@@ -1953,7 +1953,6 @@
         }).join("") : `<div style="color:#888;text-align:center;padding:12px 0;">你目前沒有道具</div>`;
       }
     
-      // 預設停在「道具」
       shopSwitchTab("items");
     }
     
