@@ -1702,18 +1702,28 @@
     }
   }
   
+  const AVATAR_ASSET_BASE = "./assets/avatar/";
+  const AVATAR_BASE_IMAGE = "base.png"; // 你的紙娃娃架子底圖檔名
+  
   function renderAvatar(items, equipped) {
     const stage = document.getElementById("avatar-stage");
     if (!stage) return;
   
     stage.innerHTML = "";
   
+    // ✅ 先放底圖（永遠最底層）
+    const base = document.createElement("img");
+    base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
+    base.alt = "avatar base";
+    base.dataset.layer = "0";
+    stage.appendChild(base);
+  
     // equipped 裡面會是 {HEAD:"...", HAIR:"...", ...}
     const equippedIds = new Set(
       Object.values(equipped || {}).map(x => String(x || "").trim()).filter(Boolean)
     );
   
-    // 把已穿上的 item 找出來，並依 layer 排序
+    // 把已穿上的 item 找出來，依 layer 排序
     const toDraw = (items || [])
       .filter(it => equippedIds.has(String(it.itemID || "").trim()))
       .sort((a, b) => Number(a.layer || 0) - Number(b.layer || 0));
@@ -1725,6 +1735,7 @@
       const img = document.createElement("img");
       img.src = AVATAR_ASSET_BASE + key;
       img.alt = it.name || it.itemID || "avatar part";
+      img.dataset.layer = String(it.layer || 0);
       stage.appendChild(img);
     }
   }
