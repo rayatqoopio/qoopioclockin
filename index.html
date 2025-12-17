@@ -1958,63 +1958,72 @@
     }
     
     async function shopBuy(itemID){
-      const r = await fetch(API_URL, {
-        method:"POST",
-        headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action:"avatarShopBuy",
-          email: currentUser.email,
-          itemID
-        })
-      });
-      const d = await r.json();
-      if (!d.ok) return alert(d.msg);
+      try {
+        const r = await fetch(API_URL, {
+          method:"POST",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action:"avatarShopBuy",
+            email: currentUser?.email,
+            itemID
+          })
+        });
     
-      document.getElementById("shop-coin").textContent = d.balance;
-      document.getElementById("hud-coin").textContent = d.balance;
+        if (!r.ok) throw new Error("HTTP " + r.status);
     
-      await loadAvatar(currentUser.email); // 重新抓 owned
-      alert("購買成功！");
+        const d = await r.json();
+        if (!d.ok) return alert(d.msg || "購買失敗");
+    
+        const shopCoin = document.getElementById("shop-coin");
+        const hudCoin  = document.getElementById("hud-coin");
+        if (shopCoin) shopCoin.textContent = d.balance;
+        if (hudCoin)  hudCoin.textContent  = d.balance;
+    
+        await loadAvatar(currentUser.email); // 重新抓 owned
+        if (typeof shopInit === "function") shopInit(); // ✅ 立刻刷新商店清單
+        alert("購買成功！");
+      } catch (e) {
+        console.error("shopBuy error:", e);
+        alert("購買失敗，請稍後再試");
+      }
     }
-
+    
     function renderShopPreview(tempItemID){
-    const stage = document.getElementById("shop-preview-stage");
-    if (!stage) return;
-  
-    stage.innerHTML = "";
-  
-    // 底圖
-    const base = document.createElement("img");
-    base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
-    stage.appendChild(base);
-  
-    if (!avatarCache) return;
-  
-    // 目前穿搭
-    const equipped = Object.assign({}, avatarCache.equipped || {});
-    const items = avatarCache.items || [];
-  
-    // 找該 item
-    const it = items.find(x => String(x.itemID) === String(tempItemID));
-    if (it && it.category) {
-      equipped[it.category] = it.itemID;
+      const stage = document.getElementById("shop-preview-stage");
+      if (!stage) return;
+    
+      stage.innerHTML = "";
+    
+      const base = document.createElement("img");
+      base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
+      stage.appendChild(base);
+    
+      if (!avatarCache) return;
+    
+      const equipped = Object.assign({}, avatarCache.equipped || {});
+      const items = Array.isArray(avatarCache.items) ? avatarCache.items : [];
+    
+      if (tempItemID != null && tempItemID !== "") {
+        const it = items.find(x => String(x.itemID || "").trim() === String(tempItemID).trim());
+        if (it && it.category) equipped[it.category] = it.itemID;
+      }
+    
+      const equippedIds = new Set(
+        Object.values(equipped).map(x => String(x||"").trim()).filter(Boolean)
+      );
+    
+      const toDraw = items
+        .filter(x => equippedIds.has(String(x.itemID||"").trim()))
+        .sort((a,b)=>Number(a.layer||0)-Number(b.layer||0));
+    
+      for (const p of toDraw){
+        const key = String(p.imagekey||"").trim();
+        if (!key) continue;
+        const img = document.createElement("img");
+        img.src = AVATAR_ASSET_BASE + key;
+        stage.appendChild(img);
+      }
     }
-  
-    // 疊圖
-    const equippedIds = new Set(
-      Object.values(equipped).map(x => String(x||"").trim()).filter(Boolean)
-    );
-  
-    const toDraw = items
-      .filter(x => equippedIds.has(String(x.itemID)))
-      .sort((a,b)=>Number(a.layer||0)-Number(b.layer||0));
-  
-    for (const p of toDraw){
-      const img = document.createElement("img");
-      img.src = AVATAR_ASSET_BASE + p.imagekey;
-      stage.appendChild(img);
-    }
-  }
 </script>
 </body>
 </html>
