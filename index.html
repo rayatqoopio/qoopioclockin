@@ -91,6 +91,23 @@
       justify-content:center;
       box-sizing:border-box;
     }
+    /* Avatar Stage（疊圖舞台） */
+    #avatar-stage{
+      position:relative;
+      width:100%;
+      height:100%;
+    }
+    
+    /* 每一層都是一張透明 PNG 疊在同一個框內 */
+    #avatar-stage img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
     .avatar-placeholder{font-size:12px;opacity:0.6;}
     .user-info-block{
       flex:1;
@@ -378,10 +395,9 @@
       <!-- 頂部：紙娃娃 + 使用者資訊 -->
       <div class="clockin-header">
         <!-- 紅色框：未來紙娃娃顯示區 -->
-        <div class="avatar-slot">
-          <!-- 之後可以換成 <img> 或 canvas -->
-          <span class="avatar-placeholder">紙娃娃</span>
-        </div>
+      <div class="avatar-slot">
+        <div id="avatar-stage" aria-label="avatar stage"></div>
+      </div>
     
         <!-- 綠色框：名稱 / 符號 / email（自動縮字級） -->
         <div class="user-info-block">
@@ -674,7 +690,9 @@
       currentUser.email = email;
 
       setupUI(data);
-
+      
+      // ✅ 載入紙娃娃
+      await loadAvatar(email);
       // ✅ 代幣差額提示（登入時）
       const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
       const nowBalance  = Number(data.tokens || 0);
@@ -900,6 +918,7 @@
       // 切回打卡頁時，重新依目前寬度縮一次字
       requestAnimationFrame(() => {
         applyAutoFitText();
+        if (currentUser?.email) loadAvatar(currentUser.email);
       });
     }
   }
@@ -1661,6 +1680,52 @@
     } catch (e) {
       console.error(e);
       document.getElementById("leave-history").innerHTML = "載入失敗";
+    }
+  }
+
+  // ===== Avatar Frontend =====
+  const AVATAR_ASSET_BASE = "./assets/avatar/"; // 建議你素材放這裡（GitHub Pages）
+  let avatarCache = null; // 存最後一次的 avatarGet，之後要做換裝 UI 也會用到
+  
+  async function loadAvatar(email) {
+    try {
+      const r = await fetch(`${API_URL}?action=avatarGet&email=${encodeURIComponent(email)}`);
+      const d = await r.json();
+      if (!d.ok) {
+        console.warn("avatarGet failed:", d.msg);
+        return;
+      }
+      avatarCache = d;
+      renderAvatar(d.items || [], d.equipped || {});
+    } catch (e) {
+      console.error("loadAvatar error:", e);
+    }
+  }
+  
+  function renderAvatar(items, equipped) {
+    const stage = document.getElementById("avatar-stage");
+    if (!stage) return;
+  
+    stage.innerHTML = "";
+  
+    // equipped 裡面會是 {HEAD:"...", HAIR:"...", ...}
+    const equippedIds = new Set(
+      Object.values(equipped || {}).map(x => String(x || "").trim()).filter(Boolean)
+    );
+  
+    // 把已穿上的 item 找出來，並依 layer 排序
+    const toDraw = (items || [])
+      .filter(it => equippedIds.has(String(it.itemID || "").trim()))
+      .sort((a, b) => Number(a.layer || 0) - Number(b.layer || 0));
+  
+    for (const it of toDraw) {
+      const key = String(it.imagekey || "").trim();
+      if (!key) continue;
+  
+      const img = document.createElement("img");
+      img.src = AVATAR_ASSET_BASE + key;
+      img.alt = it.name || it.itemID || "avatar part";
+      stage.appendChild(img);
     }
   }
 </script>
