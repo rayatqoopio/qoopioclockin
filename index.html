@@ -1882,15 +1882,6 @@
       renderWardrobePreview();
       renderAvatar(wardrobeState.items, wardrobeState.equipped);
     }
-    
-    async function wardrobeSave(){
-      if (!avatarCache) avatarCache = {};
-      avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped || {}));
-    
-      alert("已套用（儲存 API 下一步接）");
-      closeModal("wardrobe");
-    }
-  }
 </script>
 </body>
 </html>
