@@ -668,79 +668,84 @@
   </div>
 
   <!-- Avatar Wardrobe Modal -->
-  <div style="display:flex; gap:10px; margin-top:14px;">
-    <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
-            onclick="wardrobeReset()">還原</button>
+  <div class="modal" id="modal-wardrobe">
+  <div class="modal-card">
+    <button class="modal-close-btn" onclick="closeModal('wardrobe')">✕</button>
+    <div class="modal-title">換裝</div>
+    
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
+              onclick="wardrobeReset()">還原</button>
+    
+      <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;"
+              onclick="openShopFromWardrobe()">商店</button>
+    
+      <button class="admin-action-btn" style="flex:1;"
+              onclick="wardrobeSave()">儲存</button>
+    </div>
   
-    <button class="admin-action-btn" style="flex:1;background:#fff;color:#111;border:1px solid #111;"
-            onclick="openShopFromWardrobe()">商店</button>
-  
-    <button class="admin-action-btn" style="flex:1;"
-            onclick="wardrobeSave()">儲存</button>
-  </div>
-
-  <!-- Shop Modal -->
-  <div class="modal" id="modal-shop">
-    <div class="modal-card">
-      <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
-      <div class="modal-title">商店</div>
-      <!-- 商店預覽 -->
-      <div style="display:flex; justify-content:center; margin:10px 0 14px;">
-        <div style="width:150px; aspect-ratio:3/4; position:relative;">
-          <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
+    <!-- Shop Modal -->
+    <div class="modal" id="modal-shop">
+      <div class="modal-card">
+        <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
+        <div class="modal-title">商店</div>
+        <!-- 商店預覽 -->
+        <div style="display:flex; justify-content:center; margin:10px 0 14px;">
+          <div style="width:150px; aspect-ratio:3/4; position:relative;">
+            <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
+          <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
+        </div>
+    
+        <div id="shop-view-items">
+          <div id="shop-item-list" style="text-align:left;">載入中...</div>
+        </div>
+    
+        <div id="shop-view-owned" class="hidden">
+          <div id="shop-owned-list" style="text-align:left;">載入中...</div>
+        </div>
+    
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
+          <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
+                  onclick="backToWardrobe()">回換裝</button>
         </div>
       </div>
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
-        <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
-      </div>
-  
-      <div id="shop-view-items">
-        <div id="shop-item-list" style="text-align:left;">載入中...</div>
-      </div>
-  
-      <div id="shop-view-owned" class="hidden">
-        <div id="shop-owned-list" style="text-align:left;">載入中...</div>
-      </div>
-  
-      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
-        <button class="admin-action-btn" style="width:auto;padding:10px 14px;"
-                onclick="backToWardrobe()">回換裝</button>
+    </div>
+    
+        <!-- 上方預覽 -->
+    <div style="display:flex; justify-content:center; margin-bottom:12px;">
+       <div style="width:180px; aspect-ratio:3/4; position:relative;">
+        <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
       </div>
     </div>
-  </div>
-  
-      <!-- 上方預覽 -->
-  <div style="display:flex; justify-content:center; margin-bottom:12px;">
-     <div style="width:180px; aspect-ratio:3/4; position:relative;">
-      <div id="wardrobe-stage" style="position:relative;width:100%;height:100%;"></div>
-    </div>
-  </div>
-  
-      <!-- 分類 tabs -->
-      <div class="modal-tabs" id="wardrobe-tabs">
-        <button class="active" data-cat="HEAD" onclick="wardrobeSwitchCat('HEAD')">頭飾</button>
-        <button data-cat="HAIR" onclick="wardrobeSwitchCat('HAIR')">髮型</button>
-        <button data-cat="EYE"  onclick="wardrobeSwitchCat('EYE')">眼飾</button>
-        <button data-cat="FACE" onclick="wardrobeSwitchCat('FACE')">臉飾</button>
-        <button data-cat="EAR"  onclick="wardrobeSwitchCat('EAR')">耳飾</button>
-        <button data-cat="CLOTH" onclick="wardrobeSwitchCat('CLOTH')">服裝</button>
-        <button data-cat="PET" onclick="wardrobeSwitchCat('PET')">寵物</button>
-      </div>
-  
-      <!-- 道具清單 -->
-      <div id="wardrobe-list" style="text-align:left; margin-top:10px;"></div>
-  
-      <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
-                onclick="wardrobeReset()">還原</button>
-        <button id="wardrobe-save-btn"
-                class="admin-action-btn save-btn"
-                style="flex:1;"
-                onclick="wardrobeSave()">
-          儲存
-        </button>
+    
+        <!-- 分類 tabs -->
+        <div class="modal-tabs" id="wardrobe-tabs">
+          <button class="active" data-cat="HEAD" onclick="wardrobeSwitchCat('HEAD')">頭飾</button>
+          <button data-cat="HAIR" onclick="wardrobeSwitchCat('HAIR')">髮型</button>
+          <button data-cat="EYE"  onclick="wardrobeSwitchCat('EYE')">眼飾</button>
+          <button data-cat="FACE" onclick="wardrobeSwitchCat('FACE')">臉飾</button>
+          <button data-cat="EAR"  onclick="wardrobeSwitchCat('EAR')">耳飾</button>
+          <button data-cat="CLOTH" onclick="wardrobeSwitchCat('CLOTH')">服裝</button>
+          <button data-cat="PET" onclick="wardrobeSwitchCat('PET')">寵物</button>
+        </div>
+    
+        <!-- 道具清單 -->
+        <div id="wardrobe-list" style="text-align:left; margin-top:10px;"></div>
+    
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
+                  onclick="wardrobeReset()">還原</button>
+          <button id="wardrobe-save-btn"
+                  class="admin-action-btn save-btn"
+                  style="flex:1;"
+                  onclick="wardrobeSave()">
+            儲存
+          </button>
       </div>
     </div>
   </div>
@@ -1846,9 +1851,10 @@
       img.alt = it.name || it.itemID || "avatar part";
       stage.appendChild(img);
     }
-    
-    async function wardrobeSave(){
-      const btn = document.getElementById("wardrobe-save-btn");
+  }
+      
+  async function wardrobeSave(){
+    const btn = document.getElementById("wardrobe-save-btn");
       if (btn) {
         btn.classList.add("loading");
         btn.textContent = "儲存中…";
@@ -1888,7 +1894,6 @@
         if (btn){
           btn.classList.remove("loading");
           btn.textContent = "儲存";
-        }
       }
     }
 
