@@ -1764,39 +1764,43 @@
       img.alt = it.name || it.itemID || "avatar part";
       stage.appendChild(img);
     }
+    
+    async function wardrobeSave(){
+      // 先把狀態更新到 avatarCache（前端一致）
+      if (!avatarCache) avatarCache = {};
+      avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped || {}));
+    
+      // TODO：下一步我們接後端 action=avatarEquipSave
+      alert("已套用（儲存 API 下一步接）");
+      closeModal("wardrobe");
+    }
+  }
 
+  // ===== Wardrobe (GLOBAL) =====
     let wardrobeState = {
       cat: "HEAD",
-      baseEquipped: null,  // 打開時的原始穿戴（用來還原）
-      equipped: null,      // 目前暫存穿戴
-      items: []            // 可用道具（avatarCache.items）
+      baseEquipped: {},
+      equipped: {},
+      items: []
     };
     
     function openAvatarWardrobe(){
-      if (!avatarCache) {
-        // 沒拿到資料也先開，至少顯示 base
-        wardrobeState.items = [];
-        wardrobeState.baseEquipped = {};
-        wardrobeState.equipped = {};
-      } else {
-        wardrobeState.items = avatarCache.items || [];
-        wardrobeState.baseEquipped = JSON.parse(JSON.stringify(avatarCache.equipped || {}));
-        wardrobeState.equipped = JSON.parse(JSON.stringify(avatarCache.equipped || {}));
-      }
+      // avatarCache 來自 loadAvatar 成功後的資料
+      const items = (avatarCache && avatarCache.items) ? avatarCache.items : [];
+      const eq    = (avatarCache && avatarCache.equipped) ? avatarCache.equipped : {};
     
-      // 開啟時預設分類
+      wardrobeState.items = items;
+      wardrobeState.baseEquipped = JSON.parse(JSON.stringify(eq || {}));
+      wardrobeState.equipped     = JSON.parse(JSON.stringify(eq || {}));
+    
       wardrobeSwitchCat("HEAD");
-    
-      // 先畫一次預覽
       renderWardrobePreview();
-    
       openModal("wardrobe");
     }
     
     function wardrobeSwitchCat(cat){
       wardrobeState.cat = cat;
     
-      // tab 樣式
       document.querySelectorAll("#wardrobe-tabs button").forEach(b=>{
         b.classList.toggle("active", b.dataset.cat === cat);
       });
@@ -1815,7 +1819,6 @@
       base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
       stage.appendChild(base);
     
-      // 疊裝（沿用你 renderAvatar 的邏輯）
       const equippedIds = new Set(
         Object.values(wardrobeState.equipped || {}).map(x => String(x || "").trim()).filter(Boolean)
       );
@@ -1847,13 +1850,10 @@
     
       const now = wardrobeState.equipped?.[cat] || "";
     
-      // 「卸下」選項（除了某些你想強制要有的分類）
-      let html = `
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="menu-pill ${!now ? "active":""}" onclick="wardrobeEquip('${cat}','')">（卸下）</button>
+      let html = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="menu-pill ${!now ? "active":""}" onclick="wardrobeEquip('${cat}','')">（卸下）</button>
       `;
     
-      // 顯示每個道具
       for (const it of items){
         const id = String(it.itemID||"");
         const active = (now === id) ? "active" : "";
@@ -1866,13 +1866,13 @@
     }
     
     function wardrobeEquip(cat, itemID){
-      if (!wardrobeState.equipped) wardrobeState.equipped = {};
       wardrobeState.equipped[cat] = itemID || "";
     
+      // 更新預覽
       renderWardrobeList();
       renderWardrobePreview();
     
-      // 同步到主畫面（即時看到變化）
+      // 同步主畫面（只畫，不要重建 wardrobe function）
       renderAvatar(wardrobeState.items, wardrobeState.equipped);
     }
     
@@ -1884,11 +1884,9 @@
     }
     
     async function wardrobeSave(){
-      // 先把狀態更新到 avatarCache（前端一致）
       if (!avatarCache) avatarCache = {};
       avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped || {}));
     
-      // TODO：下一步我們接後端 action=avatarEquipSave
       alert("已套用（儲存 API 下一步接）");
       closeModal("wardrobe");
     }
