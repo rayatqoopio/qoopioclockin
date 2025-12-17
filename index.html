@@ -490,16 +490,19 @@
       box-shadow:0 2px 0 #1e874b;
     }
     @keyframes shine{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
-
-    /* 1️⃣ Avatar 整體放大 1.5 倍 */
+    /* ===============================
+       Clock Page Layout Tuning
+       =============================== */
+    
+    /* 1️⃣ Avatar 整體放大 1.2 倍 */
     .clockin-header .avatar-slot{
-      transform: scale(1.5);
+      transform: scale(1.2);
       transform-origin: left;
     }
     
     /* 為了避免放大後擠到右邊文字，補一點間距 */
     .clockin-header{
-      gap: 18px;
+      gap: 20px;
     }
     
     /* 2️⃣ 使用者資訊字級比例調整 */
@@ -508,25 +511,25 @@
     }
     
     .user-symbol{
-      font-size: 0.2em;   /* 原本的一半 */
+      font-size: 0.1em;   /* 原本0.1 */
       line-height: 1.1;
     }
     
     .user-email{
-      font-size: 0.1em;  /* 原本的 0.75 */
+      font-size: 0.1em;  /* 原本的 0.1 */
     }
     
-    /* 3️⃣ 行為區整體下移 1.5 倍 */
+    /* 3️⃣ 行為區整體下移 6 倍 */
     #clockInBtn{
-      margin-top: 2rem;
+      margin-top: calc(0.8rem * 6);
     }
     
     .logout-btn{
-      margin-top: 2rem;
+      margin-top: calc(0.6rem * 6);
     }
     
     #status{
-      margin-top: 2rem;
+      margin-top: calc(1rem * 6);
     }
   </style>
 </head>
@@ -800,7 +803,7 @@
     
           <!-- 分頁：道具 / 已擁有（固定） -->
           <div class="shop-tabs">
-            <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">服裝
+            <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">服裝</button>
             <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
           </div>
     
