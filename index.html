@@ -383,6 +383,46 @@
       user-select:none;
     }
 
+    #shop-preview-stage img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .save-btn{
+      position:relative;
+      overflow:hidden;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .save-btn:active{
+      transform:scale(.96);
+    }
+    .save-btn.loading{
+      pointer-events:none;
+      opacity:.85;
+    }
+    .save-btn.loading::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        120deg,
+        transparent 30%,
+        rgba(255,255,255,.4) 50%,
+        transparent 70%
+      );
+      animation:shine 1s infinite;
+    }
+    
+    @keyframes shine{
+      from{transform:translateX(-100%);}
+      to{transform:translateX(100%);}
+    }
+    
   </style>
 </head>
 <body>
@@ -644,7 +684,12 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('shop')">✕</button>
       <div class="modal-title">商店</div>
-  
+      <!-- 商店預覽 -->
+      <div style="display:flex; justify-content:center; margin:10px 0 14px;">
+        <div style="width:150px; aspect-ratio:3/4; position:relative;">
+          <div id="shop-preview-stage" style="position:relative;width:100%;height:100%;"></div>
+        </div>
+      </div>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
         <button class="menu-pill active" id="shop-tab-items" onclick="shopSwitchTab('items')">道具</button>
         <button class="menu-pill" id="shop-tab-owned" onclick="shopSwitchTab('owned')">已擁有</button>
@@ -690,8 +735,12 @@
       <div style="display:flex; gap:10px; margin-top:14px;">
         <button class="admin-action-btn" style="flex:1;background:#bbb;color:#111;"
                 onclick="wardrobeReset()">還原</button>
-        <button class="admin-action-btn" style="flex:1;"
-                onclick="wardrobeSave()">儲存</button>
+        <button id="wardrobe-save-btn"
+                class="admin-action-btn save-btn"
+                style="flex:1;"
+                onclick="wardrobeSave()">
+          儲存
+        </button>
       </div>
     </div>
   </div>
@@ -1799,15 +1848,49 @@
     }
     
     async function wardrobeSave(){
-      // 先把狀態更新到 avatarCache（前端一致）
-      if (!avatarCache) avatarCache = {};
-      avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped || {}));
+      const btn = document.getElementById("wardrobe-save-btn");
+      if (btn) {
+        btn.classList.add("loading");
+        btn.textContent = "儲存中…";
+      }
     
-      // TODO：下一步我們接後端 action=avatarEquipSave
-      alert("已套用（儲存 API 下一步接）");
-      closeModal("wardrobe");
+      try{
+        const r = await fetch(API_URL, {
+          method:"POST",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action:"avatarEquip",
+            email: currentUser.email,
+            equipped: wardrobeState.equipped
+          })
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg||"儲存失敗");
+    
+        // 成功視覺回饋
+        if (btn){
+          btn.classList.remove("loading");
+          btn.textContent = "✓ 已儲存";
+        }
+    
+        // 同步快取
+        avatarCache.equipped = JSON.parse(JSON.stringify(wardrobeState.equipped));
+    
+        setTimeout(()=>{
+          closeModal("wardrobe");
+          if (btn){
+            btn.textContent = "儲存";
+          }
+        }, 600);
+    
+      }catch(err){
+        alert(err.message);
+        if (btn){
+          btn.classList.remove("loading");
+          btn.textContent = "儲存";
+        }
+      }
     }
-  }
 
   // ===== Wardrobe (GLOBAL) =====
     let wardrobeState = {
@@ -2037,6 +2120,45 @@
       await loadAvatar(currentUser.email); // 重新抓 owned
       alert("購買成功！");
     }
+
+    function renderShopPreview(tempItemID){
+    const stage = document.getElementById("shop-preview-stage");
+    if (!stage) return;
+  
+    stage.innerHTML = "";
+  
+    // 底圖
+    const base = document.createElement("img");
+    base.src = AVATAR_ASSET_BASE + AVATAR_BASE_IMAGE;
+    stage.appendChild(base);
+  
+    if (!avatarCache) return;
+  
+    // 目前穿搭
+    const equipped = Object.assign({}, avatarCache.equipped || {});
+    const items = avatarCache.items || [];
+  
+    // 找該 item
+    const it = items.find(x => String(x.itemID) === String(tempItemID));
+    if (it && it.category) {
+      equipped[it.category] = it.itemID;
+    }
+  
+    // 疊圖
+    const equippedIds = new Set(
+      Object.values(equipped).map(x => String(x||"").trim()).filter(Boolean)
+    );
+  
+    const toDraw = items
+      .filter(x => equippedIds.has(String(x.itemID)))
+      .sort((a,b)=>Number(a.layer||0)-Number(b.layer||0));
+  
+    for (const p of toDraw){
+      const img = document.createElement("img");
+      img.src = AVATAR_ASSET_BASE + p.imagekey;
+      stage.appendChild(img);
+    }
+  }
 </script>
 </body>
 </html>
