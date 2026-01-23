@@ -864,7 +864,8 @@
     }
   }
 
-  window.addEventListener("load", async () => {
+  window.addEventListener("load", () => {
+    // 先把 gacha icon preload（不阻塞）
     try {
       const img = new Image();
       img.onload = () => {
@@ -873,76 +874,102 @@
       };
       img.src = GACHA_ICON;
     } catch (e) {}
-
+  
     const email = localStorage.getItem("q_email");
-    if (email) await appInit(email);
+    if (email) appInit(email);        // ✅ 不 await，避免阻塞首屏
     else showLoginOnly();
   });
 
   async function appInit(email) {
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.remove("hidden");
-    document.getElementById("login-page").classList.add("hidden");
-
+    document.getElementById("login-page")?.classList.add("hidden");
+  
     try {
+      // ✅ Critical：只做登入驗證 + 取得今日打卡狀態/角色/代幣
       const res = await fetch(`${API_URL}?action=initApp&email=${encodeURIComponent(email)}`);
       const data = await res.json();
+  
       if (!data.ok) {
         alert(data.msg || "查無帳號");
         resetApp();
         return;
       }
-
+  
       currentUser = data.user;
       currentUser.email = email;
-
+  
+      // ✅ 先把 clock 必要 UI 畫出來（不等 avatar / 班表 / 公告）
       setupUI(data);
-
-      await loadAvatar(email);
-
-      const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
-      const nowBalance  = Number(data.tokens || 0);
-      if (nowBalance > prevBalance) {
-        const diff = nowBalance - prevBalance;
-        const span = document.getElementById("reward-token-amount");
-        if (span) span.textContent = diff;
-        openModal("token-reward");
-      }
-      localStorage.setItem("q_token_balance", nowBalance);
-
-      if (data.announcement) {
-        const lastRead = localStorage.getItem("q_ann_id");
-        if (String(lastRead) !== String(data.announcement.id)) {
-          document.getElementById("ann-display-title").textContent = data.announcement.title || "";
-          document.getElementById("ann-display-content").textContent = data.announcement.content || "";
-          openModal("show-announce");
-          localStorage.setItem("q_ann_id", data.announcement.id);
-        }
-      }
-
-      loadCalendar(currentYear, currentMonth);
-      updateMonthShiftMarkers();
-
-      if (loading) loading.classList.add("hidden");
-      document.getElementById("global-header").classList.remove("hidden");
-
-      const clockPage = document.getElementById("page-clock");
-      clockPage.classList.remove("hidden");
-      requestAnimationFrame(() => {
-        clockPage.classList.add("visible");
-        applyAutoFitText();
+      showClockFast_();
+  
+      // ✅ 先畫一個 base avatar（避免空白）
+      renderAvatar([], {});
+  
+      // ✅ 背景載入（不要阻塞首屏）
+      const defer = (fn) => {
+        if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 1500 });
+        else setTimeout(fn, 0);
+      };
+  
+      // 1) avatar（背景）
+      defer(async () => {
+        try { await loadAvatar(email); } catch (e) { console.warn("bg loadAvatar fail", e); }
       });
-
-      const fab = document.getElementById("menu-fab");
-      if (fab) fab.style.display = "flex";
-
-      document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
-      const clockPill = document.querySelector('.menu-pill[data-page="clock"]');
-      if (clockPill) clockPill.classList.add("active");
+  
+      // 2) 代幣差額提示（背景）
+      defer(() => {
+        try {
+          const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
+          const nowBalance  = Number(data.tokens || 0);
+          if (nowBalance > prevBalance) {
+            const diff = nowBalance - prevBalance;
+            const span = document.getElementById("reward-token-amount");
+            if (span) span.textContent = diff;
+            openModal("token-reward");
+          }
+          localStorage.setItem("q_token_balance", nowBalance);
+        } catch (e) {}
+      });
+  
+      // 3) 公告（背景）
+      defer(() => {
+        try {
+          if (!data.announcement) return;
+          const lastRead = localStorage.getItem("q_ann_id");
+          if (String(lastRead) !== String(data.announcement.id)) {
+            document.getElementById("ann-display-title").textContent = data.announcement.title || "";
+            document.getElementById("ann-display-content").textContent = data.announcement.content || "";
+            openModal("show-announce");
+            localStorage.setItem("q_ann_id", data.announcement.id);
+          }
+        } catch (e) {}
+      });
+  
+      // 4) 班表（背景，等你真的切到 schedule 再跑也行；但先預載也 OK）
+      defer(() => {
+        try {
+          loadCalendar(currentYear, currentMonth);
+          updateMonthShiftMarkers();
+        } catch (e) { console.warn("bg schedule fail", e); }
+      });
+  
+      // 5) manager badge（背景）
+      defer(() => {
+        try {
+          if (currentUser.role === "manager" || currentUser.role === "admin") {
+            checkManagerBadge();
+          }
+        } catch (e) {}
+      });
+  
     } catch (e) {
       console.error(e);
       alert("連線失敗，請重試");
       showLoginOnly();
+    } finally {
+      // ✅ 不管怎樣都不要卡住 loading
+      document.getElementById("loading-screen")?.classList.add("hidden");
     }
   }
 
@@ -1079,7 +1106,8 @@
 
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
-    if (page === "schedule") updateMonthShiftMarkers();
+    if (page === "schedule") {loadCalendar(currentYear, currentMonth);updateMonthShiftMarkers();
+}
     if (page === "clock") {
       requestAnimationFrame(() => {
         applyAutoFitText();
@@ -2069,13 +2097,6 @@
       renderWardrobePreview();
     }
     
-    function shopSwitchTab(tab){
-      document.getElementById("shop-tab-items").classList.toggle("active", tab === "items");
-      document.getElementById("shop-tab-owned").classList.toggle("active", tab === "owned");
-      document.getElementById("shop-view-items").classList.toggle("hidden", tab !== "items");
-      document.getElementById("shop-view-owned").classList.toggle("hidden", tab !== "owned");
-    }
-    
     // ===== Shop State (GLOBAL) =====
     let shopState = {
       tab: "items",     // items | owned
@@ -2268,7 +2289,36 @@
         }
       }
     }
+
+      function showClockFast_() {
+      const loading = document.getElementById("loading-screen");
+      if (loading) loading.classList.add("hidden");
     
+      // header + FAB 先顯示
+      document.getElementById("global-header")?.classList.remove("hidden");
+      const fab = document.getElementById("menu-fab");
+      if (fab) fab.style.display = "flex";
+    
+      // 只顯示 clock page
+      ["clock","leave","schedule","manager","admin"].forEach((p)=>{
+        const el = document.getElementById("page-" + p);
+        if (!el) return;
+        if (p === "clock") {
+          el.classList.remove("hidden");
+          requestAnimationFrame(()=>el.classList.add("visible"));
+        } else {
+          el.classList.add("hidden");
+          el.classList.remove("visible");
+        }
+      });
+    
+      // menu pill active
+      document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
+      document.querySelector('.menu-pill[data-page="clock"]')?.classList.add("active");
+    
+      // 文字縮放
+      requestAnimationFrame(() => applyAutoFitText());
+    }
     function renderShopPreview(tempItemID){
       const stage = document.getElementById("shop-preview-stage");
       if (!stage) return;
