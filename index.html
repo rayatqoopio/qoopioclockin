@@ -887,7 +887,7 @@
   
     try {
       // ✅ Critical：只做登入驗證 + 取得今日打卡狀態/角色/代幣
-      const res = await fetch(`${API_URL}?action=initApp&email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_URL}?action=initLite&email=${encodeURIComponent(email)}`);
       const data = await res.json();
   
       if (!data.ok) {
