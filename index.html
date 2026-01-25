@@ -840,27 +840,6 @@
   let allUsersForAdmin = [];
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
-  const LOADING_MIN_MS = 150;
-  let loadingShownAt = 0;
-
-  function showLoading() {
-    const el = document.getElementById("loading-screen");
-    if (!el) return;
-    loadingShownAt = performance.now();
-    el.classList.remove("hidden");
-  }
-  
-  async function hideLoading() {
-    const el = document.getElementById("loading-screen");
-    if (!el) return;
-  
-    const dt = performance.now() - (loadingShownAt || performance.now());
-    const wait = Math.max(0, LOADING_MIN_MS - dt);
-    if (wait) await new Promise(r => setTimeout(r, wait));
-  
-    el.classList.add("hidden");
-  }
-  
   /** 只顯示登入頁，其他全部收起來 */
   function showLoginOnly() {
     const loading = document.getElementById("loading-screen");
@@ -902,57 +881,98 @@
   });
 
   async function appInit(email) {
-    showClockFast_(); // ✅ 先顯示 UI
-    const btn = document.getElementById("clockInBtn");
-    if (btn) { btn.textContent = "連線中..."; btn.disabled = true; }
-  
-    // 可選：只在「第一次開 app」才 show loading（看你要不要）
-    // showLoading();
+    const loading = document.getElementById("loading-screen");
+    if (loading) loading.classList.remove("hidden");
+    document.getElementById("login-page")?.classList.add("hidden");
   
     try {
-      const res = await fetchWithTimeout(
-        `${API_URL}?action=initLite&email=${encodeURIComponent(email)}`,
-        3500
-      );
+      // ✅ Critical：只做登入驗證 + 取得今日打卡狀態/角色/代幣
+      const res = await fetch(`${API_URL}?action=initApp&email=${encodeURIComponent(email)}`);
       const data = await res.json();
   
-      if (!data.ok) { alert(data.msg || "查無帳號"); resetApp(); return; }
+      if (!data.ok) {
+        alert(data.msg || "查無帳號");
+        resetApp();
+        return;
+      }
   
       currentUser = data.user;
       currentUser.email = email;
   
+      // ✅ 先把 clock 必要 UI 畫出來（不等 avatar / 班表 / 公告）
       setupUI(data);
+      showClockFast_();
   
-      // ✅ base avatar 先畫（秒出）
+      // ✅ 先畫一個 base avatar（避免空白）
       renderAvatar([], {});
   
-      // ✅ 背景載入
+      // ✅ 背景載入（不要阻塞首屏）
       const defer = (fn) => {
         if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 1500 });
         else setTimeout(fn, 0);
       };
   
-      defer(async () => { try { await loadAvatar(email); } catch (e) {} });
-      defer(() => { try { /* token diff */ } catch (e) {} });
-      defer(() => { try { /* announcement */ } catch (e) {} });
-      defer(() => { try { loadCalendar(currentYear, currentMonth); updateMonthShiftMarkers(); } catch (e) {} });
-      defer(() => { try { if (currentUser.role === "manager" || currentUser.role === "admin") checkManagerBadge(); } catch (e) {} });
+      // 1) avatar（背景）
+      defer(async () => {
+        try { await loadAvatar(email); } catch (e) { console.warn("bg loadAvatar fail", e); }
+      });
+  
+      // 2) 代幣差額提示（背景）
+      defer(() => {
+        try {
+          const prevBalance = Number(localStorage.getItem("q_token_balance") || "0");
+          const nowBalance  = Number(data.tokens || 0);
+          if (nowBalance > prevBalance) {
+            const diff = nowBalance - prevBalance;
+            const span = document.getElementById("reward-token-amount");
+            if (span) span.textContent = diff;
+            openModal("token-reward");
+          }
+          localStorage.setItem("q_token_balance", nowBalance);
+        } catch (e) {}
+      });
+  
+      // 3) 公告（背景）
+      defer(() => {
+        try {
+          if (!data.announcement) return;
+          const lastRead = localStorage.getItem("q_ann_id");
+          if (String(lastRead) !== String(data.announcement.id)) {
+            document.getElementById("ann-display-title").textContent = data.announcement.title || "";
+            document.getElementById("ann-display-content").textContent = data.announcement.content || "";
+            openModal("show-announce");
+            localStorage.setItem("q_ann_id", data.announcement.id);
+          }
+        } catch (e) {}
+      });
+  
+      // 4) 班表（背景，等你真的切到 schedule 再跑也行；但先預載也 OK）
+      defer(() => {
+        try {
+          loadCalendar(currentYear, currentMonth);
+          updateMonthShiftMarkers();
+        } catch (e) { console.warn("bg schedule fail", e); }
+      });
+  
+      // 5) manager badge（背景）
+      defer(() => {
+        try {
+          if (currentUser.role === "manager" || currentUser.role === "admin") {
+            checkManagerBadge();
+          }
+        } catch (e) {}
+      });
   
     } catch (e) {
       console.error(e);
       alert("連線失敗，請重試");
       showLoginOnly();
     } finally {
-      await hideLoading(); // ✅ 有最短顯示時間（不閃）
+      // ✅ 不管怎樣都不要卡住 loading
+      document.getElementById("loading-screen")?.classList.add("hidden");
     }
   }
 
-  function fetchWithTimeout(url, ms = 3500, options = {}) {
-    const ac = new AbortController();
-    const t = setTimeout(() => ac.abort(), ms);
-    return fetch(url, { ...options, signal: ac.signal })
-      .finally(() => clearTimeout(t));
-  }
   // ===== 文字自動縮放 =====
   function fitTextToOneLine(el) {
     if (!el) return;
@@ -1086,21 +1106,15 @@
 
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
-    if (page === "schedule") {loadCalendar(currentYear, currentMonth);updateMonthShiftMarkers();}
+    if (page === "schedule") {loadCalendar(currentYear, currentMonth);updateMonthShiftMarkers();
+}
     if (page === "clock") {
       requestAnimationFrame(() => {
         applyAutoFitText();
-    
-        // ✅ 有 cache 就秒畫
-        if (avatarCache) {
-          renderAvatar(avatarCache.items || [], avatarCache.equipped || {});
-          return;
-        }
-    
-        // ✅ 沒 cache 才去抓
         if (currentUser?.email) loadAvatar(currentUser.email);
       });
     }
+  }
 
   function openModal(id) {
     const el = document.getElementById("modal-" + id);
