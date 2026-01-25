@@ -106,10 +106,10 @@
       height:100%;
       object-fit:contain;
       pointer-events:none;
-      -select:none;
+      user-select:none;
     }
 
-    .-info-block{
+    .user-info-block{
       flex:1;
       border-radius:8px;
       padding:6px 10px;
@@ -122,10 +122,10 @@
       min-width:0;
       text-align:left;
     }
-    .-info-block > div{white-space:nowrap;overflow:hidden;text-overflow:clip;}
-    .-name{font-weight:600;}
-    .-symbol{opacity:0.85;}
-    .-email{opacity:0.7;font-family:monospace;}
+    .user-info-block > div{white-space:nowrap;overflow:hidden;text-overflow:clip;}
+    .user-name{font-weight:600;}
+    .user-symbol{opacity:0.85;}
+    .user-email{opacity:0.7;font-family:monospace;}
 
     #clockInBtn{
       width:80%;padding:1.7rem;font-size:1.3rem;
@@ -345,7 +345,7 @@
       height:100%;
       object-fit:contain;
       pointer-events:none;
-      -select:none;
+      user-select:none;
     }
 
     /* ===== Shop Sticky Layout ===== */
@@ -506,16 +506,16 @@
     }
     
     /* 2️⃣ 使用者資訊字級比例調整 */
-    .-name{
+    .user-name{
       /* 維持原本，不動 */
     }
     
-    .-symbol{
+    .user-symbol{
       font-size: 0.1em;   /* 原本0.1 */
       line-height: 1.1;
     }
     
-    .-email{
+    .user-email{
       font-size: 0.1em;  /* 原本的 0.1 */
     }
   </style>
@@ -547,10 +547,10 @@
           <div id="avatar-stage" aria-label="avatar stage"></div>
         </div>
 
-        <div class="-info-block">
-          <div id="-label" class="-name auto-fit-text" data-min="14" data-max="20"></div>
-          <div id="-symbol" class="-symbol auto-fit-text" data-min="12" data-max="18"></div>
-          <div id="-email" class="-email auto-fit-text" data-min="10" data-max="16"></div>
+        <div class="user-info-block">
+          <div id="user-label" class="user-name auto-fit-text" data-min="14" data-max="20"></div>
+          <div id="user-symbol" class="user-symbol auto-fit-text" data-min="12" data-max="18"></div>
+          <div id="user-email" class="user-email auto-fit-text" data-min="10" data-max="16"></div>
         </div>
       </div>
 
@@ -691,7 +691,7 @@
       <div class="modal-title">發送代幣</div>
 
       <div style="font-size:0.9rem;margin-bottom:6px;">選擇對象（可複選）</div>
-      <div id="adm--list"
+      <div id="adm-user-list"
            style="max-height:180px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:0.9rem;text-align:left;">
         讀取中...
       </div>
@@ -832,18 +832,12 @@
   const API_URL =
     "https://script.google.com/macros/s/AKfycbzdG-XnSqTjbrRft_K4Wc3alPIso5RinyXjpqM82Ne6HAg4TW-b3IxUBc6n9kuSbT_y-Q/exec";
 
-  // ✅ 修正：一定要先宣告，避免 user/currentUser is not defined
   let currentUser = null;
-
-  // 其他狀態
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let pendingLeaveItems = [];
   let currentReviewIndex = null;
-
-  // ✅ 修正：統一變數名稱（原本你有 allsForAdmin / allUsersForAdmin 混用）
   let allUsersForAdmin = [];
-
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
   const LOADING_MIN_MS = 150;
@@ -855,24 +849,24 @@
     loadingShownAt = performance.now();
     el.classList.remove("hidden");
   }
-
+  
   async function hideLoading() {
     const el = document.getElementById("loading-screen");
     if (!el) return;
-
+  
     const dt = performance.now() - (loadingShownAt || performance.now());
     const wait = Math.max(0, LOADING_MIN_MS - dt);
-    if (wait) await new Promise((r) => setTimeout(r, wait));
-
+    if (wait) await new Promise(r => setTimeout(r, wait));
+  
     el.classList.add("hidden");
   }
-
+  
   /** 只顯示登入頁，其他全部收起來 */
   function showLoginOnly() {
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.add("hidden");
 
-    ["clock", "leave", "schedule", "manager", "admin"].forEach((p) => {
+    ["clock","leave","schedule","manager","admin"].forEach((p)=>{
       const el = document.getElementById("page-" + p);
       if (!el) return;
       el.classList.add("hidden");
@@ -881,19 +875,18 @@
 
     const header = document.getElementById("global-header");
     if (header) header.classList.add("hidden");
-
     const fab = document.getElementById("menu-fab");
     if (fab) fab.style.display = "none";
 
     const loginPage = document.getElementById("login-page");
     if (loginPage) {
       loginPage.classList.remove("hidden");
-      requestAnimationFrame(() => loginPage.classList.add("visible"));
+      requestAnimationFrame(()=>loginPage.classList.add("visible"));
     }
   }
 
   window.addEventListener("load", () => {
-    // gacha icon preload（不阻塞）
+    // 先把 gacha icon preload（不阻塞）
     try {
       const img = new Image();
       img.onload = () => {
@@ -902,82 +895,64 @@
       };
       img.src = GACHA_ICON;
     } catch (e) {}
-
+  
     const email = localStorage.getItem("q_email");
-    if (email) appInit(email); // ✅ 不 await，避免阻塞首屏
+    if (email) appInit(email);        // ✅ 不 await，避免阻塞首屏
     else showLoginOnly();
   });
 
   async function appInit(email) {
     showClockFast_(); // ✅ 先顯示 UI
     const btn = document.getElementById("clockInBtn");
-    if (btn) {
-      btn.textContent = "連線中...";
-      btn.disabled = true;
-    }
-
+    if (btn) { btn.textContent = "連線中..."; btn.disabled = true; }
+  
+    // 可選：只在「第一次開 app」才 show loading（看你要不要）
+    // showLoading();
+  
     try {
       const res = await fetchWithTimeout(
         `${API_URL}?action=initLite&email=${encodeURIComponent(email)}`,
         3500
       );
       const data = await res.json();
-
-      if (!data.ok) {
-        alert(data.msg || "查無帳號");
-        resetApp();
-        return;
-      }
-
-      currentUser = data.user || {};
+  
+      if (!data.ok) { alert(data.msg || "查無帳號"); resetApp(); return; }
+  
+      currentUser = data.user;
       currentUser.email = email;
-
+  
       setupUI(data);
-
+  
       // ✅ base avatar 先畫（秒出）
       renderAvatar([], {});
-
+  
       // ✅ 背景載入
       const defer = (fn) => {
-        if ("requestIdleCallback" in window)
-          requestIdleCallback(fn, { timeout: 1500 });
+        if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 1500 });
         else setTimeout(fn, 0);
       };
-
-      defer(async () => {
-        try {
-          await loadAvatar(email);
-        } catch (e) {}
-      });
-      defer(() => {
-        try {
-          loadCalendar(currentYear, currentMonth);
-          updateMonthShiftMarkers();
-        } catch (e) {}
-      });
-      defer(() => {
-        try {
-          if (currentUser.role === "manager" || currentUser.role === "admin")
-            checkManagerBadge();
-        } catch (e) {}
-      });
+  
+      defer(async () => { try { await loadAvatar(email); } catch (e) {} });
+      defer(() => { try { /* token diff */ } catch (e) {} });
+      defer(() => { try { /* announcement */ } catch (e) {} });
+      defer(() => { try { loadCalendar(currentYear, currentMonth); updateMonthShiftMarkers(); } catch (e) {} });
+      defer(() => { try { if (currentUser.role === "manager" || currentUser.role === "admin") checkManagerBadge(); } catch (e) {} });
+  
     } catch (e) {
       console.error(e);
       alert("連線失敗，請重試");
       showLoginOnly();
     } finally {
-      await hideLoading();
+      await hideLoading(); // ✅ 有最短顯示時間（不閃）
     }
   }
 
   function fetchWithTimeout(url, ms = 3500, options = {}) {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), ms);
-    return fetch(url, { ...options, signal: ac.signal }).finally(() =>
-      clearTimeout(t)
-    );
+    return fetch(url, { ...options, signal: ac.signal })
+      .finally(() => clearTimeout(t));
   }
-
   // ===== 文字自動縮放 =====
   function fitTextToOneLine(el) {
     if (!el) return;
@@ -995,9 +970,7 @@
 
   function applyAutoFitText() {
     const elements = document.querySelectorAll(".auto-fit-text");
-    elements.forEach((el) => {
-      el.style.fontSize = "";
-    });
+    elements.forEach((el) => { el.style.fontSize = ""; });
     elements.forEach(fitTextToOneLine);
   }
   window.addEventListener("resize", applyAutoFitText);
@@ -1011,66 +984,56 @@
     const mgrPill = document.querySelector('.menu-pill[data-page="manager"]');
     if (mgrPill) mgrPill.classList.remove("has-notif");
 
-    // ✅ 修正：你的 HTML id 是 "-label / -symbol / -email"
-    const nameEl = document.getElementById("-label");
-    const symbolEl = document.getElementById("-symbol");
-    const emailEl = document.getElementById("-email");
-
-    const btn = document.getElementById("clockInBtn");
-    const status = document.getElementById("status");
+    const nameEl   = document.getElementById("user-label");
+    const symbolEl = document.getElementById("user-symbol");
+    const emailEl  = document.getElementById("user-email");
+    const btn      = document.getElementById("clockInBtn");
+    const status   = document.getElementById("status");
 
     const clockStatus = data.clockStatus || "";
 
-    if (nameEl) nameEl.textContent = currentUser?.name || "";
-    if (emailEl) emailEl.textContent = currentUser?.email || "";
+    nameEl.textContent  = currentUser.name  || "";
+    emailEl.textContent = currentUser.email || "";
 
-    if (symbolEl) {
-      if (currentUser?.symbol) {
-        symbolEl.textContent = currentUser.symbol;
-        symbolEl.classList.remove("hidden");
-      } else {
-        symbolEl.textContent = "";
-        symbolEl.classList.add("hidden");
-      }
+    if (currentUser.symbol) {
+      symbolEl.textContent = currentUser.symbol;
+      symbolEl.classList.remove("hidden");
+    } else {
+      symbolEl.textContent = "";
+      symbolEl.classList.add("hidden");
     }
 
-    const hudCoin = document.getElementById("hud-coin");
-    const modalCoin = document.getElementById("modal-coin-count");
-    if (hudCoin) hudCoin.textContent = data.tokens || 0;
-    if (modalCoin) modalCoin.textContent = data.tokens || 0;
+    document.getElementById("hud-coin").textContent         = data.tokens || 0;
+    document.getElementById("modal-coin-count").textContent = data.tokens || 0;
 
-    if (btn && status) {
-      if (clockStatus.includes("已")) {
-        status.textContent = clockStatus;
-        status.style.color = "green";
-        const isOff = clockStatus.includes("下班");
-        btn.textContent = isOff ? "已下班" : "下班";
-        btn.style.background = "#333";
-        btn.dataset.type = isOff ? "done" : "下班";
-        btn.disabled = !!isOff;
-      } else {
-        status.textContent = clockStatus || "今日未打卡";
-        status.style.color = "#8B0000";
-        btn.textContent = "上班";
-        btn.dataset.type = "上班";
-        btn.disabled = false;
-        btn.style.background = "#111";
-      }
+    if (clockStatus.includes("已")) {
+      status.textContent = clockStatus;
+      status.style.color = "green";
+      const isOff = clockStatus.includes("下班");
+      btn.textContent = isOff ? "已下班" : "下班";
+      btn.style.background = "#333";
+      btn.dataset.type = isOff ? "done" : "下班";
+      btn.disabled = !!isOff;
+    } else {
+      status.textContent = clockStatus || "今日未打卡";
+      status.style.color = "#8B0000";
+      btn.textContent = "上班";
+      btn.dataset.type = "上班";
+      btn.disabled = false;
+      btn.style.background = "#111";
     }
 
-    if (currentUser?.role === "manager" || currentUser?.role === "admin") {
+    if (currentUser.role === "manager" || currentUser.role === "admin") {
       if (mgrFab) mgrFab.classList.remove("hidden");
       checkManagerBadge();
     }
-    if (currentUser?.role === "admin") {
+    if (currentUser.role === "admin") {
       if (admFab) admFab.classList.remove("hidden");
     }
-
-    requestAnimationFrame(() => applyAutoFitText());
   }
 
   function login() {
-    const email = document.getElementById("login-email")?.value.trim();
+    const email = document.getElementById("login-email").value.trim();
     if (!email) return alert("請先輸入 Email");
     localStorage.setItem("q_email", email);
     appInit(email);
@@ -1090,11 +1053,10 @@
 
   // ===== 導覽 FAB =====
   function toggleMenu() {
-    const sheet = document.getElementById("menu-sheet");
+    const sheet   = document.getElementById("menu-sheet");
     const overlay = document.getElementById("fab-overlay");
-    const fab = document.querySelector(".fab-main");
-    const hud = document.getElementById("hud-right");
-    if (!sheet || !overlay || !fab) return;
+    const fab     = document.querySelector(".fab-main");
+    const hud     = document.getElementById("hud-right");
 
     const willOpen = sheet.classList.contains("hidden");
 
@@ -1107,45 +1069,38 @@
 
   function nav(page) {
     const target = document.getElementById("page-" + page);
-    if (!target) return;
 
-    document.querySelectorAll(".page-section").forEach((p) => {
+    document.querySelectorAll(".page-section").forEach((p)=>{
       p.classList.add("hidden");
       p.classList.remove("visible");
     });
 
     target.classList.remove("hidden");
-    requestAnimationFrame(() => target.classList.add("visible"));
+    requestAnimationFrame(()=>target.classList.add("visible"));
 
     toggleMenu();
 
-    document.querySelectorAll(".menu-pill").forEach((btn) =>
-      btn.classList.remove("active")
-    );
+    document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
     const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
     if (pill) pill.classList.add("active");
 
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
-    if (page === "schedule") {
-      loadCalendar(currentYear, currentMonth);
-      updateMonthShiftMarkers();
-    }
+    if (page === "schedule") {loadCalendar(currentYear, currentMonth);updateMonthShiftMarkers();}
     if (page === "clock") {
       requestAnimationFrame(() => {
         applyAutoFitText();
-
+    
         // ✅ 有 cache 就秒畫
         if (avatarCache) {
           renderAvatar(avatarCache.items || [], avatarCache.equipped || {});
           return;
         }
-
+    
         // ✅ 沒 cache 才去抓
         if (currentUser?.email) loadAvatar(currentUser.email);
       });
     }
-  }
 
   function openModal(id) {
     const el = document.getElementById("modal-" + id);
@@ -1153,9 +1108,8 @@
     el.classList.add("open");
     if (id === "leave") prepareLeaveDates();
     if (id === "admin-token") loadAdminUserList();
-    if (id === "shop") shopInit();
+    if (id === "shop") shopInit();              // ✅ 加這行
   }
-
   function closeModal(id) {
     const el = document.getElementById("modal-" + id);
     if (!el) return;
@@ -1166,16 +1120,14 @@
   // ===== 班表：月曆 =====
   function loadCalendar(y, m) {
     const grid = document.getElementById("calendar-grid");
-    const title = document.getElementById("calendar-title");
-    if (!grid || !title) return;
-
     grid.innerHTML = "";
-    title.textContent = y + " 年 " + (m + 1) + " 月";
+    document.getElementById("calendar-title").textContent =
+      y + " 年 " + (m + 1) + " 月";
 
     const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7; // 週一開頭
     const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-    ["一", "二", "三", "四", "五", "六", "日"].forEach((n) => {
+    ["一","二","三","四","五","六","日"].forEach((n)=>{
       const c = document.createElement("div");
       c.className = "day-name";
       c.textContent = n;
@@ -1198,18 +1150,11 @@
         cell.classList.add("today");
       }
 
-      const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(
-        2,
-        "0"
-      )}`;
-
+      const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       cell.onclick = () => {
-        document
-          .querySelectorAll(".day-cell")
-          .forEach((x) => x.classList.remove("selected"));
+        document.querySelectorAll(".day-cell").forEach(x=>x.classList.remove("selected"));
         cell.classList.add("selected");
         const box = document.getElementById("selected-shift");
-        if (!box) return;
         box.classList.remove("show");
         box.innerHTML = `<div class="shift-loading"></div>`;
         loadAllShifts(ds);
@@ -1220,30 +1165,28 @@
     }
   }
 
-  async function updateMonthShiftMarkers() {
-    if (!currentUser?.email) return;
+  async function updateMonthShiftMarkers(){
+    if (!currentUser || !currentUser.email) return;
 
     try {
-      const ym = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+      const ym = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
       const res = await fetch(
-        `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(
-          currentUser.email
-        )}`
+        `${API_URL}?month=${ym}&mode=summary&email=${encodeURIComponent(currentUser.email)}`
       );
       const d = await res.json();
 
       const zs = Array.isArray(d.zhongshanDays) ? d.zhongshanDays : [];
-      const jm = Array.isArray(d.jingmeiDays) ? d.jingmeiDays : [];
+      const jm = Array.isArray(d.jingmeiDays)  ? d.jingmeiDays  : [];
       const dw = Array.isArray(d.daysWithShift) ? d.daysWithShift : [];
 
       const cells = document.querySelectorAll(".day-cell");
-      cells.forEach((c) => {
-        c.classList.remove("shift-zhongshan", "shift-jingmei", "shift-any");
+      cells.forEach(c=>{
+        c.classList.remove("shift-zhongshan","shift-jingmei","shift-any");
         const first = c.firstElementChild;
         if (!first) return;
-        const dayNum = parseInt(first.textContent, 10);
+        const dayNum = parseInt(first.textContent,10);
         if (!dayNum) return;
-        const fullDate = `${ym}-${String(dayNum).padStart(2, "0")}`;
+        const fullDate = `${ym}-${String(dayNum).padStart(2,'0')}`;
 
         let marked = false;
         if (zs.includes(fullDate)) {
@@ -1255,6 +1198,7 @@
           marked = true;
         }
         if (!marked && dw.includes(fullDate)) {
+          // 有班但沒分門市，用 shift-any 顯示綠點
           c.classList.add("shift-any");
         }
       });
@@ -1277,6 +1221,7 @@
     updateMonthShiftMarkers();
   }
 
+  /** 把「名字 (中山櫃檯)」這種字串拆成 {name, shift} */
   function parseShiftString(str) {
     const s = String(str || "");
     const m = s.match(/^(.+?)\s*\((.+)\)$/);
@@ -1287,9 +1232,9 @@
   function buildStoreBlock(list, storeLabel) {
     if (!list.length) return "";
     const groups = {};
-    const order = ["櫃檯", "彩妝", "攝影", "修圖"];
+    const order = ["櫃檯","彩妝","攝影","修圖"];
 
-    list.forEach((item) => {
+    list.forEach((item)=>{
       const m = item.shift.match(/(櫃檯|彩妝|攝影|修圖)/);
       const role = m ? m[1] : "其他";
       if (!groups[role]) groups[role] = [];
@@ -1297,17 +1242,20 @@
     });
 
     let lines = [];
-    order.forEach((role) => {
-      if (groups[role]) lines.push(`${storeLabel}${role}：${groups[role].join("、")}`);
+    order.forEach(role=>{
+      if (groups[role]) {
+        lines.push(`${storeLabel}${role}：${groups[role].join("、")}`);
+      }
     });
-    if (groups["其他"]) lines.push(`${storeLabel}其他：${groups["其他"].join("、")}`);
+    if (groups["其他"]) {
+      lines.push(`${storeLabel}其他：${groups["其他"].join("、")}`);
+    }
     return lines.join("<br>");
   }
 
+  // ===== 班表詳細 =====
   async function loadAllShifts(ds) {
     const box = document.getElementById("selected-shift");
-    if (!box) return;
-
     box.classList.remove("show");
     box.innerHTML = `<div class="shift-loading"></div>`;
 
@@ -1323,21 +1271,27 @@
 
       const raw = d.shifts;
       const zsList = (raw.zhongshan || []).map(parseShiftString);
-      const jmList = (raw.jingmei || []).map(parseShiftString);
+      const jmList = (raw.jingmei   || []).map(parseShiftString);
       const offList = raw.off || [];
 
       let html = `<div class="shift-date-title">${ds}</div><br>`;
 
-      if (zsList.length)
-        html += "<b>[中山]</b><br>" + buildStoreBlock(zsList, "中山") + "<br><br>";
-      if (jmList.length)
-        html += "<b>[景美]</b><br>" + buildStoreBlock(jmList, "景美") + "<br><br>";
-      if (offList.length) html += "<b>[放假]</b><br>・" + offList.join("<br>・");
+      if (zsList.length) {
+        html += "<b>[中山]</b><br>" + buildStoreBlock(zsList,"中山") + "<br><br>";
+      }
+      if (jmList.length) {
+        html += "<b>[景美]</b><br>" + buildStoreBlock(jmList,"景美") + "<br><br>";
+      }
+      if (offList.length) {
+        html += "<b>[放假]</b><br>・" + offList.join("<br>・");
+      }
 
-      if (!zsList.length && !jmList.length && !offList.length) html += "本日無人排班";
+      if (!zsList.length && !jmList.length && !offList.length) {
+        html += "本日無人排班";
+      }
 
       box.innerHTML = html;
-      requestAnimationFrame(() => box.classList.add("show"));
+      requestAnimationFrame(()=>box.classList.add("show"));
     } catch (e) {
       console.error(e);
       box.innerHTML = "讀取失敗，請稍後再試";
@@ -1349,29 +1303,32 @@
   function submitClockIn() {
     const btn = document.getElementById("clockInBtn");
     const statusEl = document.getElementById("status");
-
-    if (!currentUser?.email) {
+  
+    if (!currentUser) {
       alert("請先登入");
       return;
     }
-    if (!btn || btn.disabled) return;
-
+    if (btn.disabled) return;
+  
     const type = btn.dataset.type || "上班";
     if (type === "done") return;
-
+  
     if (!confirm(`確定要打「${type}」卡嗎？`)) return;
-
+  
     btn.disabled = true;
     btn.textContent = "定位中...";
-
+  
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         btn.textContent = "打卡中...";
-
+  
         try {
           const res = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            // ⚠️ 用「簡單請求」避免 CORS preflight
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8",
+            },
             body: JSON.stringify({
               action: "clockIn",
               email: currentUser.email,
@@ -1380,32 +1337,44 @@
               lng: pos.coords.longitude,
             }),
           });
-
-          if (!res.ok) throw new Error("HTTP " + res.status);
-
+  
+          if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+          }
+  
+          // 這裡就能吃到 handleClockIn_ 回傳的 { ok, status, tokens }
           const data = await res.json();
+  
           if (!data.ok) {
             alert(data.msg || "打卡失敗，請稍後再試");
             btn.disabled = false;
             btn.textContent = type;
             return;
           }
-
+  
+          // ✅ 顯示打卡成功訊息
           alert("打卡成功");
-
+  
+          // ✅ 更新畫面上的「今日已上班 / 今日已下班」
           if (statusEl && data.status) {
             statusEl.textContent = data.status;
-            statusEl.style.color = data.status.includes("未") ? "#8B0000" : "green";
+            statusEl.style.color = data.status.includes("未")
+              ? "#8B0000"
+              : "green";
           }
-
+  
+          // ✅ 如果後端有回傳最新代幣餘額，順便刷新右下角扭蛋數
           if (typeof data.tokens === "number") {
             const hudCoin = document.getElementById("hud-coin");
             const modalCoin = document.getElementById("modal-coin-count");
             if (hudCoin) hudCoin.textContent = data.tokens;
             if (modalCoin) modalCoin.textContent = data.tokens;
+  
+            // 跟 initApp 一樣更新 localStorage，之後登入可以算差額提示
             localStorage.setItem("q_token_balance", data.tokens);
           }
-
+  
+          // ✅ 按鈕狀態切換（上班 → 下班 → done）
           if (type === "上班") {
             btn.textContent = "下班";
             btn.dataset.type = "下班";
@@ -1430,7 +1399,6 @@
         btn.textContent = type;
       }
     );
-  }
   }
 
   // ===== Manager 區 =====
