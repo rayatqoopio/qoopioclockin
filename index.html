@@ -672,6 +672,45 @@
     </div>
   </div>
 
+  <div class="modal" id="modal-clock-apply">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('clock-apply')">✕</button>
+      <div class="modal-title">申請補打卡</div>
+  
+      <label>日期</label>
+      <input type="date" id="clock-date" class="admin-input">
+  
+      <label>類型</label>
+      <select id="clock-type" class="admin-input">
+        <option value="上班">上班</option>
+        <option value="下班">下班</option>
+      </select>
+  
+      <label>時間</label>
+      <input type="time" id="clock-time" class="admin-input">
+  
+      <label>原因</label>
+      <input id="clock-reason" class="admin-input">
+  
+      <button class="admin-action-btn" onclick="submitClockApply()">送出</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-overtime">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('overtime')">✕</button>
+      <div class="modal-title">申請加班</div>
+      <label>日期</label>
+      <input type="date" id="ot-date" class="admin-input">
+      <label>開始時間</label>
+      <input type="time" id="ot-start" class="admin-input">
+      <label>結束時間</label>
+      <input type="time" id="ot-end" class="admin-input">
+      <label>原因</label>
+      <input id="ot-reason" class="admin-input">
+      <button class="admin-action-btn" onclick="submitOvertime()">送出</button>
+    </div>
+  </div>
   <!-- Review Leave Modal -->
   <div class="modal" id="modal-review">
     <div class="modal-card">
@@ -833,51 +872,6 @@
         <div class="shop-footer">
           <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
           <button class="admin-action-btn" style="width:auto;padding:10px 14px;" onclick="backToWardrobe()">回衣櫃</button>
-        </div>
-        
-        <div class="modal" id="modal-clock-apply">
-          <div class="modal-card">
-            <button class="modal-close-btn" onclick="closeModal('clock-apply')">✕</button>
-            <div class="modal-title">申請補打卡</div>
-        
-            <label>日期</label>
-            <input type="date" id="clock-date" class="admin-input">
-        
-            <label>類型</label>
-            <select id="clock-type" class="admin-input">
-              <option value="上班">上班</option>
-              <option value="下班">下班</option>
-            </select>
-        
-            <label>時間</label>
-            <input type="time" id="clock-time" class="admin-input">
-        
-            <label>原因</label>
-            <input id="clock-reason" class="admin-input">
-        
-            <button class="admin-action-btn" onclick="submitClockApply()">送出</button>
-          </div>
-        </div>
-
-        <div class="modal" id="modal-overtime">
-          <div class="modal-card">
-            <button class="modal-close-btn" onclick="closeModal('overtime')">✕</button>
-            <div class="modal-title">申請加班</div>
-        
-            <label>日期</label>
-            <input type="date" id="ot-date" class="admin-input">
-        
-            <label>開始時間</label>
-            <input type="time" id="ot-start" class="admin-input">
-        
-            <label>結束時間</label>
-            <input type="time" id="ot-end" class="admin-input">
-        
-            <label>原因</label>
-            <input id="ot-reason" class="admin-input">
-        
-            <button class="admin-action-btn" onclick="submitOvertime()">送出</button>
-          </div>
         </div>
       </div>
     </div>
