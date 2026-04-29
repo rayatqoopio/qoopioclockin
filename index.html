@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="zh-TW" style="background-color: #fdf5e6;">
+<html lang="zh-Hant-TW" style="background-color: #fdf5e6;">
 <head>
   <meta charset="UTF-8" />
   <title>Qoopio</title>
@@ -538,6 +538,44 @@
       line-height: 44px;
     }
 
+    .submit-progress-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform .12s ease, opacity .15s ease, background .15s ease;
+    }
+    
+    .submit-progress-btn:active {
+      transform: scale(.97);
+    }
+    
+    .submit-progress-btn.loading {
+      pointer-events: none;
+      opacity: .85;
+    }
+    
+    .submit-progress-btn.loading::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        120deg,
+        transparent 30%,
+        rgba(255,255,255,.45) 50%,
+        transparent 70%
+      );
+      animation: submitShine 1s infinite;
+    }
+    
+    .submit-progress-btn.success {
+      background: #27ae60 !important;
+      color: #fff !important;
+    }
+    
+    @keyframes submitShine {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(100%); }
+    }
+
   </style>
 </head>
 
@@ -687,7 +725,7 @@
       </select>
       <label style="display:block;margin-top:10px">原因</label>
       <input id="leave-reason" class="admin-input" placeholder="選填..." />
-      <button class="admin-action-btn" style="margin-top:15px" onclick="submitLeave()">送出申請</button>
+      <button class="admin-action-btn submit-progress-btn" style="margin-top:15px" onclick="submitLeave()">送出申請</button>
     </div>
   </div>
 
@@ -706,12 +744,12 @@
       </select>
   
       <label>時間</label>
-      <input type="time" id="clock-time" class="admin-input">
+      <input type="time" id="clock-time" class="admin-input" lang="en-GB" step="60">
   
       <label>原因</label>
       <input id="clock-reason" class="admin-input">
   
-      <button class="admin-action-btn" onclick="submitClockApply()">送出</button>
+      <button class="admin-action-btn submit-progress-btn" onclick="submitClockApply()">送出</button>
     </div>
   </div>
 
@@ -722,12 +760,12 @@
       <label>日期</label>
       <input type="date" id="ot-date" class="admin-input">
       <label>開始時間</label>
-      <input type="time" id="ot-start" class="admin-input">
+      <input type="time" id="ot-start" class="admin-input" lang="en-GB" step="60">
       <label>結束時間</label>
-      <input type="time" id="ot-end" class="admin-input">
+      <input type="time" id="ot-end" class="admin-input" lang="en-GB" step="60">
       <label>原因</label>
       <input id="ot-reason" class="admin-input">
-      <button class="admin-action-btn" onclick="submitOvertime()">送出</button>
+      <button class="admin-action-btn submit-progress-btn" onclick="submitOvertime()">送出</button>
     </div>
   </div>
   <!-- Review Leave Modal -->
@@ -767,7 +805,7 @@
 
       <input id="adm-token-amt" class="admin-input" type="number" placeholder="每人發放數量" />
       <input id="adm-token-reason" class="admin-input" placeholder="原因（例如：活動獎勵、表現優秀…）" />
-      <button id="adm-token-submit" class="admin-action-btn" onclick="adminGiveToken()">發送</button>
+      <button id="adm-token-submit" class="admin-action-btn submit-progress-btn" onclick="adminGiveToken()">發送</button>
     </div>
   </div>
 
@@ -778,7 +816,7 @@
       <div class="modal-title">發布公告</div>
       <input id="adm-ann-title" class="admin-input" placeholder="標題" />
       <textarea id="adm-ann-content" class="admin-input" rows="4" placeholder="內容..."></textarea>
-      <button id="adm-announce-submit" class="admin-action-btn" onclick="adminSetAnnounce()">發布</button>
+      <button id="adm-announce-submit" class="admin-action-btn submit-progress-btn" onclick="adminSetAnnounce()">發布</button>
     </div>
   </div>
 
@@ -1915,17 +1953,14 @@
       alert("請先登入");
       return;
     }
-
+  
     const btn = document.querySelector("#modal-leave .admin-action-btn");
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "送出中...";
-    }
-
+    setSubmitLoading(btn);
+  
     try {
-      await fetch(API_URL, {
+      const r = await fetch(API_URL, {
         method: "POST",
-        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "applyLeave",
           email: currentUser.email,
@@ -1934,54 +1969,93 @@
           reason: document.getElementById("leave-reason").value,
         }),
       });
-      alert("已送出");
-      closeModal("leave");
-      loadApplyHistory(currentUser.email);
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "送出失敗");
+  
+      setSubmitSuccess(btn);
+  
+      setTimeout(() => {
+        closeModal("leave");
+        resetSubmitButton(btn);
+        loadApplyHistory(currentUser.email);
+      }, 700);
     } catch (e) {
       console.error(e);
-      alert("送出失敗，請稍後再試");
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "送出申請";
-      }
+      alert(e.message || "送出失敗，請稍後再試");
+      resetSubmitButton(btn);
     }
   }
+
   
   async function submitClockApply() {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "applyClock",
-        email: currentUser.email,
-        date: document.getElementById("clock-date").value,
-        subtype: document.getElementById("clock-type").value,
-        time: document.getElementById("clock-time").value,
-        reason: document.getElementById("clock-reason").value
-      })
-    });
+    const btn = document.querySelector("#modal-clock-apply .admin-action-btn");
+    setSubmitLoading(btn);
   
-    alert("已送出");
-    closeModal("clock-apply");
-    loadApplyHistory(currentUser.email);
+    try {
+      const r = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "applyClock",
+          email: currentUser.email,
+          date: document.getElementById("clock-date").value,
+          subtype: document.getElementById("clock-type").value,
+          time: document.getElementById("clock-time").value,
+          reason: document.getElementById("clock-reason").value
+        })
+      });
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "送出失敗");
+  
+      setSubmitSuccess(btn);
+  
+      setTimeout(() => {
+        closeModal("clock-apply");
+        resetSubmitButton(btn);
+        loadApplyHistory(currentUser.email);
+      }, 700);
+    } catch (e) {
+      alert(e.message || "送出失敗，請稍後再試");
+      resetSubmitButton(btn);
+    }
   }
+
   async function submitOvertime() {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "applyOvertime",
-        email: currentUser.email,
-        date: document.getElementById("ot-date").value,
-        start: document.getElementById("ot-start").value,
-        end: document.getElementById("ot-end").value,
-        reason: document.getElementById("ot-reason").value
-      })
-    });
+    const btn = document.querySelector("#modal-overtime .admin-action-btn");
+    setSubmitLoading(btn);
   
-    alert("已送出");
-    closeModal("overtime");
-    loadApplyHistory(currentUser.email);
+    try {
+      const r = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "applyOvertime",
+          email: currentUser.email,
+          date: document.getElementById("ot-date").value,
+          start: document.getElementById("ot-start").value,
+          end: document.getElementById("ot-end").value,
+          reason: document.getElementById("ot-reason").value
+        })
+      });
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "送出失敗");
+  
+      setSubmitSuccess(btn);
+  
+      setTimeout(() => {
+        closeModal("overtime");
+        resetSubmitButton(btn);
+        loadApplyHistory(currentUser.email);
+      }, 700);
+    } catch (e) {
+      alert(e.message || "送出失敗，請稍後再試");
+      resetSubmitButton(btn);
+    }
   }
+
   async function loadApplyHistory(email) {
     try {
       const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
@@ -2494,6 +2568,30 @@
         stage.appendChild(img);
       }
     }
+
+    function setSubmitLoading(btn, text = "送出中…") {
+      if (!btn) return;
+      btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+      btn.disabled = true;
+      btn.classList.remove("success");
+      btn.classList.add("loading");
+      btn.textContent = text;
+    }
+    
+    function setSubmitSuccess(btn, text = "送出成功！！") {
+      if (!btn) return;
+      btn.classList.remove("loading");
+      btn.classList.add("success");
+      btn.textContent = text;
+    }
+    
+    function resetSubmitButton(btn) {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.classList.remove("loading", "success");
+      btn.textContent = btn.dataset.originalText || "送出";
+    }
+
 </script>
 </body>
 </html>
