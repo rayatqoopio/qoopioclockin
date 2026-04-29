@@ -1752,7 +1752,7 @@
   function prepareLeaveDates() {
     const s = document.getElementById("leave-date");
     s.innerHTML = "";
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 365; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
       const v = d.toISOString().split("T")[0];
