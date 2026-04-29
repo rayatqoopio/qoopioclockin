@@ -1695,11 +1695,12 @@
 
   async function handleReviewAction(statusText) {
     if (currentReviewIndex == null) return;
+  
     const item = pendingLeaveItems[currentReviewIndex];
     if (!item) return;
-
+  
     let reviewLabel = "";
-
+  
     if (item.type === "leave") {
       reviewLabel = `請假｜${item.leaveType || ""}`;
     } else if (item.type === "clock") {
@@ -1709,34 +1710,39 @@
     } else {
       reviewLabel = "申請";
     }
-    
+  
     if (!confirm(`確定要將「${item.name || ""} ${item.date || ""} 的 ${reviewLabel}」標記為「${statusText}」嗎？`)) {
       return;
     }
-
-
+  
     const note = document.getElementById("rv-note").value.trim();
-
+  
     try {
-      await fetch(API_URL, {
+      const r = await fetch(API_URL, {
         method: "POST",
-        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "reviewApplication",
-          type: item.type,     // ⭐關鍵
+          type: item.type,
           rowIndex: item.rowIndex,
           status: statusText,
-          note: note
+          note
         }),
       });
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "審核失敗");
+  
       alert("已送出審核結果");
       closeModal("review");
+      currentReviewIndex = null;
       loadManagerData();
     } catch (e) {
       console.error(e);
-      alert("審核失敗，請稍後再試");
+      alert(e.message || "審核失敗，請稍後再試");
     }
   }
+
   
   // ===== Admin =====
   async function adminSetAnnounce() {
@@ -1956,7 +1962,11 @@
   
     const btn = document.querySelector("#modal-leave .admin-action-btn");
     setSubmitLoading(btn);
-  
+
+    const date = requireValue("leave-date", "日期");
+    const leaveType = requireValue("leave-type", "假別");
+    if (!date || !leaveType) return;
+
     try {
       const r = await fetch(API_URL, {
         method: "POST",
@@ -1989,6 +1999,19 @@
 
   
   async function submitClockApply() {
+    if (!currentUser) return alert("請先登入");
+  
+    const date = requireValue("clock-date", "日期");
+    const subtype = requireValue("clock-type", "類型");
+    const time = requireValue("clock-time", "時間");
+    const reason = requireValue("clock-reason", "原因");
+    if (!date || !subtype || !time || !reason) return;
+  
+    if (!isBeforeToday(date)) {
+      alert("補打卡日期必須早於今天");
+      return;
+    }
+  
     const btn = document.querySelector("#modal-clock-apply .admin-action-btn");
     setSubmitLoading(btn);
   
@@ -1999,10 +2022,10 @@
         body: JSON.stringify({
           action: "applyClock",
           email: currentUser.email,
-          date: document.getElementById("clock-date").value,
-          subtype: document.getElementById("clock-type").value,
-          time: document.getElementById("clock-time").value,
-          reason: document.getElementById("clock-reason").value
+          date,
+          subtype,
+          time,
+          reason
         })
       });
   
@@ -2010,19 +2033,37 @@
       if (!d.ok) throw new Error(d.msg || "送出失敗");
   
       setSubmitSuccess(btn);
-  
       setTimeout(() => {
         closeModal("clock-apply");
         resetSubmitButton(btn);
         loadApplyHistory(currentUser.email);
       }, 700);
     } catch (e) {
-      alert(e.message || "送出失敗，請稍後再試");
+      alert(e.message || "送出失敗");
       resetSubmitButton(btn);
     }
   }
 
+
   async function submitOvertime() {
+    if (!currentUser) return alert("請先登入");
+  
+    const date = requireValue("ot-date", "日期");
+    const start = requireValue("ot-start", "開始時間");
+    const end = requireValue("ot-end", "結束時間");
+    const reason = requireValue("ot-reason", "原因");
+    if (!date || !start || !end || !reason) return;
+  
+    if (!isBeforeToday(date)) {
+      alert("加班日期必須早於今天");
+      return;
+    }
+  
+    if (end <= start) {
+      alert("結束時間必須晚於開始時間");
+      return;
+    }
+  
     const btn = document.querySelector("#modal-overtime .admin-action-btn");
     setSubmitLoading(btn);
   
@@ -2033,10 +2074,10 @@
         body: JSON.stringify({
           action: "applyOvertime",
           email: currentUser.email,
-          date: document.getElementById("ot-date").value,
-          start: document.getElementById("ot-start").value,
-          end: document.getElementById("ot-end").value,
-          reason: document.getElementById("ot-reason").value
+          date,
+          start,
+          end,
+          reason
         })
       });
   
@@ -2044,17 +2085,17 @@
       if (!d.ok) throw new Error(d.msg || "送出失敗");
   
       setSubmitSuccess(btn);
-  
       setTimeout(() => {
         closeModal("overtime");
         resetSubmitButton(btn);
         loadApplyHistory(currentUser.email);
       }, 700);
     } catch (e) {
-      alert(e.message || "送出失敗，請稍後再試");
+      alert(e.message || "送出失敗");
       resetSubmitButton(btn);
     }
   }
+
 
   async function loadApplyHistory(email) {
     try {
@@ -2591,6 +2632,26 @@
       btn.classList.remove("loading", "success");
       btn.textContent = btn.dataset.originalText || "送出";
     }
+  
+    function requireValue(id, label) {
+      const el = document.getElementById(id);
+      const value = el ? el.value.trim() : "";
+      if (!value) {
+        alert(`請填寫${label}`);
+        el?.focus();
+        return null;
+      }
+      return value;
+    }
+    
+    function isBeforeToday(dateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+    
+      const target = new Date(dateStr + "T00:00:00");
+      return target < today;
+    }
+
 
 </script>
 </body>
