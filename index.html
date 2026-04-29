@@ -519,6 +519,25 @@
     .user-email{
       font-size: 0.1em;  /* 原本的 0.1 */
     }
+
+        /* 統一 modal 表單輸入格寬度 */
+    .modal-card input.admin-input,
+    .modal-card select.admin-input,
+    .modal-card textarea.admin-input {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    
+    /* 讓 date / time 在手機上高度跟一般 input 接近 */
+    .modal-card input[type="date"].admin-input,
+    .modal-card input[type="time"].admin-input {
+      height: 44px;
+      line-height: 44px;
+    }
+
   </style>
 </head>
 
@@ -658,7 +677,7 @@
       <button class="modal-close-btn" onclick="closeModal('leave')">✕</button>
       <div class="modal-title">申請請假</div>
       <label style="display:block;margin-top:10px">日期</label>
-      <select id="leave-date" class="admin-input"></select>
+      <input type="date" id="leave-date" class="admin-input">
       <label style="display:block;margin-top:10px">假別</label>
       <select id="leave-type" class="admin-input">
         <option>事假</option>
@@ -1142,9 +1161,13 @@
     const el = document.getElementById("modal-" + id);
     if (!el) return;
     el.classList.add("open");
-    if (id === "leave") prepareLeaveDates();
     if (id === "admin-token") loadAdminUserList();
-    if (id === "shop") shopInit();              // ✅ 加這行
+    if (id === "shop") {
+      shopInit().catch(e => {
+        console.error(e);
+        alert(e.message || "商店載入失敗");
+      });
+    }
   }
   function closeModal(id) {
     const el = document.getElementById("modal-" + id);
@@ -1452,7 +1475,7 @@
     dList.innerHTML = "載入中...";
 
     try {
-      const rRes = await fetch(`${API_URL}?action=getAllPendingLeaves`);
+      const rRes = await fetch(`${API_URL}?action=getAllPendingApplications`);
       const rData = await rRes.json();
       const items = (rData && rData.items) || [];
 
@@ -1463,12 +1486,24 @@
       if (mgrBtn) mgrBtn.classList.toggle("has-notif", items.length > 0);
 
       if (items.length) {
-        rList.innerHTML = items.map((i, idx)=>
-          `<div class="dash-item">
-             <span>${i.name} - ${i.leaveType} (${i.date})</span>
-             <button class="btn-approve btn-review" data-idx="${idx}">審核</button>
-           </div>`
-        ).join("");
+        rList.innerHTML = items.map((i, idx) => {
+          let text = "";
+        
+          if (i.type === "leave") {
+            text = `${i.name}｜請假｜${i.leaveType}（${i.date}）`;
+          } else if (i.type === "clock") {
+            text = `${i.name}｜補打卡｜${i.subtype} ${i.time}（${i.date}）`;
+          } else if (i.type === "overtime") {
+            text = `${i.name}｜加班 ${i.start}-${i.end}（${i.date}）`;
+          }
+        
+          return `
+            <div class="dash-item">
+              <span>${text}</span>
+              <button class="btn-approve btn-review" data-idx="${idx}">審核</button>
+            </div>
+          `;
+        }).join("");
 
         // 綁定審核按鈕事件
         rList.querySelectorAll(".btn-review").forEach(btn=>{
@@ -1507,7 +1542,7 @@
 
   async function checkManagerBadge() {
     try {
-      const r = await fetch(`${API_URL}?action=getAllPendingLeaves`);
+      const r = await fetch(`${API_URL}?action=getAllPendingApplications`);
       const d = await r.json();
       const mgrBtn = document.querySelector('button[data-page="manager"]');
       if (mgrBtn && d.items && d.items.length) {
@@ -1525,7 +1560,7 @@
         method: "POST",
         mode: "no-cors",
         body: JSON.stringify({
-          action: "reviewLeave",
+          action: "reviewApplication",
           rowIndex: idx,
           email: em,
           date: dt,
@@ -1540,18 +1575,33 @@
     }
   }
 
-    function openReviewModal(idx) {
+  function openReviewModal(idx) {
     currentReviewIndex = idx;
     const item = pendingLeaveItems[idx];
     if (!item) return;
-
-    document.getElementById("rv-name").textContent      = item.name || "";
-    document.getElementById("rv-appliedAt").textContent = item.appliedAt || "";
-    document.getElementById("rv-date").textContent      = item.date || "";
-    document.getElementById("rv-type").textContent      = item.leaveType || "";
-    document.getElementById("rv-reason").textContent    = item.reason || "";
-    document.getElementById("rv-note").value            = "";
-
+  
+    document.getElementById("rv-name").textContent = item.name || "";
+    document.getElementById("rv-appliedAt").textContent = item.appliedAt || item.createdAt || item.timestamp || "";
+    document.getElementById("rv-date").textContent = item.date || "";
+  
+    let typeText = "";
+    let detailText = "";
+  
+    if (item.type === "leave") {
+      typeText = "請假";
+      detailText = item.leaveType;
+    } else if (item.type === "clock") {
+      typeText = "補打卡";
+      detailText = `${item.subtype} ${item.time}`;
+    } else if (item.type === "overtime") {
+      typeText = "加班";
+      detailText = `${item.start} - ${item.end}`;
+    }
+  
+    document.getElementById("rv-type").textContent = typeText;
+    document.getElementById("rv-reason").textContent =
+      detailText + (item.reason ? `｜${item.reason}` : "");
+  
     openModal("review");
   }
 
@@ -1560,9 +1610,22 @@
     const item = pendingLeaveItems[currentReviewIndex];
     if (!item) return;
 
-    if (!confirm(`確定要將「${item.name} ${item.date} 的 ${item.leaveType}」標記為「${statusText}」嗎？`)) {
+    let reviewLabel = "";
+
+    if (item.type === "leave") {
+      reviewLabel = `請假｜${item.leaveType || ""}`;
+    } else if (item.type === "clock") {
+      reviewLabel = `補打卡｜${item.subtype || ""} ${item.time || ""}`;
+    } else if (item.type === "overtime") {
+      reviewLabel = `加班｜${item.start || ""} - ${item.end || ""}`;
+    } else {
+      reviewLabel = "申請";
+    }
+    
+    if (!confirm(`確定要將「${item.name || ""} ${item.date || ""} 的 ${reviewLabel}」標記為「${statusText}」嗎？`)) {
       return;
     }
+
 
     const note = document.getElementById("rv-note").value.trim();
 
@@ -1571,10 +1634,9 @@
         method: "POST",
         mode: "no-cors",
         body: JSON.stringify({
-          action: "reviewLeave",
-          rowIndex: item.rowIndex,   // 直接用後端給的 rowIndex
-          email: item.email,
-          date: item.date,
+          action: "reviewApplication",
+          type: item.type,     // ⭐關鍵
+          rowIndex: item.rowIndex,
           status: statusText,
           note: note
         }),
@@ -1796,21 +1858,7 @@
       }
     }
   }
-  
-  // ===== Leave =====
-  function prepareLeaveDates() {
-    const s = document.getElementById("leave-date");
-    s.innerHTML = "";
-    for (let i = 0; i < 180; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const v = d.toISOString().split("T")[0];
-      const o = document.createElement("option");
-      o.value = v;
-      o.textContent = v;
-      s.add(o);
-    }
-  }
+
 
   async function submitLeave() {
     if (!currentUser) {
@@ -1838,7 +1886,7 @@
       });
       alert("已送出");
       closeModal("leave");
-      loadLeaveHistory(currentUser.email);
+      loadApplyHistory(currentUser.email);
     } catch (e) {
       console.error(e);
       alert("送出失敗，請稍後再試");
@@ -2167,12 +2215,6 @@
       renderWardrobePreview();
     }
     
-    function shopSwitchTab(tab){
-      document.getElementById("shop-tab-items").classList.toggle("active", tab === "items");
-      document.getElementById("shop-tab-owned").classList.toggle("active", tab === "owned");
-      document.getElementById("shop-view-items").classList.toggle("hidden", tab !== "items");
-      document.getElementById("shop-view-owned").classList.toggle("hidden", tab !== "owned");
-    }
     
     // ===== Shop State (GLOBAL) =====
     let shopState = {
@@ -2188,7 +2230,6 @@
     
       document.getElementById("shop-tab-items")?.classList.toggle("active", tab === "items");
       document.getElementById("shop-tab-owned")?.classList.toggle("active", tab === "owned");
-    
       document.getElementById("shop-view-items")?.classList.toggle("hidden", tab !== "items");
       document.getElementById("shop-view-owned")?.classList.toggle("hidden", tab !== "owned");
     
