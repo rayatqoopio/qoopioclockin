@@ -561,10 +561,20 @@
     </div>
 
     <div id="page-leave" class="hidden page-section">
-      <h3 style="display:none">請假</h3>
-      <button class="leave-btn-main" type="button" onclick="openModal('leave')">申請請假</button>
-      <h4>個人請假紀錄</h4>
-      <div id="leave-history">載入中...</div>
+    
+      <h3>申請</h3>
+    
+      <!-- 🔹 三個申請按鈕 -->
+      <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
+        <button class="menu-pill" onclick="openModal('clock-apply')">申請打卡</button>
+        <button class="menu-pill" onclick="openModal('overtime')">申請加班</button>
+        <button class="menu-pill" onclick="openModal('leave')">申請請假</button>
+      </div>
+    
+      <!-- 🔹 紀錄區 -->
+      <h4>個人申請紀錄</h4>
+      <div id="apply-history">載入中...</div>
+    
     </div>
 
     <div id="page-schedule" class="hidden page-section">
@@ -824,6 +834,50 @@
           <div style="font-size:0.9rem;color:#666;">代幣：<b id="shop-coin">0</b></div>
           <button class="admin-action-btn" style="width:auto;padding:10px 14px;" onclick="backToWardrobe()">回衣櫃</button>
         </div>
+        <div class="modal" id="modal-clock-apply">
+          <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeModal('clock-apply')">✕</button>
+            <div class="modal-title">申請補打卡</div>
+        
+            <label>日期</label>
+            <input type="date" id="clock-date" class="admin-input">
+        
+            <label>類型</label>
+            <select id="clock-type" class="admin-input">
+              <option value="上班">上班</option>
+              <option value="下班">下班</option>
+            </select>
+        
+            <label>時間</label>
+            <input type="time" id="clock-time" class="admin-input">
+        
+            <label>原因</label>
+            <input id="clock-reason" class="admin-input">
+        
+            <button class="admin-action-btn" onclick="submitClockApply()">送出</button>
+          </div>
+        </div>
+
+        <div class="modal" id="modal-overtime">
+          <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeModal('overtime')">✕</button>
+            <div class="modal-title">申請加班</div>
+        
+            <label>日期</label>
+            <input type="date" id="ot-date" class="admin-input">
+        
+            <label>開始時間</label>
+            <input type="time" id="ot-start" class="admin-input">
+        
+            <label>結束時間</label>
+            <input type="time" id="ot-end" class="admin-input">
+        
+            <label>原因</label>
+            <input id="ot-reason" class="admin-input">
+        
+            <button class="admin-action-btn" onclick="submitOvertime()">送出</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1079,7 +1133,7 @@
     if (pill) pill.classList.add("active");
 
     if (page === "manager") loadManagerData();
-    if (page === "leave" && currentUser) loadLeaveHistory(currentUser.email);
+    if (page === "leave" && currentUser) loadApplyHistory(currentUser.email);
     if (page === "schedule") updateMonthShiftMarkers();
     if (page === "clock") {
       requestAnimationFrame(() => {
@@ -1800,33 +1854,81 @@
       }
     }
   }
-
-  async function loadLeaveHistory(e) {
+  
+  async function submitClockApply() {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "applyClock",
+        email: currentUser.email,
+        date: document.getElementById("clock-date").value,
+        subtype: document.getElementById("clock-type").value,
+        time: document.getElementById("clock-time").value,
+        reason: document.getElementById("clock-reason").value
+      })
+    });
+  
+    alert("已送出");
+    closeModal("clock-apply");
+    loadApplyHistory(currentUser.email);
+  }
+  async function submitOvertime() {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "applyOvertime",
+        email: currentUser.email,
+        date: document.getElementById("ot-date").value,
+        start: document.getElementById("ot-start").value,
+        end: document.getElementById("ot-end").value,
+        reason: document.getElementById("ot-reason").value
+      })
+    });
+  
+    alert("已送出");
+    closeModal("overtime");
+    loadApplyHistory(currentUser.email);
+  }
+  async function loadApplyHistory(email) {
     try {
-      const r = await fetch(
-        `${API_URL}?action=leaveHistory&email=${encodeURIComponent(e)}`
-      );
+      const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
       const d = await r.json();
       const list = d.items || [];
-      const box = document.getElementById("leave-history");
+  
+      const box = document.getElementById("apply-history");
+  
       if (!list.length) {
-        box.innerHTML = "<p>目前沒有請假紀錄</p>";
+        box.innerHTML = "<p>目前沒有申請紀錄</p>";
         return;
       }
-      box.innerHTML = list.map(i=>
-        `<div class="leave-card">
-           <div class="row-1">
-             <span class="title">${i.leaveType}</span>
-             <span class="status-bar status-${i.status || "審核中"}">${
-              i.status || "審核中"
-            }</span>
-           </div>
-           <div class="info">${i.date}</div>
-         </div>`
-      ).join("");
+  
+      box.innerHTML = list.map(i => {
+        let title = "";
+  
+        if (i.type === "leave") {
+          title = `請假｜${i.leaveType}`;
+        } else if (i.type === "clock") {
+          title = `補打卡｜${i.subtype}`;
+        } else if (i.type === "overtime") {
+          title = `加班`;
+        }
+  
+        return `
+          <div class="leave-card">
+            <div class="row-1">
+              <span class="title">${title}</span>
+              <span class="status-bar status-${i.status || "審核中"}">
+                ${i.status || "審核中"}
+              </span>
+            </div>
+            <div class="info">${i.date}</div>
+          </div>
+        `;
+      }).join("");
+  
     } catch (e) {
       console.error(e);
-      document.getElementById("leave-history").innerHTML = "載入失敗";
+      document.getElementById("apply-history").innerHTML = "載入失敗";
     }
   }
 
