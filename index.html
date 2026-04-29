@@ -19,7 +19,7 @@
   <style>
     /* Base & Reset */
     @supports(height:120dvh){
-      .container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}
+    .container{min-height:calc(100dvh - env(safe-area-inset-bottom,0px))}
     }
     html,body{
       margin:0;padding:0;height:100%;
@@ -1034,8 +1034,57 @@
     const elements = document.querySelectorAll(".auto-fit-text");
     elements.forEach((el) => { el.style.fontSize = ""; });
     elements.forEach(fitTextToOneLine);
+    }
+    window.addEventListener("resize", applyAutoFitText);
+  
+    function pad2(n) {
+    return String(n).padStart(2, "0");
   }
-  window.addEventListener("resize", applyAutoFitText);
+
+  function formatDateTime24(value, fallbackDate) {
+    if (!value) return "";
+  
+    let d;
+  
+    if (value instanceof Date) {
+      d = value;
+    } else if (/^\d{1,2}:\d{2}/.test(String(value))) {
+      const base = fallbackDate || formatLocalDate(new Date());
+      d = new Date(`${base}T${String(value).slice(0, 5)}`);
+    } else {
+      d = new Date(value);
+    }
+  
+    if (isNaN(d.getTime())) {
+      return String(value);
+    }
+  
+    return `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+  
+  function formatTime24(value) {
+    if (!value) return "";
+  
+    const raw = String(value);
+  
+    if (/^\d{1,2}:\d{2}/.test(raw)) {
+      const [h, m] = raw.split(":");
+      return `${pad2(h)}:${pad2(m)}`;
+    }
+  
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return raw;
+  
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+
+  function formatLocalDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
 
   function setupUI(data) {
     const mgrFab = document.getElementById("fab-mgr");
@@ -1492,10 +1541,11 @@
           if (i.type === "leave") {
             text = `${i.name}｜請假｜${i.leaveType}（${i.date}）`;
           } else if (i.type === "clock") {
-            text = `${i.name}｜補打卡｜${i.subtype} ${i.time}（${i.date}）`;
+            text = `${i.name}｜補打卡｜${i.subtype} ${formatDateTime24(i.time, i.date)}`;
           } else if (i.type === "overtime") {
-            text = `${i.name}｜加班 ${i.start}-${i.end}（${i.date}）`;
+            text = `${i.name}｜加班 ${i.date} ${formatTime24(i.start)}-${formatTime24(i.end)}`;
           }
+
         
           return `
             <div class="dash-item">
