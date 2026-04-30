@@ -617,6 +617,11 @@
       <div id="status"></div>
     </div>
 
+    <div id="page-clocklog" class="hidden page-section">
+      <h3>打卡紀錄</h3>
+      <div id="clock-history-list">載入中...</div>
+    </div>
+
     <div id="page-leave" class="hidden page-section">
     
       <h3>申請</h3>
@@ -669,6 +674,7 @@
   <div class="menu-fab" id="menu-fab">
     <div class="menu-sheet hidden" id="menu-sheet">
       <div class="fab-option"><button class="menu-pill" data-page="clock" onclick="nav('clock')">打卡</button></div>
+      <div class="fab-option"><button class="menu-pill" data-page="clocklog" onclick="nav('clocklog')">打卡紀錄</button></div>
       <div class="fab-option"><button class="menu-pill" data-page="leave" onclick="nav('leave')">申請</button></div>
       <div class="fab-option"><button class="menu-pill" data-page="schedule" onclick="nav('schedule')">班表</button></div>
       <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">帕拉迪島</button></div>
@@ -952,7 +958,7 @@
     const loading = document.getElementById("loading-screen");
     if (loading) loading.classList.add("hidden");
 
-    ["clock","leave","schedule","manager","admin"].forEach((p)=>{
+    ["clock","clocklog","leave","schedule","manager","admin"].forEach((p)=>{
       const el = document.getElementById("page-" + p);
       if (!el) return;
       el.classList.add("hidden");
@@ -1232,7 +1238,7 @@
     document.querySelectorAll(".menu-pill").forEach(btn=>btn.classList.remove("active"));
     const pill = document.querySelector(`.menu-pill[data-page="${page}"]`);
     if (pill) pill.classList.add("active");
-
+    if (page === "clocklog" && currentUser) loadClockHistory(currentUser.email);
     if (page === "manager") loadManagerData();
     if (page === "leave" && currentUser) loadApplyHistory(currentUser.email);
     if (page === "schedule") updateMonthShiftMarkers();
@@ -1999,16 +2005,28 @@
 
   
   async function submitClockApply() {
-    if (!currentUser) return alert("請先登入");
+    if (!currentUser) {
+      alert("請先登入");
+      return;
+    }
   
-    const date = requireValue("clock-date", "日期");
-    const subtype = requireValue("clock-type", "類型");
-    const time = requireValue("clock-time", "時間");
-    const reason = requireValue("clock-reason", "原因");
-    if (!date || !subtype || !time || !reason) return;
+    const date = document.getElementById("clock-date").value.trim();
+    const subtype = document.getElementById("clock-type").value.trim();
+    const time = document.getElementById("clock-time").value.trim();
+    const reason = document.getElementById("clock-reason").value.trim();
   
-    if (!isBeforeToday(date)) {
-      alert("補打卡日期必須早於今天");
+    if (!date || !subtype || !time || !reason) {
+      alert("請完整填寫補打卡資料");
+      return;
+    }
+  
+    const targetDateTime = buildLocalDateTime(date, time);
+    if (!targetDateTime) {
+      alert("日期或時間格式錯誤");
+      return;
+    }
+    if (targetDateTime.getTime() >= Date.now()) {
+      alert("補打卡只能申請當下時間之前的時段");
       return;
     }
   
@@ -2033,17 +2051,28 @@
       if (!d.ok) throw new Error(d.msg || "送出失敗");
   
       setSubmitSuccess(btn);
+  
       setTimeout(() => {
         closeModal("clock-apply");
         resetSubmitButton(btn);
         loadApplyHistory(currentUser.email);
       }, 700);
     } catch (e) {
-      alert(e.message || "送出失敗");
+      console.error(e);
+      alert(e.message || "送出失敗，請稍後再試");
       resetSubmitButton(btn);
     }
   }
 
+
+
+  function buildLocalDateTime(dateStr, timeStr) {
+    const [y, m, d] = String(dateStr || "").split("-").map(Number);
+    const [hh, mm] = String(timeStr || "").split(":").map(Number);
+  
+    if (!y || !m || !d || isNaN(hh) || isNaN(mm)) return null;
+    return new Date(y, m - 1, d, hh, mm, 0, 0);
+  }
 
   async function submitOvertime() {
     if (!currentUser) return alert("請先登入");
@@ -2650,6 +2679,46 @@
     
       const target = new Date(dateStr + "T00:00:00");
       return target < today;
+    }
+
+    async function loadClockHistory(email) {
+      const box = document.getElementById("clock-history-list");
+      if (!box) return;
+    
+      box.innerHTML = "載入中...";
+    
+      try {
+        const r = await fetch(`${API_URL}?action=getClockHistory&email=${encodeURIComponent(email)}`);
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg || "載入失敗");
+    
+        const items = d.items || [];
+        if (!items.length) {
+          box.innerHTML = "<p>目前沒有打卡紀錄</p>";
+          return;
+        }
+    
+        box.innerHTML = items.map((item) => {
+          const statusClass =
+            item.status === "完整" ? "status-通過" :
+            (item.status === "僅上班" || item.status === "僅下班") ? "status-審核中" :
+            "status-退回";
+    
+          return `
+            <div class="leave-card">
+              <div class="row-1">
+                <span class="title">${item.date}</span>
+                <span class="status-bar ${statusClass}">${item.status}</span>
+              </div>
+              <div class="info">上班：${item.in || "—"}</div>
+              <div class="info">下班：${item.out || "—"}</div>
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        console.error(e);
+        box.innerHTML = "載入失敗";
+      }
     }
 
 
