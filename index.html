@@ -525,8 +525,8 @@
     .modal-card select.admin-input,
     .modal-card textarea.admin-input {
       display: block;
-      width: 100%;
-      max-width: 100%;
+      width: 90%;
+      max-width: 90%;
       min-width: 0;
       box-sizing: border-box;
     }
@@ -575,42 +575,6 @@
       from { transform: translateX(-100%); }
       to { transform: translateX(100%); }
     }
-    /* 讓 modal 內所有表單欄位與「原因」輸入格同寬 */
-    .modal-card input.admin-input,
-    .modal-card select.admin-input,
-    .modal-card textarea.admin-input {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-    
-    /* 修 iOS/Safari date/time 內建寬度，否則會比一般 input 寬 */
-    .modal-card input[type="date"].admin-input,
-    .modal-card input[type="time"].admin-input {
-      -webkit-appearance: textfield;
-      appearance: textfield;
-      inline-size: 100%;
-      min-inline-size: 0;
-      max-inline-size: 100%;
-      font-size: 16px;
-      height: 44px;
-      line-height: 44px;
-    }
-    
-    /* 讓日期/時間欄位內部元件不要撐開 */
-    .modal-card input[type="date"].admin-input::-webkit-date-and-time-value,
-    .modal-card input[type="time"].admin-input::-webkit-date-and-time-value {
-      text-align: left;
-      min-width: 0;
-    }
-    
-    /* 所有欄位都依照同一個 padding / border 計算寬度 */
-    .admin-input {
-      box-sizing: border-box;
-    }
-
 
   </style>
 </head>
