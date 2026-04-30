@@ -523,12 +523,11 @@
         /* 統一 modal 表單輸入格寬度 */
     .modal-card input.admin-input,
     .modal-card select.admin-input,
-    .modal-card textarea.admin-input,
-    .modal-close-btn,
-    .admin-input,
-    .admin-action-btn {
+    .modal-card textarea.admin-input {
+      display: block;
       width: 100%;
-      border-radius: 10px;
+      min-width: 0;
+      box-sizing: border-box;
     }
     
     /* 讓 date / time 在手機上高度跟一般 input 接近 */
@@ -584,6 +583,11 @@
       display: block;
       margin: 10px 0 6px;
       font-size: 0.9rem;
+    }
+    .admin-input,
+    .admin-action-btn {
+      width: 100%;
+      border-radius: 10px;
     }
     
   </style>
