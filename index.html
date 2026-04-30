@@ -527,13 +527,15 @@
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
+      border-radius: 10px;
     }
     
     /* 讓 date / time 在手機上高度跟一般 input 接近 */
     .modal-card input[type="date"].admin-input,
     .modal-card input[type="time"].admin-input {
-      height: 44px;
-      line-height: 44px;
+      height: 34px;
+      width: 100%;
+      line-height: 34px;
     }
 
     .submit-progress-btn {
@@ -582,11 +584,6 @@
       display: block;
       margin: 10px 0 6px;
       font-size: 0.9rem;
-    }
-    .admin-input,
-    .admin-action-btn {
-      width: 100%;
-      border-radius: 10px;
     }
     
   </style>
@@ -752,19 +749,15 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('clock-apply')">✕</button>
       <div class="modal-title">申請補打卡</div>
-  
       <label>日期</label>
       <input type="date" id="clock-date" class="admin-input">
-  
       <label>類型</label>
       <select id="clock-type" class="admin-input">
         <option value="上班">上班</option>
         <option value="下班">下班</option>
       </select>
-  
       <label>時間</label>
       <input type="time" id="clock-time" class="admin-input" lang="en-GB" step="60">
-  
       <label>原因</label>
       <input id="clock-reason" class="admin-input">
   
