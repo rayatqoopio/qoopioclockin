@@ -647,6 +647,105 @@
       word-break:break-word;
     }
 
+    .fab-apply-wrap{
+      position:relative;
+    }
+    
+    .fab-submenu{
+      position:absolute;
+      left:calc(100% + 10px);
+      top:50%;
+      transform:translateY(-50%);
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      z-index:10021;
+    }
+    
+    .menu-sheet.apply-submenu-open > .fab-option:not(.fab-apply-wrap){
+      opacity:.28;
+      transition:opacity .18s ease;
+    }
+    
+    .menu-sheet.apply-submenu-open > .fab-option.fab-apply-wrap > .menu-pill{
+      background:#111;
+      color:#fff;
+    }
+
+    .apply-toolbar{
+      display:flex;
+      justify-content:flex-end;
+      margin-bottom:12px;
+    }
+    
+    .apply-history-loading{
+      padding:10px 0;
+    }
+    
+    .apply-loading-label{
+      font-size:.88rem;
+      color:#777;
+      text-align:left;
+      margin-bottom:8px;
+    }
+    
+    .apply-loading-track{
+      width:100%;
+      height:8px;
+      background:#ece7df;
+      border-radius:999px;
+      overflow:hidden;
+    }
+    
+    .apply-loading-bar{
+      width:36%;
+      height:100%;
+      background:#111;
+      border-radius:999px;
+      animation:applyLoading 1s ease-in-out infinite;
+    }
+    
+    @keyframes applyLoading{
+      0%{transform:translateX(-120%);}
+      100%{transform:translateX(320%);}
+    }
+
+    .apply-card-meta{
+      font-size:.82rem;
+      color:#888;
+      margin-bottom:8px;
+    }
+    
+    .procurement-card-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px 12px;
+      margin-top:6px;
+    }
+    
+    .procurement-card-item{
+      text-align:left;
+    }
+    
+    .procurement-card-item.wide{
+      grid-column:1 / -1;
+    }
+    
+    .procurement-card-label{
+      font-size:.78rem;
+      color:#888;
+      margin-bottom:2px;
+    }
+    
+    .procurement-card-value{
+      font-size:.92rem;
+      color:#222;
+      word-break:break-word;
+    }
+
+
+
+
 
     
   </style>
@@ -696,19 +795,13 @@
     </div>
 
     <div id="page-leave" class="hidden page-section">
-      <div class="apply-page-header">
-        <div style="min-width:0;text-align:left;">
-          <h3 id="apply-page-title" style="margin:0;">打卡申請</h3>
-          <div id="apply-page-subtitle" class="apply-page-subtitle">最近申請紀錄</div>
-        </div>
-        <button id="apply-primary-btn" class="admin-action-btn" style="width:auto;min-width:128px;padding:12px 16px;" onclick="openCurrentApplyModal()">
-      <!-- 🔹 四個申請按鈕 -->
-      <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
-        <button class="menu-pill" onclick="openModal('clock-apply')">申請打卡</button>
-        <button class="menu-pill" onclick="openModal('overtime')">申請加班</button>
-        <button class="menu-pill" onclick="openModal('leave')">申請請假</button>
-        <button class="menu-pill" onclick="openModal('procurement')">申請採購</button>
+      <div class="apply-toolbar">
+        <button id="apply-primary-btn" class="menu-pill" onclick="openCurrentApplyModal()">新增申請</button>
       </div>
+    
+      <div id="apply-history">載入中...</div>
+    </div>
+
     
       <!-- 🔹 紀錄區 -->
       <h4>個人申請紀錄</h4>
@@ -762,14 +855,14 @@
     <div class="menu-sheet hidden" id="menu-sheet">
       <div class="fab-option"><button class="menu-pill" data-page="clock" onclick="nav('clock')">打卡</button></div>
       <div class="fab-option"><button class="menu-pill" data-page="clocklog" onclick="nav('clocklog')">打卡紀錄</button></div>
-      <div class="fab-option">
+      <div class="fab-option fab-apply-wrap">
         <button class="menu-pill" id="fab-apply-main" data-page="leave" onclick="toggleApplySubmenu(event)">申請</button>
-      </div>
-      <div id="fab-apply-submenu" class="fab-submenu hidden">
-        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="clock" onclick="openApplyCategory('clock')">打卡</button></div>
-        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="overtime" onclick="openApplyCategory('overtime')">加班</button></div>
-        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="leave" onclick="openApplyCategory('leave')">請假</button></div>
-        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="procurement" onclick="openApplyCategory('procurement')">採購</button></div>
+        <div id="fab-apply-submenu" class="fab-submenu hidden">
+          <button class="menu-pill apply-sub-pill" data-apply-kind="clock" onclick="openApplyCategory('clock')">打卡</button>
+          <button class="menu-pill apply-sub-pill" data-apply-kind="overtime" onclick="openApplyCategory('overtime')">加班</button>
+          <button class="menu-pill apply-sub-pill" data-apply-kind="leave" onclick="openApplyCategory('leave')">請假</button>
+          <button class="menu-pill apply-sub-pill" data-apply-kind="procurement" onclick="openApplyCategory('procurement')">採購</button>
+        </div>
       </div>
       <div class="fab-option"><button class="menu-pill" data-page="schedule" onclick="nav('schedule')">班表</button></div>
       <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">帕拉迪島</button></div>
@@ -1550,11 +1643,10 @@
     if (page === "clocklog" && currentUser) loadClockHistory(currentUser.email);
     if (page === "manager") loadManagerData();
     if (page === "leave") {
-      renderApplyPageHeader();
+      updateApplyPrimaryButton_();
       highlightApplyCategoryPills_();
-      if (currentUser) loadApplyHistory(currentUser.email, currentApplyCategory);
+      if (currentUser) loadApplyHistory(currentUser.email);
     }
-
     if (page === "schedule") updateMonthShiftMarkers();
     if (page === "clock") {
       requestAnimationFrame(() => {
@@ -2632,11 +2724,17 @@
     }
   }
   
-  async function loadApplyHistory(email, kind = currentApplyCategory) {
+  async function loadApplyHistory(email) {
+    renderApplyHistoryLoading_();
+  
     try {
-      const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}&kind=${encodeURIComponent(kind)}`);
+      const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
       const d = await r.json();
-      const list = d.items || [];
+  
+      const rawList = d.items || [];
+      const filtered = rawList.filter((item) => item.type === currentApplyCategory);
+      const list = limitApplyHistoryForView_(filtered);
+  
       applyHistoryItems = list;
   
       const box = document.getElementById("apply-history");
@@ -2657,6 +2755,7 @@
       document.getElementById("apply-history").innerHTML = "載入失敗";
     }
   }
+
 
   
   function openApplyDetail(idx) {
@@ -3462,6 +3561,148 @@
       `;
     }
 
+   let currentApplyCategory = "clock";
+
+    const APPLY_PAGE_CONFIG = {
+      clock: { modal: "clock-apply", buttonText: "申請打卡" },
+      overtime: { modal: "overtime", buttonText: "申請加班" },
+      leave: { modal: "leave", buttonText: "申請請假" },
+      procurement: { modal: "procurement", buttonText: "申請採購" }
+    };
+    
+    function isOpenApplyStatus(status) {
+      const s = String(status || "").trim();
+      return !s || s === "審核中" || s === "需與廠商討論" || s === "資料補充";
+    }
+    
+    function limitApplyHistoryForView_(items) {
+      const out = [];
+      let doneCount = 0;
+    
+      for (const item of items) {
+        if (isOpenApplyStatus(item.status)) {
+          out.push(item);
+          continue;
+        }
+        if (doneCount < 10) {
+          out.push(item);
+          doneCount++;
+        }
+      }
+      return out;
+    }
+    
+    function renderApplyHistoryLoading_() {
+      const box = document.getElementById("apply-history");
+      if (!box) return;
+    
+      box.innerHTML = `
+        <div class="apply-history-loading">
+          <div class="apply-loading-label">讀取申請紀錄中...</div>
+          <div class="apply-loading-track">
+            <div class="apply-loading-bar"></div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function updateApplyPrimaryButton_() {
+      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
+      const btn = document.getElementById("apply-primary-btn");
+      if (btn) btn.textContent = cfg.buttonText;
+    }
+    
+    function highlightApplyCategoryPills_() {
+      document.querySelectorAll(".apply-sub-pill").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.applyKind === currentApplyCategory);
+      });
+    }
+    
+    function toggleApplySubmenu(event) {
+      event?.stopPropagation();
+      const submenu = document.getElementById("fab-apply-submenu");
+      const sheet = document.getElementById("menu-sheet");
+      const willOpen = submenu.classList.contains("hidden");
+    
+      submenu.classList.toggle("hidden");
+      sheet.classList.toggle("apply-submenu-open", willOpen);
+    }
+    
+    function closeApplySubmenu() {
+      document.getElementById("fab-apply-submenu")?.classList.add("hidden");
+      document.getElementById("menu-sheet")?.classList.remove("apply-submenu-open");
+    }
+    
+    function openApplyCategory(kind) {
+      currentApplyCategory = kind;
+      updateApplyPrimaryButton_();
+      highlightApplyCategoryPills_();
+      closeApplySubmenu();
+      nav("leave");
+    }
+    
+    function openCurrentApplyModal() {
+      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
+      openModal(cfg.modal);
+    }
+    
+    function formatProcurementProgress_(item) {
+      if (item.invoiceReturned) return "已購買 / 已繳回發票";
+      if (item.purchased) return "已購買 / 待繳回發票";
+      return "尚未購買";
+    }
+    
+    function buildApplyHistoryCard_(item, idx) {
+      const statusClass = getStatusClass(item.status || "審核中");
+    
+      if (item.type === "procurement") {
+        return `
+          <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
+            <div class="row-1">
+              <span class="title">${item.title || "採購"}</span>
+              <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
+            </div>
+            <div class="apply-card-meta">${item.appliedAt || ""}</div>
+    
+            <div class="procurement-card-grid">
+              <div class="procurement-card-item">
+                <div class="procurement-card-label">店別</div>
+                <div class="procurement-card-value">${item.store || "—"}</div>
+              </div>
+              <div class="procurement-card-item">
+                <div class="procurement-card-label">價格</div>
+                <div class="procurement-card-value">${item.price || "—"}</div>
+              </div>
+              <div class="procurement-card-item">
+                <div class="procurement-card-label">發票</div>
+                <div class="procurement-card-value">${item.invoiceType || "—"}</div>
+              </div>
+              <div class="procurement-card-item">
+                <div class="procurement-card-label">進度</div>
+                <div class="procurement-card-value">${formatProcurementProgress_(item)}</div>
+              </div>
+              <div class="procurement-card-item wide">
+                <div class="procurement-card-label">品項</div>
+                <div class="procurement-card-value">${item.detail || "—"}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    
+      return `
+        <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
+          <div class="row-1">
+            <span class="title">${item.title || "申請"}</span>
+            <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
+          </div>
+          <div class="apply-card-meta">${item.appliedAt || ""}</div>
+          <div class="info">${item.dateText || ""}</div>
+          ${item.reason && item.reason !== "—" ? `<div class="info">原因：${item.reason}</div>` : ""}
+        </div>
+      `;
+    }
+     
 
 
 
