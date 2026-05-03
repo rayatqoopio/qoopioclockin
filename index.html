@@ -802,12 +802,6 @@
       <div id="apply-history">載入中...</div>
     </div>
 
-    
-      <!-- 🔹 紀錄區 -->
-      <h4>個人申請紀錄</h4>
-      <div id="apply-history">載入中...</div>
-    
-    </div>
 
     <div id="page-schedule" class="hidden page-section">
       <div class="calendar-header">
@@ -1284,6 +1278,7 @@
   let allUsersForAdmin = [];
   let selectedPendingReviewKeys = new Set();
   let currentApplyDetailItem = null;
+  let currentApplyCategory = "clock";
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
 
@@ -2474,65 +2469,6 @@
       }
     }
   }
-
-
-  async function submitLeave() {
-    if (!currentUser) {
-      alert("請先登入");
-      return;
-    }
-  
-    const startDate = document.getElementById("leave-start-date").value.trim();
-    const endDate = document.getElementById("leave-end-date").value.trim();
-    const leaveType = document.getElementById("leave-type").value.trim();
-    const reason = document.getElementById("leave-reason").value.trim();
-    const allDay = true;
-  
-    if (!startDate || !endDate || !leaveType) {
-      alert("請完整填寫請假資料");
-      return;
-    }
-    if (startDate > endDate) {
-      alert("結束日期不能早於開始日期");
-      return;
-    }
-  
-    const btn = document.querySelector("#modal-leave .admin-action-btn");
-    setSubmitLoading(btn);
-  
-    try {
-      const r = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "applyLeave",
-          email: currentUser.email,
-          startDate,
-          endDate,
-          leaveType,
-          reason,
-          allDay
-        }),
-      });
-  
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.msg || "送出失敗");
-  
-      setSubmitSuccess(btn);
-  
-      setTimeout(() => {
-        closeModal("leave");
-        resetSubmitButton(btn);
-        loadApplyHistory(currentUser.email);
-      }, 700);
-    } catch (e) {
-      console.error(e);
-      alert(e.message || "送出失敗，請稍後再試");
-      resetSubmitButton(btn);
-    }
-  }
-
-
   
   async function submitClockApply() {
     if (!currentUser) {
@@ -3477,91 +3413,6 @@
       }
     }
 
-    let currentApplyCategory = "clock";
-
-    const APPLY_PAGE_CONFIG = {
-      clock: { title: "打卡申請", buttonText: "申請打卡", modal: "clock-apply" },
-      overtime: { title: "加班申請", buttonText: "申請加班", modal: "overtime" },
-      leave: { title: "請假申請", buttonText: "申請請假", modal: "leave" },
-      procurement: { title: "採購申請", buttonText: "申請採購", modal: "procurement" }
-    };
-    
-    function toggleApplySubmenu(event) {
-      event?.stopPropagation();
-      document.getElementById("fab-apply-submenu")?.classList.toggle("hidden");
-    }
-    
-    function closeApplySubmenu() {
-      document.getElementById("fab-apply-submenu")?.classList.add("hidden");
-    }
-    
-    function renderApplyPageHeader() {
-      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
-      document.getElementById("apply-page-title").textContent = cfg.title;
-      document.getElementById("apply-primary-btn").textContent = cfg.buttonText;
-    }
-    
-    function highlightApplyCategoryPills_() {
-      const main = document.getElementById("fab-apply-main");
-      if (main) main.classList.add("active");
-    
-      document.querySelectorAll(".apply-sub-pill").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.applyKind === currentApplyCategory);
-      });
-    }
-    
-    function openApplyCategory(kind) {
-      currentApplyCategory = kind;
-      renderApplyPageHeader();
-      nav("leave");
-      closeApplySubmenu();
-      highlightApplyCategoryPills_();
-    }
-    
-    function openCurrentApplyModal() {
-      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
-      openModal(cfg.modal);
-    }
-    
-    function formatProcurementProgress_(item) {
-      if (item.invoiceReturned) return "已購買 / 已繳回發票";
-      if (item.purchased) return "已購買 / 待繳回發票";
-      return "尚未購買";
-    }
-    
-    function buildApplyHistoryCard_(item, idx) {
-      const statusClass = getStatusClass(item.status || "審核中");
-    
-      if (item.type === "procurement") {
-        return `
-          <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
-            <div class="row-1">
-              <span class="title">${item.title || "採購"}</span>
-              <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
-            </div>
-            <div class="apply-card-meta">${item.appliedAt || ""}</div>
-            <div class="info">品項：${item.detail || "—"}</div>
-            <div class="info">店別：${item.store || "—"}　價格：${item.price || "—"}</div>
-            <div class="info">發票：${item.invoiceType || "—"}</div>
-            <div class="info">進度：${formatProcurementProgress_(item)}</div>
-          </div>
-        `;
-      }
-    
-      return `
-        <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
-          <div class="row-1">
-            <span class="title">${item.title || "申請"}</span>
-            <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
-          </div>
-          <div class="apply-card-meta">${item.appliedAt || ""}</div>
-          <div class="info">${item.dateText || ""}</div>
-          ${item.reason && item.reason !== "—" ? `<div class="info">原因：${item.reason}</div>` : ""}
-        </div>
-      `;
-    }
-
-   let currentApplyCategory = "clock";
 
     const APPLY_PAGE_CONFIG = {
       clock: { modal: "clock-apply", buttonText: "申請打卡" },
