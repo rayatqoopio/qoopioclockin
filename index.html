@@ -282,7 +282,7 @@
     .status-審核中{background:#e67e22;} .status-通過{background:#27ae60;} .status-退回{background:#c0392b;}
 
     /* FAB */
-    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10015;}
+    #fab-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10;}
     .menu-fab{position:fixed;left:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:10020;display:none;flex-direction:column;align-items:flex-start;}
     .fab-main{width:60px;height:60px;border-radius:50%;background:#111;color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,0.35);font-size:1.6rem;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;}
     .fab-icon-o,.fab-icon-x{position:absolute;font-family:sans-serif;font-weight:700;transition:all 0.3s;}
@@ -592,6 +592,12 @@
       flex-direction:column;
       gap:8px;
       pointer-events:auto;
+      z-index: 30; /* 👈 一定要比 overlay 高 */
+    }
+
+
+    .fab-container {
+      z-index: 20;
     }
     
     .apply-page-header{
@@ -1181,6 +1187,13 @@
       </div>
     </div>
   </div>
+
+  <button onclick="openModal('clock-apply')">補打卡</button>
+  <button onclick="openModal('overtime')">加班</button>
+  <button onclick="openModal('leave')">請假</button>
+  <button onclick="openModalAndCloseFAB('clock-apply')">補打卡</button>
+  <button onclick="openModalAndCloseFAB('overtime')">加班</button>
+  <button onclick="openModalAndCloseFAB('leave')">請假</button>
 
 <script>
   // ⚠️ C 表 Web App URL
@@ -3402,15 +3415,28 @@
     
       const submenu = document.getElementById("fab-apply-submenu");
       const overlay = document.getElementById("fab-overlay");
+      const menu = document.getElementById("menu-sheet");
     
-      const isOpen = submenu.classList.contains("hidden");
+      const isOpening = submenu.classList.contains("hidden");
     
-      submenu.classList.toggle("hidden");
-      overlay.classList.toggle("hidden", !isOpen);
+      if (isOpening) {
+        // 👉 開啟 submenu
+        submenu.classList.remove("hidden");
     
-      // 👇 關閉主 menu（避免重疊）
-      if (isOpen) {
-        document.getElementById("menu-sheet")?.classList.remove("hidden");
+        // 👉 🔥 把第一層 menu 隱藏
+        menu.classList.add("hidden");
+    
+        // 👉 顯示背景
+        overlay.classList.remove("hidden");
+    
+      } else {
+        // 👉 關閉 submenu
+        submenu.classList.add("hidden");
+    
+        // 👉 還原第一層
+        menu.classList.remove("hidden");
+    
+        overlay.classList.add("hidden");
       }
     }
     
@@ -3472,10 +3498,16 @@
       document.querySelector(".fab-main")?.classList.remove("open");
     }
 
+    function openModalAndCloseFAB(type){
+      closeAllFAB();
+      openModal(type);
+    }
 
-
-
-  
+    function closeAllFAB(){
+      document.getElementById("fab-overlay")?.classList.add("hidden");
+      document.getElementById("menu-sheet")?.classList.add("hidden");
+      document.getElementById("fab-apply-submenu")?.classList.add("hidden");
+    }
 
 
 </script>
