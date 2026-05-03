@@ -583,6 +583,71 @@
       margin: 10px 0 6px;
       font-size: 0.9rem;
     }
+
+    .fab-submenu{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin:0 0 8px 14px;
+    }
+    
+    .apply-page-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    
+    .apply-page-subtitle{
+      font-size:0.85rem;
+      color:#777;
+      margin-top:4px;
+    }
+    
+    .apply-card-meta{
+      font-size:0.82rem;
+      color:#888;
+      margin-bottom:8px;
+    }
+
+    .procurement-detail-block{
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid #eee;
+    }
+    
+    .procurement-detail-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px 12px;
+      margin-top:10px;
+    }
+    
+    .procurement-detail-item{
+      background:#faf7f2;
+      border-radius:8px;
+      padding:10px;
+      text-align:left;
+    }
+    
+    .procurement-detail-item.wide{
+      grid-column:1 / -1;
+    }
+    
+    .procurement-detail-label{
+      font-size:0.78rem;
+      color:#888;
+      margin-bottom:4px;
+    }
+    
+    .procurement-detail-value{
+      font-size:0.92rem;
+      color:#222;
+      word-break:break-word;
+    }
+
+
     
   </style>
 </head>
@@ -631,9 +696,12 @@
     </div>
 
     <div id="page-leave" class="hidden page-section">
-    
-      <h3>申請</h3>
-    
+      <div class="apply-page-header">
+        <div style="min-width:0;text-align:left;">
+          <h3 id="apply-page-title" style="margin:0;">打卡申請</h3>
+          <div id="apply-page-subtitle" class="apply-page-subtitle">最近申請紀錄</div>
+        </div>
+        <button id="apply-primary-btn" class="admin-action-btn" style="width:auto;min-width:128px;padding:12px 16px;" onclick="openCurrentApplyModal()">
       <!-- 🔹 四個申請按鈕 -->
       <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
         <button class="menu-pill" onclick="openModal('clock-apply')">申請打卡</button>
@@ -694,7 +762,15 @@
     <div class="menu-sheet hidden" id="menu-sheet">
       <div class="fab-option"><button class="menu-pill" data-page="clock" onclick="nav('clock')">打卡</button></div>
       <div class="fab-option"><button class="menu-pill" data-page="clocklog" onclick="nav('clocklog')">打卡紀錄</button></div>
-      <div class="fab-option"><button class="menu-pill" data-page="leave" onclick="nav('leave')">申請</button></div>
+      <div class="fab-option">
+        <button class="menu-pill" id="fab-apply-main" data-page="leave" onclick="toggleApplySubmenu(event)">申請</button>
+      </div>
+      <div id="fab-apply-submenu" class="fab-submenu hidden">
+        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="clock" onclick="openApplyCategory('clock')">打卡</button></div>
+        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="overtime" onclick="openApplyCategory('overtime')">加班</button></div>
+        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="leave" onclick="openApplyCategory('leave')">請假</button></div>
+        <div class="fab-option"><button class="menu-pill apply-sub-pill" data-apply-kind="procurement" onclick="openApplyCategory('procurement')">採購</button></div>
+      </div>
       <div class="fab-option"><button class="menu-pill" data-page="schedule" onclick="nav('schedule')">班表</button></div>
       <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">帕拉迪島</button></div>
       <div class="fab-option hidden" id="fab-adm"><button class="menu-pill" data-page="admin" onclick="nav('admin')">大研創意的狗</button></div>
@@ -867,6 +943,7 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('apply-detail')">✕</button>
       <div class="modal-title" id="ad-title">申請詳情</div>
+  
       <div style="font-size:0.95rem; line-height:1.7;">
         <div><b>申請時間：</b><span id="ad-appliedAt"></span></div>
         <div><b>申請內容：</b><span id="ad-dateText"></span></div>
@@ -874,25 +951,51 @@
         <div><b>狀態：</b><span id="ad-status"></span></div>
         <div><b>備註：</b><span id="ad-note"></span></div>
       </div>
-    </div>
-    <div id="ad-procurement-block" class="hidden" style="margin-top:12px;font-size:0.95rem;line-height:1.7;">
-      <div><b>店別：</b><span id="ap-store"></span></div>
-      <div><b>職務：</b><span id="ap-role"></span></div>
-      <div><b>品項：</b><span id="ap-detail"></span></div>
-      <div><b>價格：</b><span id="ap-price"></span></div>
-      <div><b>連結：</b><a id="ap-link" target="_blank" rel="noopener noreferrer">開啟連結</a></div>
-      <div><b>發票：</b><span id="ap-invoice"></span></div>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-        <input type="checkbox" id="ap-purchased">
-        <span>購買完成</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-        <input type="checkbox" id="ap-invoice-returned">
-        <span>發票繳回</span>
-      </label>
-      <button id="ap-save-btn" class="admin-action-btn submit-progress-btn" style="margin-top:12px;" onclick="saveProcurementProgress()">更新採購狀態</button>
+  
+      <div id="ad-procurement-block" class="hidden procurement-detail-block">
+        <div class="procurement-detail-grid">
+          <div class="procurement-detail-item">
+            <div class="procurement-detail-label">店別</div>
+            <div class="procurement-detail-value" id="ap-store"></div>
+          </div>
+          <div class="procurement-detail-item">
+            <div class="procurement-detail-label">職務</div>
+            <div class="procurement-detail-value" id="ap-role"></div>
+          </div>
+          <div class="procurement-detail-item">
+            <div class="procurement-detail-label">價格</div>
+            <div class="procurement-detail-value" id="ap-price"></div>
+          </div>
+          <div class="procurement-detail-item">
+            <div class="procurement-detail-label">發票</div>
+            <div class="procurement-detail-value" id="ap-invoice"></div>
+          </div>
+          <div class="procurement-detail-item wide">
+            <div class="procurement-detail-label">品項</div>
+            <div class="procurement-detail-value" id="ap-detail"></div>
+          </div>
+          <div class="procurement-detail-item wide">
+            <div class="procurement-detail-label">連結</div>
+            <div class="procurement-detail-value">
+              <a id="ap-link" target="_blank" rel="noopener noreferrer">開啟連結</a>
+            </div>
+          </div>
+        </div>
+  
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+          <input type="checkbox" id="ap-purchased">
+          <span>購買完成</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <input type="checkbox" id="ap-invoice-returned">
+          <span>發票繳回</span>
+        </label>
+  
+        <button id="ap-save-btn" class="admin-action-btn submit-progress-btn" style="margin-top:12px;" onclick="saveProcurementProgress()">更新採購狀態</button>
+      </div>
     </div>
   </div>
+
 
   <div class="modal" id="modal-procurement">
     <div class="modal-card">
@@ -1051,20 +1154,6 @@
             <button data-cat="EAR"  onclick="shopSwitchCat('EAR')">耳飾</button>
             <button data-cat="CLOTH" onclick="shopSwitchCat('CLOTH')">服裝</button>
             <button data-cat="PET"  onclick="shopSwitchCat('PET')">寵物</button>
-          </div>
-        </div>
-
-        <div class="modal" id="modal-apply-detail">
-          <div class="modal-card">
-            <button class="modal-close-btn" onclick="closeModal('apply-detail')">✕</button>
-            <div class="modal-title" id="ad-title">申請詳情</div>
-            <div style="font-size:0.95rem; line-height:1.7;">
-              <div><b>申請時間：</b><span id="ad-appliedAt"></span></div>
-              <div><b>申請內容：</b><span id="ad-dateText"></span></div>
-              <div><b>原因：</b><span id="ad-reason"></span></div>
-              <div><b>狀態：</b><span id="ad-status"></span></div>
-              <div><b>備註：</b><span id="ad-note"></span></div>
-            </div>
           </div>
         </div>
 
@@ -1439,6 +1528,7 @@
     fab.classList.toggle("open");
 
     if (hud) hud.style.display = willOpen ? "inline-flex" : "none";
+    if (!willOpen) closeApplySubmenu();
   }
 
   function nav(page) {
@@ -1459,7 +1549,12 @@
     if (pill) pill.classList.add("active");
     if (page === "clocklog" && currentUser) loadClockHistory(currentUser.email);
     if (page === "manager") loadManagerData();
-    if (page === "leave" && currentUser) loadApplyHistory(currentUser.email);
+    if (page === "leave") {
+      renderApplyPageHeader();
+      highlightApplyCategoryPills_();
+      if (currentUser) loadApplyHistory(currentUser.email, currentApplyCategory);
+    }
+
     if (page === "schedule") updateMonthShiftMarkers();
     if (page === "clock") {
       requestAnimationFrame(() => {
@@ -2537,9 +2632,9 @@
     }
   }
   
-  async function loadApplyHistory(email) {
+  async function loadApplyHistory(email, kind = currentApplyCategory) {
     try {
-      const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
+      const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}&kind=${encodeURIComponent(kind)}`);
       const d = await r.json();
       const list = d.items || [];
       applyHistoryItems = list;
@@ -2550,15 +2645,7 @@
         return;
       }
   
-      box.innerHTML = list.map((item, idx) => `
-        <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
-          <div class="row-1">
-            <span class="title">${item.title || "申請"}</span>
-            <span class="status-bar ${getStatusClass(item.status || "審核中")}">${item.status || "審核中"}</span>
-          </div>
-          <div class="info">${item.dateText || ""}</div>
-        </div>
-      `).join("");
+      box.innerHTML = list.map((item, idx) => buildApplyHistoryCard_(item, idx)).join("");
   
       box.querySelectorAll(".apply-history-card").forEach((card) => {
         card.addEventListener("click", () => {
@@ -2570,6 +2657,7 @@
       document.getElementById("apply-history").innerHTML = "載入失敗";
     }
   }
+
   
   function openApplyDetail(idx) {
     const item = applyHistoryItems[idx];
@@ -3289,6 +3377,91 @@
         resetSubmitButton(btn);
       }
     }
+
+    let currentApplyCategory = "clock";
+
+    const APPLY_PAGE_CONFIG = {
+      clock: { title: "打卡申請", buttonText: "申請打卡", modal: "clock-apply" },
+      overtime: { title: "加班申請", buttonText: "申請加班", modal: "overtime" },
+      leave: { title: "請假申請", buttonText: "申請請假", modal: "leave" },
+      procurement: { title: "採購申請", buttonText: "申請採購", modal: "procurement" }
+    };
+    
+    function toggleApplySubmenu(event) {
+      event?.stopPropagation();
+      document.getElementById("fab-apply-submenu")?.classList.toggle("hidden");
+    }
+    
+    function closeApplySubmenu() {
+      document.getElementById("fab-apply-submenu")?.classList.add("hidden");
+    }
+    
+    function renderApplyPageHeader() {
+      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
+      document.getElementById("apply-page-title").textContent = cfg.title;
+      document.getElementById("apply-primary-btn").textContent = cfg.buttonText;
+    }
+    
+    function highlightApplyCategoryPills_() {
+      const main = document.getElementById("fab-apply-main");
+      if (main) main.classList.add("active");
+    
+      document.querySelectorAll(".apply-sub-pill").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.applyKind === currentApplyCategory);
+      });
+    }
+    
+    function openApplyCategory(kind) {
+      currentApplyCategory = kind;
+      renderApplyPageHeader();
+      nav("leave");
+      closeApplySubmenu();
+      highlightApplyCategoryPills_();
+    }
+    
+    function openCurrentApplyModal() {
+      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
+      openModal(cfg.modal);
+    }
+    
+    function formatProcurementProgress_(item) {
+      if (item.invoiceReturned) return "已購買 / 已繳回發票";
+      if (item.purchased) return "已購買 / 待繳回發票";
+      return "尚未購買";
+    }
+    
+    function buildApplyHistoryCard_(item, idx) {
+      const statusClass = getStatusClass(item.status || "審核中");
+    
+      if (item.type === "procurement") {
+        return `
+          <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
+            <div class="row-1">
+              <span class="title">${item.title || "採購"}</span>
+              <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
+            </div>
+            <div class="apply-card-meta">${item.appliedAt || ""}</div>
+            <div class="info">品項：${item.detail || "—"}</div>
+            <div class="info">店別：${item.store || "—"}　價格：${item.price || "—"}</div>
+            <div class="info">發票：${item.invoiceType || "—"}</div>
+            <div class="info">進度：${formatProcurementProgress_(item)}</div>
+          </div>
+        `;
+      }
+    
+      return `
+        <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
+          <div class="row-1">
+            <span class="title">${item.title || "申請"}</span>
+            <span class="status-bar ${statusClass}">${item.status || "審核中"}</span>
+          </div>
+          <div class="apply-card-meta">${item.appliedAt || ""}</div>
+          <div class="info">${item.dateText || ""}</div>
+          ${item.reason && item.reason !== "—" ? `<div class="info">原因：${item.reason}</div>` : ""}
+        </div>
+      `;
+    }
+
 
 
 
