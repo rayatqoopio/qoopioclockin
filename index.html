@@ -585,10 +585,13 @@
     }
 
     .fab-submenu{
+      position:absolute;
+      left:70px;   /* 👈 往右展開 */
+      bottom:0;
       display:flex;
       flex-direction:column;
       gap:8px;
-      margin:0 0 8px 14px;
+      pointer-events:auto;
     }
     
     .apply-page-header{
@@ -647,6 +650,20 @@
       word-break:break-word;
     }
 
+    .apply-loading {
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ddd, #999, #ddd);
+      background-size: 200% 100%;
+      animation: applyLoading 1s infinite;
+      margin: 20px 0;
+    }
+    
+    @keyframes applyLoading {
+      0% { background-position: -100% 0; }
+      100% { background-position: 100% 0; }
+    }
+
 
     
   </style>
@@ -658,7 +675,7 @@
     <p>系統連線中...</p>
   </div>
 
-  <div id="fab-overlay" class="hidden" onclick="toggleMenu()"></div>
+  <div id="fab-overlay" class="hidden" onclick="closeAllFAB()"></div>
 
   <header id="global-header" class="hidden">
     <img src="qoopio logo.png" class="header-logo" />
@@ -696,19 +713,6 @@
     </div>
 
     <div id="page-leave" class="hidden page-section">
-      <div class="apply-page-header">
-        <div style="min-width:0;text-align:left;">
-          <h3 id="apply-page-title" style="margin:0;">打卡申請</h3>
-          <div id="apply-page-subtitle" class="apply-page-subtitle">最近申請紀錄</div>
-        </div>
-        <button id="apply-primary-btn" class="admin-action-btn" style="width:auto;min-width:128px;padding:12px 16px;" onclick="openCurrentApplyModal()">
-      <!-- 🔹 四個申請按鈕 -->
-      <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
-        <button class="menu-pill" onclick="openModal('clock-apply')">申請打卡</button>
-        <button class="menu-pill" onclick="openModal('overtime')">申請加班</button>
-        <button class="menu-pill" onclick="openModal('leave')">申請請假</button>
-        <button class="menu-pill" onclick="openModal('procurement')">申請採購</button>
-      </div>
     
       <!-- 🔹 紀錄區 -->
       <h4>個人申請紀錄</h4>
@@ -2633,13 +2637,18 @@
   }
   
   async function loadApplyHistory(email, kind = currentApplyCategory) {
+    const box = document.getElementById("apply-history");
+  
+    // 👇 先顯示 loading
+    box.innerHTML = `<div class="apply-loading"></div>`;
+  
     try {
       const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}&kind=${encodeURIComponent(kind)}`);
       const d = await r.json();
       const list = d.items || [];
+  
       applyHistoryItems = list;
   
-      const box = document.getElementById("apply-history");
       if (!list.length) {
         box.innerHTML = "<p>目前沒有申請紀錄</p>";
         return;
@@ -2652,9 +2661,10 @@
           openApplyDetail(Number(card.dataset.idx));
         });
       });
+  
     } catch (e) {
       console.error(e);
-      document.getElementById("apply-history").innerHTML = "載入失敗";
+      box.innerHTML = "載入失敗";
     }
   }
 
@@ -3389,27 +3399,25 @@
     
     function toggleApplySubmenu(event) {
       event?.stopPropagation();
-      document.getElementById("fab-apply-submenu")?.classList.toggle("hidden");
+    
+      const submenu = document.getElementById("fab-apply-submenu");
+      const overlay = document.getElementById("fab-overlay");
+    
+      const isOpen = submenu.classList.contains("hidden");
+    
+      submenu.classList.toggle("hidden");
+      overlay.classList.toggle("hidden", !isOpen);
+    
+      // 👇 關閉主 menu（避免重疊）
+      if (isOpen) {
+        document.getElementById("menu-sheet")?.classList.remove("hidden");
+      }
     }
     
     function closeApplySubmenu() {
       document.getElementById("fab-apply-submenu")?.classList.add("hidden");
     }
     
-    function renderApplyPageHeader() {
-      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
-      document.getElementById("apply-page-title").textContent = cfg.title;
-      document.getElementById("apply-primary-btn").textContent = cfg.buttonText;
-    }
-    
-    function highlightApplyCategoryPills_() {
-      const main = document.getElementById("fab-apply-main");
-      if (main) main.classList.add("active");
-    
-      document.querySelectorAll(".apply-sub-pill").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.applyKind === currentApplyCategory);
-      });
-    }
     
     function openApplyCategory(kind) {
       currentApplyCategory = kind;
@@ -3417,11 +3425,6 @@
       nav("leave");
       closeApplySubmenu();
       highlightApplyCategoryPills_();
-    }
-    
-    function openCurrentApplyModal() {
-      const cfg = APPLY_PAGE_CONFIG[currentApplyCategory] || APPLY_PAGE_CONFIG.clock;
-      openModal(cfg.modal);
     }
     
     function formatProcurementProgress_(item) {
@@ -3460,6 +3463,13 @@
           ${item.reason && item.reason !== "—" ? `<div class="info">原因：${item.reason}</div>` : ""}
         </div>
       `;
+    }
+
+    function closeAllFAB(){
+      document.getElementById("fab-overlay")?.classList.add("hidden");
+      document.getElementById("menu-sheet")?.classList.add("hidden");
+      document.getElementById("fab-apply-submenu")?.classList.add("hidden");
+      document.querySelector(".fab-main")?.classList.remove("open");
     }
 
 
