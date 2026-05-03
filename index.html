@@ -634,11 +634,12 @@
     
       <h3>申請</h3>
     
-      <!-- 🔹 三個申請按鈕 -->
+      <!-- 🔹 四個申請按鈕 -->
       <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
         <button class="menu-pill" onclick="openModal('clock-apply')">申請打卡</button>
         <button class="menu-pill" onclick="openModal('overtime')">申請加班</button>
         <button class="menu-pill" onclick="openModal('leave')">申請請假</button>
+        <button class="menu-pill" onclick="openModal('procurement')">申請採購</button>
       </div>
     
       <!-- 🔹 紀錄區 -->
@@ -834,6 +835,34 @@
     </div>
   </div>
 
+  <div class="modal" id="modal-procurement-review">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('procurement-review')">✕</button>
+      <div class="modal-title">採購審核</div>
+      <div style="font-size:0.95rem; line-height:1.7;">
+        <div><b>申請人：</b><span id="pr-name"></span></div>
+        <div><b>職務：</b><span id="pr-role"></span></div>
+        <div><b>店別：</b><span id="pr-store"></span></div>
+        <div><b>品項：</b><span id="pr-detail"></span></div>
+        <div><b>價格：</b><span id="pr-price"></span></div>
+        <div><b>連結：</b><a id="pr-link" target="_blank" rel="noopener noreferrer">開啟連結</a></div>
+        <div><b>發票：</b><span id="pr-invoice"></span></div>
+      </div>
+  
+      <label style="display:block;margin-top:12px;">老闆審核</label>
+      <select id="pr-review-status" class="admin-input">
+        <option>通過可購買</option>
+        <option>否決-價格太高</option>
+        <option>否決-用途待了解</option>
+        <option>需與廠商討論</option>
+        <option>資料補充</option>
+      </select>
+  
+      <button class="admin-action-btn" onclick="submitProcurementReview()">送出審核</button>
+    </div>
+  </div>
+
+
   <div class="modal" id="modal-apply-detail">
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('apply-detail')">✕</button>
@@ -846,7 +875,60 @@
         <div><b>備註：</b><span id="ad-note"></span></div>
       </div>
     </div>
+    <div id="ad-procurement-block" class="hidden" style="margin-top:12px;font-size:0.95rem;line-height:1.7;">
+      <div><b>店別：</b><span id="ap-store"></span></div>
+      <div><b>職務：</b><span id="ap-role"></span></div>
+      <div><b>品項：</b><span id="ap-detail"></span></div>
+      <div><b>價格：</b><span id="ap-price"></span></div>
+      <div><b>連結：</b><a id="ap-link" target="_blank" rel="noopener noreferrer">開啟連結</a></div>
+      <div><b>發票：</b><span id="ap-invoice"></span></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+        <input type="checkbox" id="ap-purchased">
+        <span>購買完成</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <input type="checkbox" id="ap-invoice-returned">
+        <span>發票繳回</span>
+      </label>
+      <button id="ap-save-btn" class="admin-action-btn submit-progress-btn" style="margin-top:12px;" onclick="saveProcurementProgress()">更新採購狀態</button>
+    </div>
   </div>
+
+  <div class="modal" id="modal-procurement">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('procurement')">✕</button>
+      <div class="modal-title">申請採購</div>
+  
+      <label>哪家店要買</label>
+      <select id="proc-store" class="admin-input">
+        <option value="">請選擇</option>
+        <option>中山店</option>
+        <option>景美店</option>
+        <option>兩家店都要</option>
+      </select>
+  
+      <label>品項細節</label>
+      <input id="proc-detail" class="admin-input">
+  
+      <label>品項價格</label>
+      <input id="proc-price" class="admin-input" inputmode="decimal">
+  
+      <label>購買連結</label>
+      <input id="proc-link" class="admin-input">
+  
+      <label>發票開立方式</label>
+      <select id="proc-invoice-type" class="admin-input">
+        <option value="">請選擇</option>
+        <option>電子發票</option>
+        <option>紙本發票</option>
+        <option>手開發票</option>
+        <option>無發票</option>
+      </select>
+  
+      <button class="admin-action-btn submit-progress-btn" onclick="submitProcurement()">送出</button>
+    </div>
+  </div>
+
 
   
   <!-- Admin: Token -->
@@ -1019,9 +1101,23 @@
   let currentReviewIndex = null;
   let allUsersForAdmin = [];
   let selectedPendingReviewKeys = new Set();
+  let currentApplyDetailItem = null;
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
 
+
+  
+  function getStatusClass(status) {
+    const s = String(status || "").trim();
+    if (!s || s === "審核中" || s === "需與廠商討論" || s === "資料補充") return "status-審核中";
+    if (s.startsWith("通過")) return "status-通過";
+    return "status-退回";
+  }
+  
+  function isBatchReviewable(item) {
+    return item.type !== "procurement";
+  }
+  
   function getPendingItemKey(item) {
     return `${item.type}:${item.rowIndex}`;
   }
@@ -2406,7 +2502,7 @@
         <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
           <div class="row-1">
             <span class="title">${item.title || "申請"}</span>
-            <span class="status-bar status-${item.status || "審核中"}">${item.status || "審核中"}</span>
+            <span class="status-bar ${getStatusClass(item.status || "審核中")}">${item.status || "審核中"}</span>
           </div>
           <div class="info">${item.dateText || ""}</div>
         </div>
@@ -2427,6 +2523,8 @@
     const item = applyHistoryItems[idx];
     if (!item) return;
   
+    currentApplyDetailItem = item;
+  
     document.getElementById("ad-title").textContent = item.title || "申請詳情";
     document.getElementById("ad-appliedAt").textContent = item.appliedAt || "—";
     document.getElementById("ad-dateText").textContent = item.dateText || "—";
@@ -2434,8 +2532,38 @@
     document.getElementById("ad-status").textContent = item.status || "審核中";
     document.getElementById("ad-note").textContent = item.note || "—";
   
+    const procBlock = document.getElementById("ad-procurement-block");
+    if (item.type === "procurement") {
+      procBlock.classList.remove("hidden");
+      document.getElementById("ap-store").textContent = item.store || "—";
+      document.getElementById("ap-role").textContent = item.role || "—";
+      document.getElementById("ap-detail").textContent = item.detail || "—";
+      document.getElementById("ap-price").textContent = item.price || "—";
+      document.getElementById("ap-invoice").textContent = item.invoiceType || "—";
+  
+      const linkEl = document.getElementById("ap-link");
+      if (item.link) {
+        linkEl.href = item.link;
+        linkEl.textContent = "開啟連結";
+      } else {
+        linkEl.removeAttribute("href");
+        linkEl.textContent = "無";
+      }
+  
+      document.getElementById("ap-purchased").checked = !!item.purchased;
+      document.getElementById("ap-invoice-returned").checked = !!item.invoiceReturned;
+  
+      const canUpdate = item.status === "通過可購買";
+      document.getElementById("ap-purchased").disabled = !canUpdate;
+      document.getElementById("ap-invoice-returned").disabled = !canUpdate;
+      document.getElementById("ap-save-btn").disabled = !canUpdate;
+    } else {
+      procBlock.classList.add("hidden");
+    }
+  
     openModal("apply-detail");
   }
+
 
 
 
@@ -2990,6 +3118,129 @@
         box.innerHTML = "載入失敗";
       }
     }
+
+    async function submitProcurement() {
+      if (!currentUser) return alert("請先登入");
+    
+      const store = document.getElementById("proc-store").value.trim();
+      const detail = document.getElementById("proc-detail").value.trim();
+      const price = document.getElementById("proc-price").value.trim();
+      const link = document.getElementById("proc-link").value.trim();
+      const invoiceType = document.getElementById("proc-invoice-type").value.trim();
+    
+      if (!store || !detail || !price || !invoiceType) {
+        alert("請完整填寫採購資料");
+        return;
+      }
+    
+      const btn = document.querySelector("#modal-procurement .admin-action-btn");
+      setSubmitLoading(btn);
+    
+      try {
+        const r = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "applyProcurement",
+            email: currentUser.email,
+            store,
+            detail,
+            price,
+            link,
+            invoiceType
+          })
+        });
+    
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg || "送出失敗");
+    
+        setSubmitSuccess(btn);
+        setTimeout(() => {
+          closeModal("procurement");
+          resetSubmitButton(btn);
+          loadApplyHistory(currentUser.email);
+        }, 700);
+      } catch (e) {
+        console.error(e);
+        alert(e.message || "送出失敗");
+        resetSubmitButton(btn);
+      }
+    }
+
+    async function submitProcurementReview() {
+      if (currentReviewIndex == null) return;
+      const item = pendingLeaveItems[currentReviewIndex];
+      if (!item || item.type !== "procurement") return;
+    
+      const status = document.getElementById("pr-review-status").value;
+      if (!confirm(`確定要將 ${item.name} 的採購申請標記為「${status}」嗎？`)) return;
+    
+      try {
+        const r = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "reviewApplication",
+            type: "procurement",
+            rowIndex: item.rowIndex,
+            status
+          })
+        });
+    
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg || "審核失敗");
+    
+        closeModal("procurement-review");
+        currentReviewIndex = null;
+        loadManagerData();
+      } catch (e) {
+        console.error(e);
+        alert(e.message || "審核失敗");
+      }
+    }
+
+    async function saveProcurementProgress() {
+      const item = currentApplyDetailItem;
+      if (!item || item.type !== "procurement") return;
+    
+      const purchased = document.getElementById("ap-purchased").checked;
+      const invoiceReturned = document.getElementById("ap-invoice-returned").checked;
+    
+      const btn = document.getElementById("ap-save-btn");
+      setSubmitLoading(btn, "更新中…");
+    
+      try {
+        const r = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "updateProcurementProgress",
+            email: currentUser.email,
+            rowIndex: item.rowIndex,
+            purchased,
+            invoiceReturned
+          })
+        });
+    
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg || "更新失敗");
+    
+        setSubmitSuccess(btn, "更新成功！！");
+        setTimeout(() => {
+          resetSubmitButton(btn);
+          loadApplyHistory(currentUser.email);
+          closeModal("apply-detail");
+        }, 700);
+      } catch (e) {
+        console.error(e);
+        alert(e.message || "更新失敗");
+        resetSubmitButton(btn);
+      }
+    }
+
+
+
+  
 
 
 </script>
