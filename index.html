@@ -1856,52 +1856,52 @@
 
 
       
-        rList.querySelectorAll(".mgr-pending-check").forEach((el) => {
-          el.addEventListener("change", () => {
-            if (el.disabled) return;
-            togglePendingSelection(el.dataset.key, el.checked);
+          rList.querySelectorAll(".mgr-pending-check").forEach((el) => {
+            el.addEventListener("change", () => {
+              if (el.disabled) return;
+              togglePendingSelection(el.dataset.key, el.checked);
+            });
           });
-        });
-
-      
-        rList.querySelectorAll(".btn-review").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const idx = Number(btn.dataset.idx);
-            openReviewModal(idx);
+  
+        
+          rList.querySelectorAll(".btn-review").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const idx = Number(btn.dataset.idx);
+              openReviewModal(idx);
+            });
           });
-        });
-      
-        syncPendingSelectionUI();
-      } else {
-        rList.innerHTML = "無待審核項目";
-        selectedPendingReviewKeys.clear();
-        syncPendingSelectionUI();
+        
+          syncPendingSelectionUI();
+          } else {
+            rList.innerHTML = "無待審核項目";
+            selectedPendingReviewKeys.clear();
+            syncPendingSelectionUI();
+          }
+    
+        } catch (e) {
+          console.error("load pending error", e);
+          rList.innerHTML = "讀取錯誤";
+        }
+    
+        try {
+          const dRes = await fetch(`${API_URL}?action=getManagerDashboard`);
+          const dData = await dRes.json();
+          const list = (dData && dData.items) || [];
+          if (list.length) {
+            dList.innerHTML = list.map(i=>
+              `<div class="dash-item">
+                 <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
+                 <span class="dash-time">${i.in}/${i.out}</span>
+               </div>`
+            ).join("");
+          } else {
+            dList.innerHTML = "今日無人上班";
+          }
+        } catch (e) {
+          console.error("load dashboard error", e);
+          dList.innerHTML = "讀取錯誤";
+        }
       }
-
-    } catch (e) {
-      console.error("load pending error", e);
-      rList.innerHTML = "讀取錯誤";
-    }
-
-    try {
-      const dRes = await fetch(`${API_URL}?action=getManagerDashboard`);
-      const dData = await dRes.json();
-      const list = (dData && dData.items) || [];
-      if (list.length) {
-        dList.innerHTML = list.map(i=>
-          `<div class="dash-item">
-             <span>${i.name} <small style="color:#888">(${i.dept})</small></span>
-             <span class="dash-time">${i.in}/${i.out}</span>
-           </div>`
-        ).join("");
-      } else {
-        dList.innerHTML = "今日無人上班";
-      }
-    } catch (e) {
-      console.error("load dashboard error", e);
-      dList.innerHTML = "讀取錯誤";
-    }
-  }
 
   async function checkManagerBadge() {
     try {
