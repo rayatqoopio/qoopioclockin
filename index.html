@@ -664,8 +664,18 @@
         <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
       </div>
       <div id="mgr-view-pending">
+        <div class="dashboard-card" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+            <input type="checkbox" id="mgr-select-all" onchange="toggleAllPendingSelections(this.checked)">
+            全選
+          </label>
+          <input id="mgr-batch-note" class="admin-input" placeholder="批次審核備註（選填）" style="margin:0;flex:1;min-width:180px;">
+          <button id="mgr-batch-approve" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#27ae60;" onclick="handleBatchReviewAction('通過')" disabled>批次通過</button>
+          <button id="mgr-batch-reject" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#c0392b;" onclick="handleBatchReviewAction('退回')" disabled>批次退回</button>
+        </div>
         <div class="dashboard-card" id="mgr-review-list">載入中...</div>
       </div>
+
       <div id="mgr-view-today" class="hidden">
         <div class="dashboard-card" id="mgr-dashboard-list">載入中...</div>
       </div>
@@ -1008,8 +1018,51 @@
   let pendingLeaveItems = [];
   let currentReviewIndex = null;
   let allUsersForAdmin = [];
+  let selectedPendingReviewKeys = new Set();
   const GACHA_ICON = "gacha-icon.png?v=4.5";
 
+
+  function getPendingItemKey(item) {
+    return `${item.type}:${item.rowIndex}`;
+  }
+  
+  function togglePendingSelection(key, checked) {
+    if (checked) selectedPendingReviewKeys.add(key);
+    else selectedPendingReviewKeys.delete(key);
+    syncPendingSelectionUI();
+  }
+  
+  function toggleAllPendingSelections(checked) {
+    selectedPendingReviewKeys.clear();
+    if (checked) {
+      pendingLeaveItems.forEach((item) => selectedPendingReviewKeys.add(getPendingItemKey(item)));
+    }
+    syncPendingSelectionUI();
+    document.querySelectorAll(".mgr-pending-check").forEach((el) => {
+      el.checked = checked;
+    });
+  }
+  
+  function syncPendingSelectionUI() {
+    const keys = pendingLeaveItems.map(getPendingItemKey);
+    const selectedCount = keys.filter((key) => selectedPendingReviewKeys.has(key)).length;
+    const total = keys.length;
+  
+    const selectAll = document.getElementById("mgr-select-all");
+    if (selectAll) {
+      selectAll.checked = total > 0 && selectedCount === total;
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < total;
+    }
+  
+    const approveBtn = document.getElementById("mgr-batch-approve");
+    const rejectBtn = document.getElementById("mgr-batch-reject");
+    if (approveBtn) approveBtn.disabled = selectedCount === 0;
+    if (rejectBtn) rejectBtn.disabled = selectedCount === 0;
+  }
+  
+  function getSelectedPendingItems() {
+    return pendingLeaveItems.filter((item) => selectedPendingReviewKeys.has(getPendingItemKey(item)));
+  }
   /** 只顯示登入頁，其他全部收起來 */
   function showLoginOnly() {
     const loading = document.getElementById("loading-screen");
@@ -1640,44 +1693,62 @@
       const rRes = await fetch(`${API_URL}?action=getAllPendingApplications`);
       const rData = await rRes.json();
       const items = (rData && rData.items) || [];
-
-      // ✅ 把結果存起來，後面審核用
+      
       pendingLeaveItems = items;
-
+      
+      const validKeys = new Set(items.map(getPendingItemKey));
+      selectedPendingReviewKeys = new Set(
+        [...selectedPendingReviewKeys].filter((key) => validKeys.has(key))
+      );
+      
       const mgrBtn = document.querySelector('button[data-page="manager"]');
       if (mgrBtn) mgrBtn.classList.toggle("has-notif", items.length > 0);
-
+      
       if (items.length) {
         rList.innerHTML = items.map((i, idx) => {
           let text = "";
-        
           if (i.type === "leave") {
-            text = `${i.name}｜請假｜${i.leaveType}（${i.date}）`;
+            text = `${i.name}｜請假｜${i.leaveType}（${i.dateText || i.date}）`;
           } else if (i.type === "clock") {
-            text = `${i.name}｜補打卡｜${i.subtype} ${formatDateTime24(i.time, i.date)}`;
+            text = `${i.name}｜補打卡｜${i.subtype} ${i.time}`;
           } else if (i.type === "overtime") {
-            text = `${i.name}｜加班 ${i.date} ${formatTime24(i.start)}-${formatTime24(i.end)}`;
+            text = `${i.name}｜加班 ${i.date} ${i.start}-${i.end}`;
           }
-
-        
+      
+          const key = getPendingItemKey(i);
+          const checked = selectedPendingReviewKeys.has(key) ? "checked" : "";
+      
           return `
             <div class="dash-item">
-              <span>${text}</span>
+              <label style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;">
+                <input type="checkbox" class="mgr-pending-check" data-key="${key}" ${checked}>
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${text}</span>
+              </label>
               <button class="btn-approve btn-review" data-idx="${idx}">審核</button>
             </div>
           `;
         }).join("");
-
-        // 綁定審核按鈕事件
-        rList.querySelectorAll(".btn-review").forEach(btn=>{
-          btn.addEventListener("click", ()=>{
+      
+        rList.querySelectorAll(".mgr-pending-check").forEach((el) => {
+          el.addEventListener("change", () => {
+            togglePendingSelection(el.dataset.key, el.checked);
+          });
+        });
+      
+        rList.querySelectorAll(".btn-review").forEach((btn) => {
+          btn.addEventListener("click", () => {
             const idx = Number(btn.dataset.idx);
             openReviewModal(idx);
           });
         });
+      
+        syncPendingSelectionUI();
       } else {
         rList.innerHTML = "無待審核項目";
+        selectedPendingReviewKeys.clear();
+        syncPendingSelectionUI();
       }
+
     } catch (e) {
       console.error("load pending error", e);
       rList.innerHTML = "讀取錯誤";
@@ -1735,6 +1806,47 @@
     } catch (e) {
       console.error(e);
       alert("審核失敗");
+    }
+  }
+
+  async function handleBatchReviewAction(statusText) {
+    const selectedItems = getSelectedPendingItems();
+    if (!selectedItems.length) {
+      alert("請先勾選要審核的項目");
+      return;
+    }
+  
+    const note = document.getElementById("mgr-batch-note")?.value.trim() || "";
+    if (!confirm(`確定要將 ${selectedItems.length} 筆申請標記為「${statusText}」嗎？`)) {
+      return;
+    }
+  
+    try {
+      const r = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "reviewApplicationsBatch",
+          items: selectedItems.map((item) => ({
+            type: item.type,
+            rowIndex: item.rowIndex
+          })),
+          status: statusText,
+          note
+        }),
+      });
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "批次審核失敗");
+  
+      alert(`已完成 ${d.successCount || selectedItems.length} 筆審核`);
+      selectedPendingReviewKeys.clear();
+      const noteEl = document.getElementById("mgr-batch-note");
+      if (noteEl) noteEl.value = "";
+      loadManagerData();
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "批次審核失敗，請稍後再試");
     }
   }
 
