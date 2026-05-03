@@ -728,8 +728,16 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('leave')">✕</button>
       <div class="modal-title">申請請假</div>
-      <label style="display:block;margin-top:10px">日期</label>
-      <input type="date" id="leave-date" class="admin-input">
+      <label style="display:block;margin-top:10px">開始日期</label>
+      <input type="date" id="leave-start-date" class="admin-input">
+      
+      <label style="display:block;margin-top:10px">結束日期</label>
+      <input type="date" id="leave-end-date" class="admin-input">
+      
+      <label style="display:flex;align-items:center;gap:8px;margin:10px 0;">
+        <input type="checkbox" id="leave-all-day" checked disabled>
+        <span>整日</span>
+      </label>
       <label style="display:block;margin-top:10px">假別</label>
       <select id="leave-type" class="admin-input">
         <option>事假</option>
@@ -923,6 +931,21 @@
             <button data-cat="PET"  onclick="shopSwitchCat('PET')">寵物</button>
           </div>
         </div>
+
+        <div class="modal" id="modal-apply-detail">
+          <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeModal('apply-detail')">✕</button>
+            <div class="modal-title" id="ad-title">申請詳情</div>
+            <div style="font-size:0.95rem; line-height:1.7;">
+              <div><b>申請時間：</b><span id="ad-appliedAt"></span></div>
+              <div><b>申請內容：</b><span id="ad-dateText"></span></div>
+              <div><b>原因：</b><span id="ad-reason"></span></div>
+              <div><b>狀態：</b><span id="ad-status"></span></div>
+              <div><b>備註：</b><span id="ad-note"></span></div>
+            </div>
+          </div>
+        </div>
+
     
         <!-- 可滾動區 -->
         <div class="shop-scroll">
@@ -1258,14 +1281,20 @@
     const el = document.getElementById("modal-" + id);
     if (!el) return;
     el.classList.add("open");
-    if (id === "admin-token") loadAdminUserList();
-    if (id === "shop") {
-      shopInit().catch(e => {
-        console.error(e);
-        alert(e.message || "商店載入失敗");
-      });
+  
+    if (id === "leave") {
+      const today = formatLocalDate(new Date());
+      const startEl = document.getElementById("leave-start-date");
+      const endEl = document.getElementById("leave-end-date");
+      if (startEl && !startEl.value) startEl.value = today;
+      if (endEl && !endEl.value) endEl.value = today;
     }
+  
+    if (id === "admin-token") loadAdminUserList();
+    if (id === "shop") shopInit();
   }
+
+  
   function closeModal(id) {
     const el = document.getElementById("modal-" + id);
     if (!el) return;
@@ -1970,13 +1999,24 @@
       return;
     }
   
+    const startDate = document.getElementById("leave-start-date").value.trim();
+    const endDate = document.getElementById("leave-end-date").value.trim();
+    const leaveType = document.getElementById("leave-type").value.trim();
+    const reason = document.getElementById("leave-reason").value.trim();
+    const allDay = true;
+  
+    if (!startDate || !endDate || !leaveType) {
+      alert("請完整填寫請假資料");
+      return;
+    }
+    if (startDate > endDate) {
+      alert("結束日期不能早於開始日期");
+      return;
+    }
+  
     const btn = document.querySelector("#modal-leave .admin-action-btn");
     setSubmitLoading(btn);
-
-    const date = requireValue("leave-date", "日期");
-    const leaveType = requireValue("leave-type", "假別");
-    if (!date || !leaveType) return;
-
+  
     try {
       const r = await fetch(API_URL, {
         method: "POST",
@@ -1984,9 +2024,11 @@
         body: JSON.stringify({
           action: "applyLeave",
           email: currentUser.email,
-          date: document.getElementById("leave-date").value,
-          leaveType: document.getElementById("leave-type").value,
-          reason: document.getElementById("leave-reason").value,
+          startDate,
+          endDate,
+          leaveType,
+          reason,
+          allDay
         }),
       });
   
@@ -2006,6 +2048,7 @@
       resetSubmitButton(btn);
     }
   }
+
 
   
   async function submitClockApply() {
@@ -2077,25 +2120,22 @@
     if (!y || !m || !d || isNaN(hh) || isNaN(mm)) return null;
     return new Date(y, m - 1, d, hh, mm, 0, 0);
   }
-
+  
   async function submitOvertime() {
     if (!currentUser) return alert("請先登入");
   
-    const date = requireValue("ot-date", "日期");
-    const start = requireValue("ot-start", "開始時間");
-    const end = requireValue("ot-end", "結束時間");
-    const reason = requireValue("ot-reason", "原因");
-    if (!date || !start || !end || !reason) return;
+    const date = document.getElementById("ot-date").value.trim();
+    const start = document.getElementById("ot-start").value.trim();
+    const end = document.getElementById("ot-end").value.trim();
+    const reason = document.getElementById("ot-reason").value.trim();
   
-    if (!isBeforeToday(date)) {
-      alert("加班日期必須早於今天");
-      return;
-    }
+    if (!date || !start || !end || !reason) return alert("請完整填寫加班資料");
   
-    if (end <= start) {
-      alert("結束時間必須晚於開始時間");
-      return;
-    }
+    const startAt = buildLocalDateTime(date, start);
+    const endAt = buildLocalDateTime(date, end);
+    if (!startAt || !endAt) return alert("日期或時間格式錯誤");
+    if (endAt <= startAt) return alert("結束時間必須晚於開始時間");
+    if (endAt.getTime() >= Date.now()) return alert("加班只能申請當下時間之前的時段");
   
     const btn = document.querySelector("#modal-overtime .admin-action-btn");
     setSubmitLoading(btn);
@@ -2104,14 +2144,7 @@
       const r = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "applyOvertime",
-          email: currentUser.email,
-          date,
-          start,
-          end,
-          reason
-        })
+        body: JSON.stringify({ action: "applyOvertime", email: currentUser.email, date, start, end, reason })
       });
   
       const d = await r.json();
@@ -2124,54 +2157,58 @@
         loadApplyHistory(currentUser.email);
       }, 700);
     } catch (e) {
-      alert(e.message || "送出失敗");
+      alert(e.message || "送出失敗，請稍後再試");
       resetSubmitButton(btn);
     }
   }
 
+
+
+
+  let applyHistoryItems = [];
 
   async function loadApplyHistory(email) {
     try {
       const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
       const d = await r.json();
       const list = d.items || [];
+      applyHistoryItems = list;
   
       const box = document.getElementById("apply-history");
-  
       if (!list.length) {
         box.innerHTML = "<p>目前沒有申請紀錄</p>";
         return;
       }
   
-      box.innerHTML = list.map(i => {
-        let title = "";
-  
-        if (i.type === "leave") {
-          title = `請假｜${i.leaveType}`;
-        } else if (i.type === "clock") {
-          title = `補打卡｜${i.subtype}`;
-        } else if (i.type === "overtime") {
-          title = `加班`;
-        }
-  
-        return `
-          <div class="leave-card">
-            <div class="row-1">
-              <span class="title">${title}</span>
-              <span class="status-bar status-${i.status || "審核中"}">
-                ${i.status || "審核中"}
-              </span>
-            </div>
-            <div class="info">${i.date}</div>
+      box.innerHTML = list.map((item, idx) => `
+        <div class="leave-card" style="cursor:pointer;" onclick="openApplyDetail(${idx})">
+          <div class="row-1">
+            <span class="title">${item.title || "申請"}</span>
+            <span class="status-bar status-${item.status || "審核中"}">${item.status || "審核中"}</span>
           </div>
-        `;
-      }).join("");
-  
+          <div class="info">${item.dateText || ""}</div>
+        </div>
+      `).join("");
     } catch (e) {
       console.error(e);
       document.getElementById("apply-history").innerHTML = "載入失敗";
     }
   }
+  
+  function openApplyDetail(idx) {
+    const item = applyHistoryItems[idx];
+    if (!item) return;
+  
+    document.getElementById("ad-title").textContent = item.title || "申請詳情";
+    document.getElementById("ad-appliedAt").textContent = item.appliedAt || "—";
+    document.getElementById("ad-dateText").textContent = item.dateText || "—";
+    document.getElementById("ad-reason").textContent = item.reason || "—";
+    document.getElementById("ad-status").textContent = item.status || "審核中";
+    document.getElementById("ad-note").textContent = item.note || "—";
+  
+    openModal("apply-detail");
+  }
+
 
   // ===== Avatar Frontend =====
   const AVATAR_ASSET_BASE = "./assets/avatar/";
