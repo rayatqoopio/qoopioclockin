@@ -728,16 +728,28 @@
     <div class="modal-card">
       <button class="modal-close-btn" onclick="closeModal('leave')">✕</button>
       <div class="modal-title">申請請假</div>
+  
       <label style="display:block;margin-top:10px">開始日期</label>
       <input type="date" id="leave-start-date" class="admin-input">
-      
-      <label style="display:block;margin-top:10px">結束日期</label>
-      <input type="date" id="leave-end-date" class="admin-input">
-      
+  
       <label style="display:flex;align-items:center;gap:8px;margin:10px 0;">
-        <input type="checkbox" id="leave-all-day" checked disabled>
+        <input type="checkbox" id="leave-all-day" checked onchange="toggleLeaveAllDay()">
         <span>整日</span>
       </label>
+  
+      <div id="leave-end-date-wrap">
+        <label style="display:block;margin-top:10px">結束日期</label>
+        <input type="date" id="leave-end-date" class="admin-input">
+      </div>
+  
+      <div id="leave-time-wrap" class="hidden">
+        <label style="display:block;margin-top:10px">開始時間</label>
+        <input type="time" id="leave-start-time" class="admin-input" lang="en-GB" step="60">
+  
+        <label style="display:block;margin-top:10px">結束時間</label>
+        <input type="time" id="leave-end-time" class="admin-input" lang="en-GB" step="60">
+      </div>
+  
       <label style="display:block;margin-top:10px">假別</label>
       <select id="leave-type" class="admin-input">
         <option>事假</option>
@@ -745,11 +757,14 @@
         <option>休假</option>
         <option>特休假</option>
       </select>
+  
       <label style="display:block;margin-top:10px">原因</label>
       <input id="leave-reason" class="admin-input" placeholder="選填..." />
+  
       <button class="admin-action-btn submit-progress-btn" style="margin-top:15px" onclick="submitLeave()">送出申請</button>
     </div>
   </div>
+
 
   <div class="modal" id="modal-clock-apply">
     <div class="modal-card">
@@ -809,6 +824,21 @@
     </div>
   </div>
 
+  <div class="modal" id="modal-apply-detail">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('apply-detail')">✕</button>
+      <div class="modal-title" id="ad-title">申請詳情</div>
+      <div style="font-size:0.95rem; line-height:1.7;">
+        <div><b>申請時間：</b><span id="ad-appliedAt"></span></div>
+        <div><b>申請內容：</b><span id="ad-dateText"></span></div>
+        <div><b>原因：</b><span id="ad-reason"></span></div>
+        <div><b>狀態：</b><span id="ad-status"></span></div>
+        <div><b>備註：</b><span id="ad-note"></span></div>
+      </div>
+    </div>
+  </div>
+
+  
   <!-- Admin: Token -->
   <div class="modal" id="modal-admin-token">
     <div class="modal-card">
@@ -1286,9 +1316,15 @@
       const today = formatLocalDate(new Date());
       const startEl = document.getElementById("leave-start-date");
       const endEl = document.getElementById("leave-end-date");
+      const allDayEl = document.getElementById("leave-all-day");
+    
       if (startEl && !startEl.value) startEl.value = today;
       if (endEl && !endEl.value) endEl.value = today;
+      if (allDayEl && allDayEl.checked == null) allDayEl.checked = true;
+    
+      toggleLeaveAllDay();
     }
+
   
     if (id === "admin-token") loadAdminUserList();
     if (id === "shop") shopInit();
@@ -2167,6 +2203,80 @@
 
   let applyHistoryItems = [];
 
+  function toggleLeaveAllDay() {
+    const allDay = !!document.getElementById("leave-all-day")?.checked;
+    const endDateWrap = document.getElementById("leave-end-date-wrap");
+    const timeWrap = document.getElementById("leave-time-wrap");
+    const startDate = document.getElementById("leave-start-date");
+    const endDate = document.getElementById("leave-end-date");
+    const startTime = document.getElementById("leave-start-time");
+    const endTime = document.getElementById("leave-end-time");
+  
+    endDateWrap?.classList.toggle("hidden", !allDay);
+    timeWrap?.classList.toggle("hidden", allDay);
+  
+    if (allDay) {
+      if (startDate && endDate && !endDate.value) endDate.value = startDate.value;
+    } else {
+      if (startTime && !startTime.value) startTime.value = "09:00";
+      if (endTime && !endTime.value) endTime.value = "18:00";
+    }
+  }
+  
+  async function submitLeave() {
+    if (!currentUser) return alert("請先登入");
+  
+    const startDate = document.getElementById("leave-start-date").value.trim();
+    const allDay = !!document.getElementById("leave-all-day").checked;
+    const endDate = allDay
+      ? document.getElementById("leave-end-date").value.trim()
+      : startDate;
+    const startTime = allDay ? "" : document.getElementById("leave-start-time").value.trim();
+    const endTime = allDay ? "" : document.getElementById("leave-end-time").value.trim();
+    const leaveType = document.getElementById("leave-type").value.trim();
+    const reason = document.getElementById("leave-reason").value.trim();
+  
+    if (!startDate || !endDate || !leaveType) return alert("請完整填寫請假資料");
+    if (startDate > endDate) return alert("結束日期不能早於開始日期");
+    if (!allDay && (!startTime || !endTime)) return alert("請填寫開始時間與結束時間");
+    if (!allDay && endTime <= startTime) return alert("結束時間必須晚於開始時間");
+  
+    const btn = document.querySelector("#modal-leave .admin-action-btn");
+    setSubmitLoading(btn);
+  
+    try {
+      const r = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "applyLeave",
+          email: currentUser.email,
+          startDate,
+          endDate,
+          leaveType,
+          reason,
+          allDay,
+          startTime,
+          endTime
+        }),
+      });
+  
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.msg || "送出失敗");
+  
+      setSubmitSuccess(btn);
+      setTimeout(() => {
+        closeModal("leave");
+        resetSubmitButton(btn);
+        loadApplyHistory(currentUser.email);
+      }, 700);
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "送出失敗，請稍後再試");
+      resetSubmitButton(btn);
+    }
+  }
+  
   async function loadApplyHistory(email) {
     try {
       const r = await fetch(`${API_URL}?action=applyHistory&email=${encodeURIComponent(email)}`);
@@ -2181,7 +2291,7 @@
       }
   
       box.innerHTML = list.map((item, idx) => `
-        <div class="leave-card" style="cursor:pointer;" onclick="openApplyDetail(${idx})">
+        <div class="leave-card apply-history-card" data-idx="${idx}" style="cursor:pointer;">
           <div class="row-1">
             <span class="title">${item.title || "申請"}</span>
             <span class="status-bar status-${item.status || "審核中"}">${item.status || "審核中"}</span>
@@ -2189,6 +2299,12 @@
           <div class="info">${item.dateText || ""}</div>
         </div>
       `).join("");
+  
+      box.querySelectorAll(".apply-history-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          openApplyDetail(Number(card.dataset.idx));
+        });
+      });
     } catch (e) {
       console.error(e);
       document.getElementById("apply-history").innerHTML = "載入失敗";
@@ -2208,6 +2324,7 @@
   
     openModal("apply-detail");
   }
+
 
 
   // ===== Avatar Frontend =====
