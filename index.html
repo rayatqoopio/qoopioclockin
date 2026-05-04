@@ -747,6 +747,67 @@
       word-break:break-word;
     }
 
+    .mgr-batch-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    
+    .mgr-batch-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1;
+      min-width:0;
+    }
+    
+    .mgr-select-all-label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:0.9rem;
+      white-space:nowrap;
+    }
+    
+    .mgr-batch-note{
+      margin:0;
+      flex:1;
+      min-width:120px;
+    }
+    
+    .mgr-batch-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-left:auto;
+    }
+    
+    .mgr-batch-actions .admin-action-btn{
+      width:auto;
+      padding:10px 14px;
+      white-space:nowrap;
+    }
+    
+    #mgr-batch-approve{
+      background:#27ae60;
+    }
+    
+    #mgr-batch-reject{
+      background:#c0392b;
+    }
+    
+    @media (max-width:420px){
+      .mgr-batch-toolbar{
+        align-items:stretch;
+        flex-direction:column;
+      }
+    
+      .mgr-batch-actions{
+        justify-content:flex-end;
+        margin-left:0;
+      }
+    }
 
 
 
@@ -823,8 +884,41 @@
         <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
       </div>
       <div id="mgr-view-pending">
-        <div class="dashboard-card" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+        <div class="dashboard-card mgr-batch-toolbar">
+          <div class="mgr-batch-left">
+            <label class="mgr-select-all-label">
+              <input type="checkbox" id="mgr-select-all" onchange="toggleAllPendingSelections(this.checked)">
+              全選
+            </label>
+        
+            <input
+              id="mgr-batch-note"
+              class="admin-input mgr-batch-note"
+              placeholder="批次審核備註（選填）"
+            >
+          </div>
+        
+          <div class="mgr-batch-actions">
+            <button
+              id="mgr-batch-approve"
+              class="admin-action-btn"
+              onclick="handleBatchReviewAction('通過')"
+              disabled
+            >
+              批次通過
+            </button>
+        
+            <button
+              id="mgr-batch-reject"
+              class="admin-action-btn"
+              onclick="handleBatchReviewAction('退回')"
+              disabled
+            >
+              批次退回
+            </button>
+          </div>
+        </div>
+
             <input type="checkbox" id="mgr-select-all" onchange="toggleAllPendingSelections(this.checked)">
             全選
           </label>
