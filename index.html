@@ -818,7 +818,6 @@
     </div>
 
     <div id="page-manager" class="hidden page-section">
-      <div class="dash-title">巨人之力</div>
       <div class="manager-tabs">
         <button id="mgr-tab-pending" class="active" onclick="showMgrTab('pending')">待審核</button>
         <button id="mgr-tab-today" onclick="showMgrTab('today')">今日出勤</button>
@@ -830,8 +829,8 @@
             全選
           </label>
           <input id="mgr-batch-note" class="admin-input" placeholder="批次審核備註（選填）" style="margin:0;flex:1;min-width:180px;">
-          <button id="mgr-batch-approve" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#27ae60;" onclick="handleBatchReviewAction('通過')" disabled>操你媽我有選擇嗎</button>
-          <button id="mgr-batch-reject" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#c0392b;" onclick="handleBatchReviewAction('退回')" disabled>滾啦幹</button>
+          <button id="mgr-batch-approve" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#27ae60;" onclick="handleBatchReviewAction('通過')" disabled>通過</button>
+          <button id="mgr-batch-reject" class="admin-action-btn" style="width:auto;padding:10px 14px;background:#c0392b;" onclick="handleBatchReviewAction('退回')" disabled>退回</button>
         </div>
         <div class="dashboard-card" id="mgr-review-list">載入中...</div>
       </div>
@@ -842,7 +841,6 @@
     </div>
 
     <div id="page-admin" class="hidden page-section">
-      <div class="dash-title">在狗叫什麼</div>
       <button class="admin-menu-btn" onclick="openModal('admin-token')">🎁 發送扭蛋代幣 <span>›</span></button>
       <button class="admin-menu-btn" onclick="openModal('admin-announce')">📢 發布全域公告 <span>›</span></button>
       <button class="admin-menu-btn" onclick="openModal('admin-sync')">⚙️ 系統資料同步 <span>›</span></button>
@@ -866,7 +864,7 @@
         </div>
       </div>
       <div class="fab-option"><button class="menu-pill" data-page="schedule" onclick="nav('schedule')">班表</button></div>
-      <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">帕拉迪島</button></div>
+      <div class="fab-option hidden" id="fab-mgr"><button class="menu-pill" data-page="manager" onclick="nav('manager')">管理</button></div>
       <div class="fab-option hidden" id="fab-adm"><button class="menu-pill" data-page="admin" onclick="nav('admin')">大研創意的狗</button></div>
     </div>
     <button class="fab-main" onclick="toggleMenu()">
