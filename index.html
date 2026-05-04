@@ -584,12 +584,6 @@
       font-size: 0.9rem;
     }
 
-    .fab-submenu{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin:0 0 8px 14px;
-    }
     
     .apply-page-header{
       display:flex;
@@ -647,9 +641,15 @@
       word-break:break-word;
     }
 
+    .fab-apply-anchor{
+      position:relative;
+      display:inline-flex;
+      width:max-content;
+    }
+    
     .fab-submenu{
       position:absolute;
-      left:calc(100%);
+      left:calc(100% + 8px);
       top:50%;
       transform:translateY(-50%);
       display:flex;
@@ -663,20 +663,17 @@
       display:none!important;
     }
     
-    .fab-apply-wrap{
-      position:relative;
-    }
-    
-    .menu-sheet.apply-submenu-open > .fab-option:not(.fab-apply-wrap){
+    .menu-sheet.apply-submenu-open > .fab-option:not(:has(.fab-apply-anchor)){
       opacity:0;
       visibility:hidden;
       pointer-events:none;
     }
     
-    .menu-sheet.apply-submenu-open > .fab-option.fab-apply-wrap > .menu-pill{
+    .menu-sheet.apply-submenu-open .fab-apply-anchor > #fab-apply-main{
       background:#111;
       color:#fff;
     }
+
 
 
     .apply-toolbar{
@@ -856,13 +853,16 @@
     <div class="menu-sheet hidden" id="menu-sheet">
       <div class="fab-option"><button class="menu-pill" data-page="clock" onclick="nav('clock')">打卡</button></div>
       <div class="fab-option"><button class="menu-pill" data-page="clocklog" onclick="nav('clocklog')">打卡紀錄</button></div>
-      <div class="fab-option fab-apply-wrap">
-        <button class="menu-pill" id="fab-apply-main" data-page="leave" onclick="toggleApplySubmenu(event)">申請</button>
-        <div id="fab-apply-submenu" class="fab-submenu hidden">
-          <button class="menu-pill apply-sub-pill" data-apply-kind="clock" onclick="openApplyCategory('clock')">打卡</button>
-          <button class="menu-pill apply-sub-pill" data-apply-kind="overtime" onclick="openApplyCategory('overtime')">加班</button>
-          <button class="menu-pill apply-sub-pill" data-apply-kind="leave" onclick="openApplyCategory('leave')">請假</button>
-          <button class="menu-pill apply-sub-pill" data-apply-kind="procurement" onclick="openApplyCategory('procurement')">採購</button>
+      <div class="fab-option">
+        <div class="fab-apply-anchor">
+          <button class="menu-pill" id="fab-apply-main" data-page="leave" onclick="toggleApplySubmenu(event)">申請</button>
+      
+          <div id="fab-apply-submenu" class="fab-submenu hidden">
+            <button class="menu-pill apply-sub-pill" data-apply-kind="clock" onclick="openApplyCategory('clock')">打卡</button>
+            <button class="menu-pill apply-sub-pill" data-apply-kind="overtime" onclick="openApplyCategory('overtime')">加班</button>
+            <button class="menu-pill apply-sub-pill" data-apply-kind="leave" onclick="openApplyCategory('leave')">請假</button>
+            <button class="menu-pill apply-sub-pill" data-apply-kind="procurement" onclick="openApplyCategory('procurement')">採購</button>
+          </div>
         </div>
       </div>
       <div class="fab-option"><button class="menu-pill" data-page="schedule" onclick="nav('schedule')">班表</button></div>
